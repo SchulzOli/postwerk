@@ -1,0 +1,29 @@
+{
+  "name": "postwerk",
+  "private": true,
+  "type": "module",
+  "workspaces": [
+    "packages/*",
+    "apps/*"
+  ],
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "dev": "npm run dev --workspace=@postwerk/web & npm run dev --workspace=@postwerk/worker; wait",
+    "dev:web": "npm run dev --workspace=@postwerk/web",
+    "dev:worker": "npm run dev --workspace=@postwerk/worker",
+    "build": "npm run build --workspaces --if-present",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "test": "vitest run",
+    "db:generate": "npm run generate --workspace=@postwerk/db",
+    "db:migrate": "npm run migrate --workspace=@postwerk/db",
+    "services:up": "docker compose up -d postgres",
+    "services:down": "docker compose down"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "typescript": "^5.9.3",
+    "vitest": "^5.0.3"
+  }
+}
