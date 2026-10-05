@@ -2,10 +2,10 @@
 
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
-import { createOAuthState, deleteAccount, getOrRegisterMastodonApp, saveAccount } from '@postwerk/core';
+import { createOAuthState, deleteAccount, getOrRegisterMastodonApp, isProviderAvailable, oauthClientFor, saveConnectedAccounts } from '@postwerk/core';
 import { getDb } from '@postwerk/db';
-import { Bluesky, Mastodon, ProviderError } from '@postwerk/providers';
-import { appUrl, mastodonRedirectUri, sandboxEnabled } from '@/lib/env';
+import { codeChallenge, generateCodeVerifier, getProvider, isProviderId, Mastodon, ProviderError } from '@postwerk/providers';
+import { appUrl, redirectUriFor } from '@/lib/env';
 import { requireAdmin } from '@/lib/session';
 
 export type ConnectState = { error?: string; success?: string; values?: Record<string, string> };
@@ -21,7 +21,7 @@ export async function connectMastodon(_: ConnectState, form: FormData): Promise<
   let target: string;
   try {
     const instanceUrl = Mastodon.normalizeInstanceUrl(String(form.get('instance') ?? ''));
-    const redirectUri = mastodonRedirectUri;
+    const redirectUri = redirectUriFor('mastodon');
     const db = getDb();
     const app = await getOrRegisterMastodonApp(db, instanceUrl, redirectUri, 'Postwerk', appUrl);
     const state = await createOAuthState(db, { workspaceId: workspace.id, userId: user.id, provider: 'mastodon', data: { instanceUrl } });
@@ -32,32 +32,53 @@ export async function connectMastodon(_: ConnectState, form: FormData): Promise<
   redirect(target);
 }
 
-export async function connectBluesky(_: ConnectState, form: FormData): Promise<ConnectState> {
+/** Networks connected with a form (Bluesky app password, Telegram bot, Discord webhook, Sandbox). */
+export async function connectWithForm(providerId: string, _: ConnectState, form: FormData): Promise<ConnectState> {
   const { workspace } = await requireAdmin();
-  const credentials = {
-    service: Bluesky.BLUESKY_DEFAULT_SERVICE,
-    identifier: Bluesky.normalizeHandle(String(form.get('handle') ?? '')),
-    appPassword: String(form.get('appPassword') ?? '').trim(),
-  };
-  const values = { handle: String(form.get('handle') ?? '') };
-  if (!credentials.identifier) return { error: 'Please enter your Bluesky handle.', values };
-  try {
-    const profile = await Bluesky.connect(credentials);
-    await saveAccount(getDb(), { workspaceId: workspace.id, provider: 'bluesky', profile, credentials, maxLength: Bluesky.BLUESKY_MAX_LENGTH });
-  } catch (error) {
-    return { error: message(error), values };
+  if (!isProviderId(providerId) || !isProviderAvailable(providerId)) return { error: 'This network is not available.' };
+  const provider = getProvider(providerId);
+  if (provider.connector.kind !== 'form') return { error: 'This network is not connected with a form.' };
+
+  const values: Record<string, string> = {};
+  const echo: Record<string, string> = {};
+  for (const field of provider.connector.fields) {
+    values[field.name] = String(form.get(field.name) ?? '');
+    if (field.type !== 'password') echo[field.name] = values[field.name]!;
   }
-  revalidatePath('/accounts');
-  return { success: 'Bluesky account connected.' };
+  try {
+    const accounts = await provider.connector.connect(values);
+    await saveConnectedAccounts(getDb(), workspace.id, providerId, accounts);
+    revalidatePath('/accounts');
+    return { success: `Connected ${accounts.map((a) => a.profile.handle).join(', ')}.` };
+  } catch (error) {
+    return { error: message(error), values: echo };
+  }
 }
 
-export async function connectSandbox(_: ConnectState, form: FormData): Promise<ConnectState> {
-  const { workspace } = await requireAdmin();
-  if (!sandboxEnabled) return { error: 'The sandbox is disabled.' };
-  const name = String(form.get('name') ?? '').trim() || 'sandbox';
-  await saveAccount(getDb(), { workspaceId: workspace.id, provider: 'sandbox', profile: { externalId: name, handle: `@${name}` }, credentials: { name } });
-  revalidatePath('/accounts');
-  return { success: 'Sandbox account added.' };
+/** Starts the OAuth flow of a network that uses the operator's developer app. */
+export async function startOAuth(providerId: string) {
+  const { user, workspace } = await requireAdmin();
+  if (!isProviderId(providerId)) redirect('/accounts');
+  const provider = getProvider(providerId);
+  const client = oauthClientFor(providerId);
+  if (provider.connector.kind !== 'oauth2' || !client) {
+    redirect(`/accounts?${new URLSearchParams({ error: `${provider.name} is not set up on this server yet.` })}`);
+  }
+
+  const codeVerifier = provider.connector.pkce ? generateCodeVerifier() : undefined;
+  const state = await createOAuthState(getDb(), {
+    workspaceId: workspace.id,
+    userId: user.id,
+    provider: providerId,
+    data: codeVerifier ? { codeVerifier } : {},
+  });
+  redirect(
+    provider.connector.authorizeUrl(client, {
+      redirectUri: redirectUriFor(providerId),
+      state,
+      codeChallenge: codeVerifier ? await codeChallenge(codeVerifier) : undefined,
+    }),
+  );
 }
 
 export async function disconnectAccount(form: FormData) {

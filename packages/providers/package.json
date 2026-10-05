@@ -5,6 +5,8 @@
   "type": "module",
   "exports": {
     ".": "./src/index.ts",
+    "./catalog": "./src/catalog.ts",
+    "./validate": "./src/validate.ts",
     "./text": "./src/text.ts"
   },
   "scripts": {

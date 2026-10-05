@@ -1,7 +1,8 @@
-import { and, eq, inArray, lt, sql } from 'drizzle-orm';
+import { and, eq, inArray, lt, ne, sql } from 'drizzle-orm';
 import { posts, postTargets, socialAccounts, type Database } from '@postwerk/db';
 import { getProvider, ProviderError } from '@postwerk/providers';
-import { decryptJson } from './crypto';
+import { oauthClientFor } from './clients';
+import { decryptJson, encryptJson } from './crypto';
 import { aggregatePostStatus, backoffMs, MAX_ATTEMPTS } from './status';
 
 const STALE_LOCK_MS = 10 * 60_000;
@@ -52,10 +53,11 @@ export async function publishTarget(db: Database, targetId: string, now = () => 
       throw new ProviderError('Account needs to be reconnected.', { needsReauth: true });
     }
     const provider = getProvider(target.account.provider);
+    const credentials = await currentCredentials(db, target.account.id, now());
     const result = await provider.publish(
-      readCredentials(target.account.credentialsEnc),
-      { text: target.post.text },
-      { idempotencyKey: target.id },
+      credentials,
+      { text: target.post.text, media: target.post.media, options: target.options },
+      { idempotencyKey: target.id, client: oauthClientFor(target.account.provider) },
     );
     await db
       .update(postTargets)
@@ -78,6 +80,60 @@ export async function publishTarget(db: Database, targetId: string, now = () => 
       .where(eq(postTargets.id, target.id));
   }
   await refreshPostStatus(db, target.postId);
+}
+
+/**
+ * Decrypted credentials, refreshed first when the network's token is about to
+ * expire. The account row is locked during a refresh so that two targets of the
+ * same account never refresh concurrently (X and others rotate refresh tokens).
+ */
+async function currentCredentials(db: Database, accountId: string, now: Date): Promise<unknown> {
+  return db.transaction(async (tx) => {
+    const [account] = await tx.select().from(socialAccounts).where(eq(socialAccounts.id, accountId)).for('update');
+    if (!account) throw new ProviderError('The account was disconnected.');
+    const credentials = readCredentials(account.credentialsEnc);
+    const provider = getProvider(account.provider);
+    if (!provider.refresh || !provider.needsRefresh?.(credentials, now.getTime())) return credentials;
+
+    const refreshed = await provider.refresh(credentials, oauthClientFor(account.provider));
+    await tx.update(socialAccounts).set({ credentialsEnc: encryptJson(refreshed), updatedAt: now }).where(eq(socialAccounts.id, account.id));
+    await updateSiblingGrants(tx, account, credentials, refreshed, now);
+    return refreshed;
+  });
+}
+
+type Tokens = { accessToken?: unknown; refreshToken?: unknown; expiresAt?: unknown };
+
+/**
+ * One login can produce several accounts (Facebook/LinkedIn pages, Pinterest
+ * boards) that share a single grant. When a refresh rotates the refresh token,
+ * the siblings' copies become invalid, so they get the new tokens too.
+ */
+async function updateSiblingGrants(
+  tx: Parameters<Parameters<Database['transaction']>[0]>[0],
+  account: typeof socialAccounts.$inferSelect,
+  before: unknown,
+  after: unknown,
+  now: Date,
+) {
+  const previous = (before as Tokens).refreshToken;
+  const next = after as Tokens;
+  if (typeof previous !== 'string' || previous === next.refreshToken) return;
+  const siblings = await tx
+    .select()
+    .from(socialAccounts)
+    .where(and(eq(socialAccounts.workspaceId, account.workspaceId), eq(socialAccounts.provider, account.provider), ne(socialAccounts.id, account.id)));
+  for (const sibling of siblings) {
+    let credentials: Tokens;
+    try {
+      credentials = decryptJson<Tokens>(sibling.credentialsEnc);
+    } catch {
+      continue;
+    }
+    if (credentials.refreshToken !== previous) continue;
+    const updated = { ...credentials, accessToken: next.accessToken, refreshToken: next.refreshToken, expiresAt: next.expiresAt };
+    await tx.update(socialAccounts).set({ credentialsEnc: encryptJson(updated), updatedAt: now }).where(eq(socialAccounts.id, sibling.id));
+  }
 }
 
 function readCredentials(payload: string): unknown {

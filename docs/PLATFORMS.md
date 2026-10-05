@@ -1,40 +1,66 @@
-# Platform integration guide
+# Platform guide
 
-What each network needs before Postwerk can publish to it natively, and what the user experience looks like. Requirements change often — check the linked developer docs before starting a review.
+Every network is a module in `packages/providers/src/` behind one interface (`Provider` in `types.ts`). Its static rules — text limits, media, per-post fields, setup — live in `catalog.ts` as plain data, so the composer validates in the browser with exactly the rules the server enforces.
 
-**Status legend:** ✅ implemented · 🌉 planned via bridge (Phase 2) · 🛠 planned native (Phase 3)
+## Status
 
-| Network | Status | Operator setup | User experience | Notable limits |
-|---|---|---|---|---|
-| Mastodon | ✅ | None. Postwerk registers an OAuth client on each server automatically | Enter server → approve on Mastodon | Per-server character limit (read from the server) |
-| Bluesky | ✅ | None | Handle + app password (Phase 1: OAuth) | 300 graphemes |
-| Sandbox | ✅ | `ENABLE_SANDBOX=true` | Enter a name | Fake network for demos/tests |
-| LinkedIn (personal) | 🛠 | LinkedIn app with self-serve "Share on LinkedIn" (`w_member_social`) | Click → LinkedIn login | — |
-| Facebook Pages | 🌉🛠 | Meta app, business verification, app review (`pages_manage_posts`, …) | Click → Facebook login → pick pages | — |
-| Instagram | 🌉🛠 | Same Meta app; Instagram API with Instagram Login (`instagram_business_content_publish`), advanced access needs a verified business + app review | Click → Instagram login | Professional (Business/Creator) accounts only; 100 API posts / 24 h; media required |
-| Threads | 🌉🛠 | Same Meta app, Threads permissions + review | Click → login | — |
-| Google Business Profile | 🌉🛠 | Google Cloud project + Business Profile API access request form | Click → Google login → pick location | Update/event/offer posts |
-| LinkedIn (company pages) | 🌉🛠 | Community Management API via partner program: registered legal entity, development tier → standard tier after screencast review (weeks–months) | Click → LinkedIn login → pick page | Admin role on page required |
-| YouTube | 🌉🛠 | Google OAuth app verification for `youtube.upload`; quota extension audit | Click → Google login | Default quota allows only a few uploads/day; unverified apps' uploads are private |
-| Reddit | 🌉🛠 | Manual approval under the Responsible Builder Policy (self-service ended Nov 2025; ~2–4 weeks) | Click → Reddit login | Subreddit rules, rate limits |
-| TikTok | 🌉🛠 | Content Posting API + audit | Click → TikTok login | Unaudited apps can only post privately |
-| Pinterest | 🌉🛠 | Trial access → standard access review | Click → Pinterest login | Image/video required |
-| X | 🌉🛠 | Paid API (pay-per-use) | Click → X login | Cost per post |
+All networks below are implemented and unit-tested against mocked APIs. **"Live-verified" means a real post went out through the real API.** Networks that need an operator app can only be live-verified once that app exists and (where noted) has passed review.
 
-## Adding a native provider
+| Network | Connect | Operator setup (env prefix) | Media | Per-post fields | Token refresh | Live-verified |
+|---|---|---|---|---|---|---|
+| Mastodon | OAuth, app auto-registered per server | none | 4 images or 1 video, alt text | — | not needed | mock server |
+| Bluesky | handle + app password | none | 4 images, alt text | — | not needed | — |
+| Telegram | bot token + channel | none | up to 10 photos/videos (album) | — | not needed | — |
+| Discord | channel webhook URL | none | 10 image embeds, video links | — | not needed | — |
+| Facebook Pages | OAuth → one account per page | `FACEBOOK` | 10 images or 1 video | — | page tokens don't expire | — |
+| Instagram | OAuth (Instagram Login) | `INSTAGRAM` | **required**: image, reel, or carousel ≤ 10 | — | long-lived token, refreshed 7 days before expiry | — |
+| Threads | OAuth | `THREADS` | carousel ≤ 10, alt text | — | long-lived token, refreshed 7 days before expiry | — |
+| LinkedIn (profile) | OAuth | `LINKEDIN` | 20 images, alt text | — | partners only; otherwise reconnect after ~60 days | — |
+| LinkedIn Page | OAuth → one account per page | `LINKEDIN` | 20 images, alt text | — | same as above | — |
+| X | OAuth 2.0 + PKCE | `X` | 4 images | — | 2 h tokens, rotating refresh token | — |
+| TikTok | OAuth | `TIKTOK` | **required**: 1 video or ≤ 35 photos | privacy (must be chosen) | 24 h tokens | — |
+| YouTube | Google OAuth → one account per channel | `GOOGLE` | **required**: 1 video | title, visibility | 1 h tokens | — |
+| Google Business Profile | Google OAuth → one account per location | `GOOGLE` | 1 image | — | 1 h tokens | — |
+| Pinterest | OAuth → one account per board | `PINTEREST` | **required**: 1 image, alt text | title, link | 30-day tokens | — |
+| Reddit | OAuth | `REDDIT` | — (text posts) | subreddit, title | 1 h tokens | — |
+| Sandbox | name | `ENABLE_SANDBOX=true` | anything | — | — | n/a |
 
-1. Add the id to `ProviderId` (`packages/providers/src/types.ts`) and the `provider` enum in `packages/db/src/schema.ts`, then `npm run db:generate`.
-2. Create `packages/providers/src/<network>.ts` implementing `Provider`:
-   - `validate()` — length/media rules, return readable messages
-   - `publish()` — map HTTP errors with `ProviderError.fromHttpStatus` so retries and "reconnect needed" work automatically; pass `context.idempotencyKey` if the API supports it
-3. Export connect helpers (authorize URL, code exchange, profile fetch) and add a connect action + callback route in `apps/web`.
-4. Store only what `publish()` needs in the credentials object; it is encrypted at rest.
-5. If tokens expire, add a refresh step before publishing (Phase 1 adds a shared token-refresh job).
-6. Tests: mock `fetch` like `packages/providers/test/mastodon.test.ts`.
+## Setting up an operator app
 
-## Sources
+1. Create the developer app in the network's console (links in the table below).
+2. Register the callback URL **`${APP_URL}/api/connect/<network>/callback`** (e.g. `https://postwerk.example.com/api/connect/instagram/callback`). LinkedIn profile and page use `linkedin` and `linkedin_page`; YouTube and Business Profile use `youtube` and `google_business` — add both if you use both.
+3. Set `<PREFIX>_CLIENT_ID` and `<PREFIX>_CLIENT_SECRET` (see `.env.example`) and restart. The network moves from "needs setup" to "Connect" on the accounts page.
+4. Until the app passes review, only you and the testers you add in the console can connect.
 
-- Instagram Platform overview: https://developers.facebook.com/docs/instagram-platform/overview
-- LinkedIn Community Management API: https://learn.microsoft.com/linkedin/marketing/community-management/
-- Reddit Responsible Builder Policy announcement (r/redditdev, Nov 2025)
-- Google Business Profile API prerequisites: https://developers.google.com/my-business/content/prereqs
+| Network | Developer console / docs | Review before strangers can connect |
+|---|---|---|
+| Facebook | developers.facebook.com → Facebook Login for Business | Business verification + App Review: `pages_show_list`, `pages_manage_posts`, `pages_read_engagement` |
+| Instagram | developers.facebook.com → Instagram API with Instagram Login | App Review: `instagram_business_basic`, `instagram_business_content_publish`; business verification for advanced access |
+| Threads | developers.facebook.com → Threads API | App Review: `threads_basic`, `threads_content_publish` |
+| LinkedIn | linkedin.com/developers | Profile: self-serve products "Share on LinkedIn" + "Sign In with LinkedIn using OpenID Connect". Pages: Community Management API (partner review, registered legal entity) |
+| X | developer.x.com | Paid API access; enable OAuth 2.0 (confidential client) with `tweet.read tweet.write users.read media.write offline.access` |
+| TikTok | developers.tiktok.com → Content Posting API (Direct Post) | Audit before posts can be public; media URLs must be on a verified domain |
+| Google | console.cloud.google.com | YouTube: OAuth verification for `youtube.upload` + quota extension. Business Profile: API access request form. Apps in "Testing" get refresh tokens that expire after 7 days |
+| Pinterest | developers.pinterest.com | Trial access on creation (may be limited to the sandbox API); Standard access needs review |
+| Reddit | reddit.com/prefs/apps | Manual approval under the Responsible Builder Policy |
+
+## Known gaps and unverified details
+
+The developer docs of most networks were not reachable while these modules were written, so some details come from prior knowledge. Check these first when live-testing:
+
+- **Meta**: Graph API `v26.0`; Instagram code-exchange response shape (both wrapped and flat are handled); whether Threads' authorize host is now `threads.com`; Threads carousel limit (10 assumed, may be 20); `appsecret_proof` is not sent ("Require App Secret" must be off).
+- **X**: v2 media upload request/response shape; alt text is not sent yet.
+- **TikTok**: PKCE not used (web app); exact error codes; `publicaly_available_post_id` field name; brand-content disclosure fields not sent.
+- **Google**: `languageCode` in the Business Information read mask; YouTube `categoryId` fixed to 22 (People & Blogs). A YouTube upload whose response is lost may be retried and upload twice (no idempotency key).
+- **Pinterest**: trial apps may only write to `api-sandbox.pinterest.com`.
+- **Telegram / Discord**: error description wording; Discord avatar CDN path.
+- **Media URLs (security)**: until uploads land, the composer takes public media URLs, and the server downloads them for Mastodon, Bluesky, LinkedIn, X and YouTube. Obviously internal hosts are refused, but DNS is not resolved, so a hostname pointing at an internal address is not caught. Don't expose multi-tenant instances before Phase 1 uploads.
+- **Not yet supported**: Bluesky, LinkedIn and X videos; Pinterest videos; Reddit image/link posts; first comments; per-network text variants.
+
+## Adding a network
+
+1. Add the id to `PROVIDER_IDS` (`types.ts`) and the `provider` enum in `packages/db/src/schema.ts` (a test fails if they differ), then `npm run db:generate`.
+2. Describe it in `catalog.ts`: limits, media, options, setup.
+3. Create `packages/providers/src/<network>.ts` exporting a `Provider`: spread the catalog entry, add a `connector` (`oauth2`, `form` or `mastodon`), `publish`, and `refresh`/`needsRefresh` if tokens expire. `linkedin.ts` is the reference implementation.
+4. Use `http.ts` helpers so errors map to `ProviderError` (`retryable`, `needsReauth`); pass a `mapError` when the network encodes errors in the body.
+5. Register it in `index.ts` and write tests with `test/helpers.ts` (`mockFetch`).

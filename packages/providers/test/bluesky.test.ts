@@ -1,10 +1,13 @@
 import { describe, expect, it } from 'vitest';
-import { bluesky, connect, isAppPassword, normalizeHandle, postUrl } from '../src/bluesky';
+import { connect, isAppPassword, normalizeHandle, postUrl } from '../src/bluesky';
+import { catalog } from '../src/catalog';
+import { validateContent } from '../src/validate';
 
 describe('bluesky', () => {
   it('enforces the 300 grapheme limit', () => {
-    expect(bluesky.validate({ text: '👋'.repeat(300) })).toEqual([]);
-    expect(bluesky.validate({ text: 'a'.repeat(301) })).toHaveLength(1);
+    const post = (text: string) => ({ text, media: [], options: {} });
+    expect(validateContent(catalog.bluesky, post('👋'.repeat(300)))).toEqual([]);
+    expect(validateContent(catalog.bluesky, post('a'.repeat(301)))).toHaveLength(1);
   });
 
   it('recognizes app passwords', () => {

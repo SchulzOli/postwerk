@@ -2,17 +2,18 @@
 
 Self-hosted social media scheduling. Connect your accounts with one click, write a post once, publish it everywhere — now or later.
 
-- **No developer setup for users.** Mastodon and Bluesky work out of the box; Instagram, LinkedIn, Reddit & more are on the [roadmap](docs/PLAN.md) via a bridge first, then native integrations.
-- **Reliable publishing.** Every network is published and retried independently, with backoff, crash recovery and clear "reconnect needed" states.
+- **15 networks behind one interface.** Mastodon, Bluesky, Telegram and Discord work out of the box. Facebook, Instagram, Threads, LinkedIn (profiles and pages), X, TikTok, YouTube, Google Business Profile, Pinterest and Reddit work as soon as the server admin registers one developer app per network — users then just click "Connect".
+- **Validates as you type.** Each network's limits, media rules and required fields (subreddit, video title, TikTok privacy…) are checked live in the composer.
+- **Reliable publishing.** Every network is published and retried independently, with backoff, token refresh, crash recovery and clear "reconnect needed" states.
 - **Your data stays yours.** Tokens are encrypted at rest; runs anywhere Docker runs.
 
 | Accounts | Composer | Posts |
 |---|---|---|
-| ![Accounts](docs/screenshots/2-accounts-connected.png) | ![Composer](docs/screenshots/3-composer.png) | ![Posts](docs/screenshots/4-posts.png) |
+| ![Accounts](docs/screenshots/1-accounts-all-networks.png) | ![Composer](docs/screenshots/3-composer.png) | ![Posts](docs/screenshots/4-posts.png) |
 
 ## Status
 
-Phase 0 (foundation) is done: accounts, workspaces, Mastodon, Bluesky, a sandbox network, scheduling and the publishing worker. See [docs/PLAN.md](docs/PLAN.md) for what comes next and [docs/PLATFORMS.md](docs/PLATFORMS.md) for per-network requirements.
+Phase 0 (foundation) is done, and every network integration is implemented ahead of schedule. Networks that need an operator app still have to be set up and live-verified — see [docs/PLATFORMS.md](docs/PLATFORMS.md). Next up: media uploads, editing and the calendar ([docs/PLAN.md](docs/PLAN.md)).
 
 ## Quick start (development)
 
@@ -46,6 +47,7 @@ This starts Postgres, runs migrations, and launches the web app (port 3000) and 
 | `APP_URL` | yes | Public URL without trailing slash |
 | `ENABLE_SANDBOX` | no | `true` shows the fake Sandbox network |
 | `WORKER_POLL_INTERVAL_MS` | no | How often the worker checks for due posts (default 10000) |
+| `<NETWORK>_CLIENT_ID` / `_CLIENT_SECRET` | no | Operator developer apps, e.g. `INSTAGRAM_CLIENT_ID`. See [docs/PLATFORMS.md](docs/PLATFORMS.md) |
 
 ## Project structure
 

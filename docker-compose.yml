@@ -33,6 +33,10 @@ services:
       context: .
       target: web
     restart: unless-stopped
+    # Operator app credentials (FACEBOOK_CLIENT_ID, …); `environment` below takes precedence.
+    env_file:
+      - path: .env
+        required: false
     ports:
       - "${WEB_PORT:-3000}:3000"
     environment:
@@ -50,6 +54,10 @@ services:
       context: .
       target: worker
     restart: unless-stopped
+    # Operator app credentials (FACEBOOK_CLIENT_ID, …); `environment` below takes precedence.
+    env_file:
+      - path: .env
+        required: false
     environment:
       DATABASE_URL: postgres://postwerk:${POSTGRES_PASSWORD:-postwerk}@postgres:5432/postwerk
       ENCRYPTION_KEY: ${ENCRYPTION_KEY:-}

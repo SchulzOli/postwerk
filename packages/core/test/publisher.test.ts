@@ -2,7 +2,8 @@ import { eq, sql } from 'drizzle-orm';
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createDb, posts, socialAccounts, users, workspaces, type Database } from '@postwerk/db';
 import { runMigrations } from '../../db/src/migrate';
-import { deleteAccount, saveAccount } from '../src/accounts';
+import { deleteAccount, getOrRegisterMastodonApp, saveAccount } from '../src/accounts';
+import { decryptJson } from '../src/crypto';
 import { createPost, deletePost } from '../src/posts';
 import { claimDueTargets, publishTarget, releaseStaleLocks, runPublishCycle } from '../src/publisher';
 
@@ -186,6 +187,117 @@ describe.skipIf(!url)('publishing (Postgres)', () => {
     await deleteAccount(db, workspaceId, b.id);
     expect(await getPost(onlyB)).toBeUndefined();
     expect((await getPost(both))!.targets).toHaveLength(1);
+  });
+
+  it('stores media and per-network options and validates them', async () => {
+    const reddit = await saveAccount(db, {
+      workspaceId,
+      provider: 'reddit',
+      profile: { externalId: 'u1', handle: 'u/oli' },
+      credentials: { accessToken: 't' },
+    });
+    const missing = await createPost(db, { workspaceId, authorId: userId, text: 'Body', accountIds: [reddit.id], scheduledAt: null });
+    expect(missing).toEqual({ ok: false, errors: ['u/oli: Subreddit is required.', 'u/oli: Title is required.'] });
+
+    const sandbox = await sandboxAccount('one');
+    const result = await createPost(db, {
+      workspaceId,
+      authorId: userId,
+      text: 'Body',
+      media: [{ url: 'https://cdn.example/a.png', kind: 'image' }],
+      options: { reddit: { subreddit: 'physio', title: 'Hello' } },
+      accountIds: [sandbox.id],
+      scheduledAt: new Date(Date.now() + 60_000),
+    });
+    expect(result.ok).toBe(true);
+    const stored = await getPost((result as { postId: string }).postId);
+    expect(stored!.media).toEqual([{ url: 'https://cdn.example/a.png', kind: 'image' }]);
+    // Options only apply to the network they belong to.
+    expect(stored!.targets[0]!.options).toEqual({});
+  });
+
+  it('refreshes expiring tokens before publishing', async () => {
+    process.env.LINKEDIN_CLIENT_ID = 'cid';
+    process.env.LINKEDIN_CLIENT_SECRET = 'secret';
+    const requests: string[] = [];
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (url: string, init: RequestInit) => {
+        requests.push(`${init.method ?? 'GET'} ${url}`);
+        if (url.includes('/oauth/v2/accessToken')) return Response.json({ access_token: 'new-token', expires_in: 3600, refresh_token: 'r2' });
+        return new Response(null, { status: 201, headers: { 'x-restli-id': 'urn:li:share:1' } });
+      }),
+    );
+    try {
+      const account = await saveAccount(db, {
+        workspaceId,
+        provider: 'linkedin',
+        profile: { externalId: 'abc', handle: 'Oli' },
+        credentials: { accessToken: 'old', refreshToken: 'r1', expiresAt: Date.now() - 1000, author: 'urn:li:person:abc' },
+      });
+      const id = await post('Hello', [account.id]);
+      await runPublishCycle(db);
+
+      expect((await getPost(id))!.status).toBe('published');
+      expect(requests).toEqual(['POST https://www.linkedin.com/oauth/v2/accessToken', 'POST https://api.linkedin.com/rest/posts']);
+      const updated = await db.query.socialAccounts.findFirst({ where: eq(socialAccounts.id, account.id) });
+      expect(decryptJson(updated!.credentialsEnc)).toMatchObject({ accessToken: 'new-token', refreshToken: 'r2' });
+    } finally {
+      vi.unstubAllGlobals();
+      delete process.env.LINKEDIN_CLIENT_ID;
+      delete process.env.LINKEDIN_CLIENT_SECRET;
+    }
+  });
+
+  it('shares rotated refresh tokens with accounts from the same login', async () => {
+    process.env.LINKEDIN_CLIENT_ID = 'cid';
+    process.env.LINKEDIN_CLIENT_SECRET = 'secret';
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (url: string) =>
+        url.includes('/oauth/v2/accessToken')
+          ? Response.json({ access_token: 'new', expires_in: 3600, refresh_token: 'rotated' })
+          : new Response(null, { status: 201, headers: { 'x-restli-id': 'urn:li:share:1' } }),
+      ),
+    );
+    try {
+      const shared = { accessToken: 'old', refreshToken: 'r1', expiresAt: Date.now() - 1000 };
+      const page = (id: string) =>
+        saveAccount(db, {
+          workspaceId,
+          provider: 'linkedin_page',
+          profile: { externalId: `urn:li:organization:${id}`, handle: id },
+          credentials: { ...shared, author: `urn:li:organization:${id}` },
+        });
+      const [one, two] = [await page('1'), await page('2')];
+      await post('Hello', [one.id]);
+      await runPublishCycle(db);
+
+      const sibling = await db.query.socialAccounts.findFirst({ where: eq(socialAccounts.id, two.id) });
+      expect(decryptJson(sibling!.credentialsEnc)).toMatchObject({ accessToken: 'new', refreshToken: 'rotated', author: 'urn:li:organization:2' });
+    } finally {
+      vi.unstubAllGlobals();
+      delete process.env.LINKEDIN_CLIENT_ID;
+      delete process.env.LINKEDIN_CLIENT_SECRET;
+    }
+  });
+
+  it('re-registers a Mastodon app whose secret no longer decrypts', async () => {
+    let registrations = 0;
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => Response.json({ client_id: `cid-${++registrations}`, client_secret: 'secret' })),
+    );
+    try {
+      const first = await getOrRegisterMastodonApp(db, 'https://social.example', 'https://app/cb', 'Postwerk');
+      expect(await getOrRegisterMastodonApp(db, 'https://social.example', 'https://app/cb', 'Postwerk')).toEqual(first);
+      await db.execute(sql`UPDATE mastodon_apps SET client_secret_enc = 'v1.broken'`);
+      const second = await getOrRegisterMastodonApp(db, 'https://social.example', 'https://app/cb', 'Postwerk');
+      expect(second).toEqual({ clientId: 'cid-2', clientSecret: 'secret' });
+      expect(registrations).toBe(2);
+    } finally {
+      vi.unstubAllGlobals();
+    }
   });
 
   it('ignores unknown targets', async () => {
