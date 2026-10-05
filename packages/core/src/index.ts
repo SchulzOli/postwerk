@@ -7,3 +7,5 @@ export * from './publisher';
 export * from './clients';
 export * from './flow';
 export * from './flows';
+export * from './theme';
+export * from './plugins';

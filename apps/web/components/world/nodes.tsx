@@ -1,11 +1,14 @@
 'use client';
 
 import { Handle, Position, type NodeProps } from '@xyflow/react';
+import { useTransition } from 'react';
 import { stepLabels, type FlowStep } from '@postwerk/core/flow';
 import { catalog } from '@postwerk/providers/catalog';
 import { Composer } from '@/components/composer';
 import { LocalTime } from '@/components/local-time';
+import { ThemePreview } from '@/components/theme-preview';
 import { submitPost } from '@/app/(app)/posts/actions';
+import { chooseThemeAction, installBuiltinPluginAction } from '@/app/(world)/canvas/actions';
 import { useWorld } from './context';
 import { ids, type WorldNode } from './layout';
 
@@ -252,6 +255,54 @@ export function PostsNode({ selected }: Props<'posts'>) {
   );
 }
 
+export function PluginNode({ data, selected }: Props<'plugin'>) {
+  const world = useWorld();
+  const [pending, startTransition] = useTransition();
+  const { manifest, builtin, installed } = data.plugin;
+  const active = world.data.appearance.themeId === manifest.id;
+  return (
+    <div className={`world-card plugin-node ${installed ? '' : 'is-available'} ${selected ? 'is-selected' : ''}`}>
+      <div className="row-tight">
+        <strong className="grow clip">{manifest.name}</strong>
+        {active ? (
+          <span className="badge badge-active">In use</span>
+        ) : installed ? (
+          <button type="button" className="secondary small nodrag" disabled={pending} onClick={() => startTransition(() => chooseThemeAction(manifest.id))}>
+            {pending ? 'Switching…' : 'Use'}
+          </button>
+        ) : (
+          world.data.canManage && (
+            <button type="button" className="small nodrag" disabled={pending} onClick={() => startTransition(() => installBuiltinPluginAction(manifest.id))}>
+              {pending ? 'Installing…' : 'Install'}
+            </button>
+          )
+        )}
+      </div>
+      <small className="muted meta clip">
+        {installed ? `${manifest.author} · v${manifest.version}` : 'Not installed'}
+        {builtin ? ' · Built-in' : ''}
+      </small>
+      <p className="clip-2 muted">{manifest.description}</p>
+      <ThemePreview theme={manifest} />
+    </div>
+  );
+}
+
+export function PluginInstallNode({ id, selected }: Props<'pluginInstall'>) {
+  const world = useWorld();
+  return (
+    <div className={`world-card plugin-node is-available ${selected ? 'is-selected' : ''}`}>
+      <strong>+ Add a theme</strong>
+      <p className="muted">
+        Start from any theme, change colors, fonts and shapes for light and dark mode, and install it. Or install a theme file someone shared.
+      </p>
+      <button type="button" className="small nodrag" onClick={() => world.focus(id)}>
+        Open theme editor
+      </button>
+    </div>
+  );
+}
+
 export const nodeTypes = {
   region: RegionNode,
   network: NetworkNode,
@@ -260,4 +311,6 @@ export const nodeTypes = {
   step: StepNode,
   composer: ComposerNode,
   posts: PostsNode,
+  plugin: PluginNode,
+  pluginInstall: PluginInstallNode,
 };

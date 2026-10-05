@@ -42,7 +42,7 @@ export const getSession = cache(async () => {
     with: { workspace: true },
   });
   if (!membership) return null;
-  return { user: row.user, workspace: membership.workspace, role: membership.role };
+  return { user: row.user, workspace: membership.workspace, role: membership.role, theme: membership.theme };
 });
 
 export async function requireSession() {
