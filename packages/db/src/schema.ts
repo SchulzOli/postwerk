@@ -5,7 +5,30 @@ const id = () => uuid('id').primaryKey().defaultRandom();
 const createdAt = () => timestamp('created_at', { withTimezone: true }).notNull().defaultNow();
 
 export const memberRole = pgEnum('member_role', ['owner', 'admin', 'editor']);
-export const provider = pgEnum('provider', ['mastodon', 'bluesky', 'sandbox']);
+export const provider = pgEnum('provider', [
+  'mastodon',
+  'bluesky',
+  'facebook',
+  'instagram',
+  'threads',
+  'linkedin',
+  'linkedin_page',
+  'x',
+  'tiktok',
+  'youtube',
+  'pinterest',
+  'reddit',
+  'google_business',
+  'telegram',
+  'discord',
+  'sandbox',
+]);
+
+export interface PostMedia {
+  url: string;
+  kind: 'image' | 'video';
+  altText?: string;
+}
 export const accountStatus = pgEnum('account_status', ['active', 'needs_reauth']);
 export const postStatus = pgEnum('post_status', ['draft', 'scheduled', 'publishing', 'published', 'partial', 'failed']);
 export const targetStatus = pgEnum('target_status', ['pending', 'publishing', 'published', 'failed']);
@@ -98,6 +121,7 @@ export const posts = pgTable(
     workspaceId: uuid('workspace_id').notNull().references(() => workspaces.id, { onDelete: 'cascade' }),
     authorId: uuid('author_id').references(() => users.id, { onDelete: 'set null' }),
     text: text('text').notNull(),
+    media: jsonb('media').$type<PostMedia[]>().notNull().default([]),
     status: postStatus('status').notNull().default('draft'),
     scheduledAt: timestamp('scheduled_at', { withTimezone: true }),
     createdAt: createdAt(),
@@ -113,6 +137,8 @@ export const postTargets = pgTable(
     id: id(),
     postId: uuid('post_id').notNull().references(() => posts.id, { onDelete: 'cascade' }),
     socialAccountId: uuid('social_account_id').notNull().references(() => socialAccounts.id, { onDelete: 'cascade' }),
+    /** Network-specific fields (subreddit, video title, privacy…), defaults already applied. */
+    options: jsonb('options').$type<Record<string, string>>().notNull().default({}),
     status: targetStatus('status').notNull().default('pending'),
     attempts: integer('attempts').notNull().default(0),
     nextAttemptAt: timestamp('next_attempt_at', { withTimezone: true }).notNull().defaultNow(),

@@ -7,7 +7,7 @@ Self-hosted social media scheduler. TypeScript monorepo (npm workspaces). Plan: 
 - `apps/worker` — publishing loop (`runPublishCycle` from `@postwerk/core`), bundled with esbuild.
 - `packages/core` — business logic; web and worker only call into this.
 - `packages/db` — Drizzle schema. After schema changes: `npm run db:generate`, commit the SQL in `packages/db/drizzle/`.
-- `packages/providers` — one file per network implementing `Provider`. Throw `ProviderError` with `retryable`/`needsReauth`.
+- `packages/providers` — one file per network implementing `Provider`; static limits/options in `catalog.ts` (browser-safe). Throw `ProviderError` with `retryable`/`needsReauth`. `linkedin.ts` is the reference; see `docs/PLATFORMS.md` → "Adding a network".
 
 ## Checks before committing
 ```bash

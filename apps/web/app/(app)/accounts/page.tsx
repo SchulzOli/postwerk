@@ -1,10 +1,11 @@
 import { asc, eq } from 'drizzle-orm';
-import { ConnectForm } from '@/components/connect-form';
+import { isProviderAvailable } from '@postwerk/core';
 import { getDb, socialAccounts } from '@postwerk/db';
-import { sandboxEnabled } from '@/lib/env';
-import { providerLabels, upcoming } from '@/lib/platforms';
+import { getProvider, providerInfos } from '@postwerk/providers';
+import { ConnectForm } from '@/components/connect-form';
+import { providerLabels } from '@/lib/platforms';
 import { requireSession } from '@/lib/session';
-import { connectBluesky, connectMastodon, connectSandbox, disconnectAccount } from './actions';
+import { connectMastodon, connectWithForm, disconnectAccount, startOAuth } from './actions';
 
 export const metadata = { title: 'Accounts · Postwerk' };
 
@@ -16,6 +17,9 @@ export default async function AccountsPage({ searchParams }: { searchParams: Pro
     orderBy: [asc(socialAccounts.provider), asc(socialAccounts.handle)],
   });
   const canManage = role !== 'editor';
+  const networks = providerInfos.filter((info) => info.id !== 'sandbox' || isProviderAvailable('sandbox'));
+  const available = networks.filter((info) => isProviderAvailable(info.id));
+  const needsSetup = networks.filter((info) => !isProviderAvailable(info.id));
 
   return (
     <div className="stack-lg">
@@ -52,61 +56,55 @@ export default async function AccountsPage({ searchParams }: { searchParams: Pro
       </section>
 
       {canManage && (
-        <div className="grid">
-          <section className="card">
-            <h2>Mastodon</h2>
-            <p className="muted">Enter your server and approve access there. No developer setup needed.</p>
-            <ConnectForm
-              action={connectMastodon}
-              submitLabel="Continue to Mastodon"
-              fields={[{ name: 'instance', label: 'Server', placeholder: 'mastodon.social' }]}
-            />
-          </section>
+        <>
+          <h2>Connect a network</h2>
+          <div className="grid">
+            {available.map((info) => {
+              const { connector } = getProvider(info.id);
+              return (
+                <section key={info.id} className="card">
+                  <h2>{info.name}</h2>
+                  <p className="muted">{info.description}</p>
+                  {connector.kind === 'mastodon' && (
+                    <ConnectForm
+                      action={connectMastodon}
+                      submitLabel="Continue to Mastodon"
+                      fields={[{ name: 'instance', label: 'Server', placeholder: 'mastodon.social' }]}
+                    />
+                  )}
+                  {connector.kind === 'form' && (
+                    <ConnectForm action={connectWithForm.bind(null, info.id)} submitLabel={`Connect ${info.name}`} fields={connector.fields} />
+                  )}
+                  {connector.kind === 'oauth2' && (
+                    <form action={startOAuth.bind(null, info.id)}>
+                      <button type="submit">Continue to {info.name}</button>
+                    </form>
+                  )}
+                </section>
+              );
+            })}
+          </div>
 
-          <section className="card">
-            <h2>Bluesky</h2>
-            <p className="muted">Sign in with an app password so your main password stays private.</p>
-            <ConnectForm
-              action={connectBluesky}
-              submitLabel="Connect Bluesky"
-              fields={[
-                { name: 'handle', label: 'Handle', placeholder: 'you.bsky.social' },
-                {
-                  name: 'appPassword',
-                  label: 'App password',
-                  type: 'password',
-                  placeholder: 'xxxx-xxxx-xxxx-xxxx',
-                  hint: (
-                    <>
-                      Create one at{' '}
-                      <a href="https://bsky.app/settings/app-passwords" target="_blank" rel="noreferrer">
-                        Settings → App passwords
-                      </a>
-                      .
-                    </>
-                  ),
-                },
-              ]}
-            />
-          </section>
-
-          {sandboxEnabled && (
-            <section className="card">
-              <h2>Sandbox</h2>
-              <p className="muted">A fake network for trying things out. Add #fail or #flaky to a post to simulate errors.</p>
-              <ConnectForm action={connectSandbox} submitLabel="Add sandbox account" fields={[{ name: 'name', label: 'Name', placeholder: 'test' }]} />
-            </section>
+          {needsSetup.length > 0 && (
+            <details className="card">
+              <summary>
+                <strong>{needsSetup.length} more networks</strong> <span className="muted">need a one-time setup by the server admin</span>
+              </summary>
+              <ul className="list setup-list">
+                {needsSetup.map((info) => (
+                  <li key={info.id} className="stack-sm">
+                    <strong>{info.name}</strong>
+                    <span className="muted">{info.setup.review}</span>
+                    <span>
+                      Set <code>{info.setup.envPrefix}_CLIENT_ID</code> and <code>{info.setup.envPrefix}_CLIENT_SECRET</code> ·{' '}
+                      <a href={info.setup.docsUrl} target="_blank" rel="noreferrer">Developer docs</a>
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </details>
           )}
-
-          <section className="card">
-            <h2>Coming soon</h2>
-            <ul className="chips">
-              {upcoming.map((name) => (
-                <li key={name}>{name}</li>
-              ))}
-            </ul>
-          </section>
-        </div>
+        </>
       )}
     </div>
   );

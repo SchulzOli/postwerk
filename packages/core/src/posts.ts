@@ -1,11 +1,14 @@
 import { and, eq, inArray, notInArray } from 'drizzle-orm';
-import { posts, postTargets, socialAccounts, type Database } from '@postwerk/db';
-import { getProvider } from '@postwerk/providers';
+import { posts, postTargets, socialAccounts, type Database, type PostMedia } from '@postwerk/db';
+import { getProvider, getProviderInfo, resolveOptions, validateContent, type ProviderId } from '@postwerk/providers';
 
 export interface CreatePostInput {
   workspaceId: string;
   authorId: string;
   text: string;
+  media?: PostMedia[];
+  /** Network-specific fields, keyed by provider (e.g. `{ reddit: { subreddit: 'x' } }`). */
+  options?: Partial<Record<ProviderId, Record<string, string>>>;
   accountIds: string[];
   /** null publishes as soon as the worker picks it up. */
   scheduledAt: Date | null;
@@ -23,10 +26,17 @@ export async function createPost(db: Database, input: CreatePostInput): Promise<
   });
   if (accounts.length !== accountIds.length) return { ok: false, errors: ['One of the selected accounts no longer exists.'] };
 
-  const errors = accounts.flatMap((account) => {
+  const media = input.media ?? [];
+  const errors: string[] = [];
+  const targets = accounts.map((account) => {
+    const info = getProviderInfo(account.provider);
+    const options = resolveOptions(info, input.options?.[account.provider] ?? {});
+    const content = { text: input.text, media, options };
+    const limits = { maxLength: account.maxLength ?? undefined };
     const issues = account.status === 'needs_reauth' ? ['Account needs to be reconnected.'] : [];
-    issues.push(...getProvider(account.provider).validate({ text: input.text }, { maxLength: account.maxLength ?? undefined }));
-    return issues.map((issue) => `${account.handle}: ${issue}`);
+    issues.push(...validateContent(info, content, limits), ...(getProvider(account.provider).validate?.(content, limits) ?? []));
+    errors.push(...issues.map((issue) => `${account.handle}: ${issue}`));
+    return { socialAccountId: account.id, options };
   });
   if (errors.length > 0) return { ok: false, errors };
 
@@ -38,11 +48,12 @@ export async function createPost(db: Database, input: CreatePostInput): Promise<
         workspaceId: input.workspaceId,
         authorId: input.authorId,
         text: input.text,
+        media,
         status: input.draft ? 'draft' : 'scheduled',
         scheduledAt,
       })
       .returning({ id: posts.id });
-    await tx.insert(postTargets).values(accounts.map((account) => ({ postId: post!.id, socialAccountId: account.id, nextAttemptAt: scheduledAt })));
+    await tx.insert(postTargets).values(targets.map((target) => ({ ...target, postId: post!.id, nextAttemptAt: scheduledAt })));
     return post!.id;
   });
   return { ok: true, postId };

@@ -1,6 +1,6 @@
 import { and, eq, inArray, sql } from 'drizzle-orm';
 import { mastodonApps, oauthStates, posts, postTargets, socialAccounts, type Database } from '@postwerk/db';
-import { Mastodon, type AccountProfile, type ProviderId } from '@postwerk/providers';
+import { Mastodon, type AccountProfile, type ConnectedAccount, type ProviderId } from '@postwerk/providers';
 import { decrypt, encrypt, encryptJson } from './crypto';
 import { generateToken } from './password';
 
@@ -8,6 +8,7 @@ export async function saveAccount(
   db: Database,
   input: { workspaceId: string; provider: ProviderId; profile: AccountProfile; credentials: unknown; maxLength?: number },
 ) {
+  // A reconnect replaces credentials and clears "needs reconnect"; the account keeps its id and posts.
   const values = {
     workspaceId: input.workspaceId,
     provider: input.provider,
@@ -52,14 +53,32 @@ export async function getOrRegisterMastodonApp(db: Database, instanceUrl: string
   const existing = await db.query.mastodonApps.findFirst({
     where: and(eq(mastodonApps.instanceUrl, instanceUrl), eq(mastodonApps.redirectUri, redirectUri)),
   });
-  if (existing) return { clientId: existing.clientId, clientSecret: decrypt(existing.clientSecretEnc) };
+  if (existing) {
+    try {
+      return { clientId: existing.clientId, clientSecret: decrypt(existing.clientSecretEnc) };
+    } catch {
+      // ENCRYPTION_KEY changed since the app was registered: register a fresh one below.
+    }
+  }
 
   const app = await Mastodon.registerApp(instanceUrl, redirectUri, appName, website);
+  const values = { clientId: app.clientId, clientSecretEnc: encrypt(app.clientSecret) };
   await db
     .insert(mastodonApps)
-    .values({ instanceUrl, redirectUri, clientId: app.clientId, clientSecretEnc: encrypt(app.clientSecret) })
-    .onConflictDoNothing();
+    .values({ instanceUrl, redirectUri, ...values })
+    .onConflictDoUpdate({ target: [mastodonApps.instanceUrl, mastodonApps.redirectUri], set: values });
   return app;
+}
+
+/** Saves every account a connect flow returned (one login can grant several pages/boards/locations). */
+export async function saveConnectedAccounts(db: Database, workspaceId: string, provider: ProviderId, accounts: ConnectedAccount<unknown>[]) {
+  const saved = [];
+  for (const account of accounts) {
+    saved.push(
+      await saveAccount(db, { workspaceId, provider, profile: account.profile, credentials: account.credentials, maxLength: account.limits?.maxLength }),
+    );
+  }
+  return saved;
 }
 
 const STATE_TTL_MS = 10 * 60_000;

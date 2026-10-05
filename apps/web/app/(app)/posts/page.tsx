@@ -48,11 +48,21 @@ export default async function PostsPage() {
                 )}
               </div>
               <p className="post-text">{post.text}</p>
+              {post.media.length > 0 && (
+                <ul className="chips">
+                  {post.media.map((item) => (
+                    <li key={item.url}>
+                      <a href={item.url} target="_blank" rel="noreferrer">{item.kind === 'video' ? 'Video' : 'Image'}</a>
+                    </li>
+                  ))}
+                </ul>
+              )}
               <ul className="targets">
                 {post.targets.map((target) => (
                   <li key={target.id}>
                     <span className={`badge badge-${target.account.provider}`}>{providerLabels[target.account.provider]}</span>{' '}
-                    {target.account.handle} —{' '}
+                    {target.account.handle}
+                    {Object.keys(target.options).length > 0 && <span className="muted"> ({Object.values(target.options).join(' · ')})</span>} —{' '}
                     {target.status === 'published' && target.remoteUrl ? (
                       <a href={target.remoteUrl} target="_blank" rel="noreferrer">published</a>
                     ) : (

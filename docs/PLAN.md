@@ -75,7 +75,7 @@ Sizes: **S** ≈ days, **M** ≈ 1–2 weeks, **L** ≈ several weeks (one devel
 ### Phase 1 — A product people can use daily
 | Item | Size |
 |---|---|
-| Media: image/video upload (S3-compatible or local disk), per-network media rules, alt text | L |
+| Media uploads (S3-compatible or local disk) — the composer currently takes public media URLs; per-network media rules and alt text already exist | L |
 | Edit and reschedule posts; per-network text variants ("customize for LinkedIn") | M |
 | Calendar view (week/month), drag to reschedule | M |
 | Bluesky via AT Protocol OAuth (no app password needed) | S |
@@ -95,7 +95,9 @@ Sizes: **S** ≈ days, **M** ≈ 1–2 weeks, **L** ≈ several weeks (one devel
 After Phase 2 users can post to Instagram, Facebook, LinkedIn, TikTok, YouTube, Pinterest, Threads, Reddit, X and Google Business Profile.
 
 ### Phase 3 — Native integrations (start approvals early; they run in parallel)
-Ordered by value ÷ approval effort. Details and checklists in [PLATFORMS.md](PLATFORMS.md).
+**Code status:** all networks below are implemented behind the common provider interface (built breadth-first, ahead of Phases 1–2) and unit-tested against mocked APIs. What remains per network is the operator app, its review, and a first live post to verify the integration. Details and checklists in [PLATFORMS.md](PLATFORMS.md).
+
+Ordered by value ÷ approval effort:
 
 1. **LinkedIn personal profiles** — self-serve "Share on LinkedIn" (S)
 2. **Meta: Facebook Pages + Instagram** — one Meta app, business verification + app review (L)

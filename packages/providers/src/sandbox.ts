@@ -1,4 +1,4 @@
-import { randomUUID } from 'node:crypto';
+import { catalog } from './catalog';
 import { ProviderError, type Provider } from './types';
 
 /**
@@ -10,15 +10,20 @@ export interface SandboxCredentials {
 }
 
 export const sandbox: Provider<SandboxCredentials> = {
-  id: 'sandbox',
-  name: 'Sandbox',
-  validate(content) {
-    return content.text.trim() ? [] : ['Text is empty.'];
+  ...catalog.sandbox,
+  connector: {
+    kind: 'form',
+    fields: [{ name: 'name', label: 'Name', placeholder: 'test' }],
+    async connect(values) {
+      const name = values.name?.trim() || 'sandbox';
+      return [{ profile: { externalId: name, handle: `@${name}` }, credentials: { name } }];
+    },
   },
   async publish(credentials, content, context) {
     if (content.text.includes('#fail')) throw new ProviderError('Sandbox rejected the post (#fail).');
     if (content.text.includes('#flaky')) throw new ProviderError('Sandbox is temporarily unavailable (#flaky).', { retryable: true });
-    console.log(`[sandbox:${credentials.name}] ${context.idempotencyKey}: ${content.text}`);
-    return { remoteId: randomUUID() };
+    const media = content.media.length > 0 ? ` [+${content.media.length} media]` : '';
+    console.log(`[sandbox:${credentials.name}] ${context.idempotencyKey}: ${content.text}${media}`);
+    return { remoteId: crypto.randomUUID() };
   },
 };
