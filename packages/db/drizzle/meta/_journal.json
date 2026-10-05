@@ -15,6 +15,13 @@
       "when": 1791220479375,
       "tag": "0001_all_platforms",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1791221869448,
+      "tag": "0002_canvas_flows",
+      "breakpoints": true
     }
   ]
 }

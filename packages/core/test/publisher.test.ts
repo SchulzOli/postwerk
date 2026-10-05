@@ -4,6 +4,7 @@ import { createDb, posts, socialAccounts, users, workspaces, type Database } fro
 import { runMigrations } from '../../db/src/migrate';
 import { deleteAccount, getOrRegisterMastodonApp, saveAccount } from '../src/accounts';
 import { decryptJson } from '../src/crypto';
+import { createFlow, saveFlow } from '../src/flows';
 import { createPost, deletePost } from '../src/posts';
 import { claimDueTargets, publishTarget, releaseStaleLocks, runPublishCycle } from '../src/publisher';
 
@@ -298,6 +299,51 @@ describe.skipIf(!url)('publishing (Postgres)', () => {
     } finally {
       vi.unstubAllGlobals();
     }
+  });
+
+  it('publishes through a flow with adapted text and delays', async () => {
+    const [now, later] = await Promise.all([sandboxAccount('now'), sandboxAccount('later')]);
+    const flow = await createFlow(db, workspaceId, { name: 'Physio standard', x: 0, y: 0 });
+    const at = { x: 0, y: 0 };
+    await saveFlow(db, workspaceId, flow.id, {
+      graph: {
+        steps: [
+          { id: 'trigger', type: 'trigger', position: at },
+          { id: 'tags', type: 'addText', placement: 'end', text: '#physio', position: at },
+          { id: 'wait', type: 'delay', minutes: 30, position: at },
+          { id: 'a', type: 'target', accountId: now.id, position: at },
+          { id: 'b', type: 'target', accountId: later.id, position: at },
+        ],
+        edges: [
+          { id: '1', source: 'trigger', target: 'tags' },
+          { id: '2', source: 'tags', target: 'a' },
+          { id: '3', source: 'trigger', target: 'wait' },
+          { id: '4', source: 'wait', target: 'b' },
+        ],
+      },
+    });
+    const logged: string[] = [];
+    vi.mocked(console.log).mockImplementation((line: string) => void logged.push(line));
+
+    const result = await createPost(db, { workspaceId, authorId: userId, text: 'Hello', flowId: flow.id, scheduledAt: null });
+    expect(result.ok).toBe(true);
+    const id = (result as { postId: string }).postId;
+
+    expect(await runPublishCycle(db)).toBe(1);
+    expect(logged.some((line) => line.endsWith(': Hello\n\n#physio'))).toBe(true);
+    expect((await getPost(id))!.status).toBe('publishing');
+
+    expect(await runPublishCycle(db, { now: () => new Date(Date.now() + 31 * 60_000) })).toBe(1);
+    expect(logged.some((line) => line.startsWith('[sandbox:later]') && line.endsWith(': Hello'))).toBe(true);
+    const post = await getPost(id);
+    expect(post!.status).toBe('published');
+    expect(post!.flowId).toBe(flow.id);
+  });
+
+  it('rejects flows that reach no account', async () => {
+    const flow = await createFlow(db, workspaceId, { name: 'Empty', x: 0, y: 0 });
+    const result = await createPost(db, { workspaceId, authorId: userId, text: 'Hello', flowId: flow.id, scheduledAt: null });
+    expect(result).toEqual({ ok: false, errors: ['Empty: The flow does not reach any account yet.'] });
   });
 
   it('ignores unknown targets', async () => {

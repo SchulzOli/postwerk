@@ -72,12 +72,18 @@ Sizes: **S** ≈ days, **M** ≈ 1–2 weeks, **L** ≈ several weeks (one devel
 - Worker: retries with exponential backoff, partial-failure status, crash recovery, "reconnect needed" detection
 - Unit + integration tests (real Postgres), end-to-end tested in a browser
 
+### Canvas & flows ✅
+- One zoomable 2D world (React Flow): regions for Networks (provider overview), Accounts, Flows, Compose and Posts; positions persist per workspace
+- Deep links to every node (`#n=<id>`) and every view (`#@x,y,zoom`); inspector side panel per node
+- Flow builder: New post → Add text / Shorten to fit / Wait → Publish to account; autosaved, previewed live, used by the composer
+- Next for flows: approval step, per-network text variants, recurring triggers (RSS, schedule), conditions (e.g. only if media), flow templates
+
 ### Phase 1 — A product people can use daily
 | Item | Size |
 |---|---|
 | Media uploads (S3-compatible or local disk) — the composer currently takes public media URLs; per-network media rules and alt text already exist | L |
 | Edit and reschedule posts; per-network text variants ("customize for LinkedIn") | M |
-| Calendar view (week/month), drag to reschedule | M |
+| Calendar region on the canvas (week/month), drag to reschedule | M |
 | Bluesky via AT Protocol OAuth (no app password needed) | S |
 | Workspace invites, roles (owner/admin/editor), workspace switcher | M |
 | Email: password reset, verification, "post failed" notifications | M |

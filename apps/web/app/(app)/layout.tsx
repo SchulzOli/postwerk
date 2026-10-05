@@ -7,8 +7,9 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   return (
     <>
       <header className="topbar">
-        <Link href="/posts" className="brand">Postwerk</Link>
+        <Link href="/canvas" className="brand">Postwerk</Link>
         <nav>
+          <Link href="/canvas">Canvas</Link>
           <Link href="/posts">Posts</Link>
           <Link href="/accounts">Accounts</Link>
         </nav>

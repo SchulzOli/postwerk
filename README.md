@@ -2,18 +2,22 @@
 
 Self-hosted social media scheduling. Connect your accounts with one click, write a post once, publish it everywhere — now or later.
 
+- **One big canvas.** Networks, accounts, flows, the composer and your posts live in a single zoomable 2D world. Drag things where you like, and link to any node or view (`/canvas#n=network:instagram`, `/canvas#@x,y,zoom`).
+- **Flows.** Build reusable publishing pipelines on the canvas: *New post → add hashtags → shorten to fit → wait 30 min → publish to these accounts*. Each account receives its own adapted version.
 - **15 networks behind one interface.** Mastodon, Bluesky, Telegram and Discord work out of the box. Facebook, Instagram, Threads, LinkedIn (profiles and pages), X, TikTok, YouTube, Google Business Profile, Pinterest and Reddit work as soon as the server admin registers one developer app per network — users then just click "Connect".
 - **Validates as you type.** Each network's limits, media rules and required fields (subreddit, video title, TikTok privacy…) are checked live in the composer.
 - **Reliable publishing.** Every network is published and retried independently, with backoff, token refresh, crash recovery and clear "reconnect needed" states.
 - **Your data stays yours.** Tokens are encrypted at rest; runs anywhere Docker runs.
 
-| Accounts | Composer | Posts |
-|---|---|---|
-| ![Accounts](docs/screenshots/1-accounts-all-networks.png) | ![Composer](docs/screenshots/3-composer.png) | ![Posts](docs/screenshots/4-posts.png) |
+![The Postwerk canvas](docs/screenshots/canvas-world.png)
+
+| Flow builder | Composing through a flow |
+|---|---|
+| ![Flow](docs/screenshots/canvas-flow.png) | ![Composer](docs/screenshots/canvas-composer.png) |
 
 ## Status
 
-Phase 0 (foundation) is done, and every network integration is implemented ahead of schedule. Networks that need an operator app still have to be set up and live-verified — see [docs/PLATFORMS.md](docs/PLATFORMS.md). Next up: media uploads, editing and the calendar ([docs/PLAN.md](docs/PLAN.md)).
+Phase 0 (foundation) is done, every network integration is implemented, and the canvas with flows is the main interface (the classic list pages remain under “List view”). Networks that need an operator app still have to be set up and live-verified — see [docs/PLATFORMS.md](docs/PLATFORMS.md). Next up: media uploads, editing and the calendar ([docs/PLAN.md](docs/PLAN.md)).
 
 ## Quick start (development)
 
@@ -52,9 +56,9 @@ This starts Postgres, runs migrations, and launches the web app (port 3000) and 
 ## Project structure
 
 ```
-apps/web             Next.js app: UI, server actions, OAuth callbacks
+apps/web             Next.js app: canvas (components/world), list pages, server actions, OAuth callbacks
 apps/worker          Publishing worker (polls Postgres for due posts)
-packages/core        Posts, accounts, publishing loop, encryption, auth helpers
+packages/core        Posts, accounts, flows (planner is browser-safe), publishing loop, encryption
 packages/db          Drizzle schema + SQL migrations
 packages/providers   Network integrations behind one Provider interface
 docs/                Plan, platform guide, screenshots

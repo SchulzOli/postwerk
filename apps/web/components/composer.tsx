@@ -1,6 +1,7 @@
 'use client';
 
 import { useActionState, useMemo, useState } from 'react';
+import { planFlow, type FlowGraph } from '@postwerk/core/flow';
 import { catalog, type ProviderId } from '@postwerk/providers/catalog';
 import { countText } from '@postwerk/providers/text';
 import { textLimit, validateContent } from '@postwerk/providers/validate';
@@ -17,12 +18,16 @@ export interface ComposerAccount {
 
 interface Props {
   accounts: ComposerAccount[];
+  /** Saved flows; picking one replaces the manual account selection. */
+  flows?: { id: string; name: string; graph: FlowGraph }[];
   action: (state: ComposeState, form: FormData) => Promise<ComposeState>;
+  /** Where to go after publishing ('/posts' or '/canvas'). */
+  returnTo?: '/posts' | '/canvas';
 }
 
 type Options = Partial<Record<ProviderId, Record<string, string>>>;
 
-export function Composer({ accounts, action }: Props) {
+export function Composer({ accounts, flows = [], action, returnTo = '/posts' }: Props) {
   const [state, formAction, pending] = useActionState(action, {});
   const [text, setText] = useState('');
   const [mediaInput, setMediaInput] = useState('');
@@ -30,12 +35,29 @@ export function Composer({ accounts, action }: Props) {
   const [selected, setSelected] = useState<Set<string>>(() => new Set(accounts.filter((a) => !a.disabledReason).map((a) => a.id)));
   const [when, setWhen] = useState<'now' | 'later'>('now');
   const [localTime, setLocalTime] = useState('');
+  const [flowId, setFlowId] = useState('');
 
   const { media, errors: mediaErrors } = useMemo(() => parseMediaLines(mediaInput), [mediaInput]);
-  const chosen = accounts.filter((a) => selected.has(a.id));
-  const issuesFor = (account: ComposerAccount) =>
-    validateContent(catalog[account.provider], { text, media, options: options[account.provider] ?? {} }, { maxLength: account.maxLength ?? undefined });
-  const blocked = chosen.some((account) => issuesFor(account).length > 0) || mediaErrors.length > 0;
+  const byId = useMemo(() => new Map(accounts.map((a) => [a.id, a])), [accounts]);
+  const flow = flows.find((f) => f.id === flowId);
+  const plan = useMemo(() => {
+    if (!flow) return undefined;
+    return planFlow(flow.graph, text, (accountId, candidate) => {
+      const account = byId.get(accountId);
+      if (!account) return { length: 0, max: Infinity };
+      const info = catalog[account.provider];
+      return { length: countText(candidate, info.capabilities.text.counter), max: textLimit(info, { media }, { maxLength: account.maxLength ?? undefined }) };
+    });
+  }, [flow, text, media, byId]);
+  const chosen = plan ? plan.targets.flatMap((t) => byId.get(t.accountId) ?? []) : accounts.filter((a) => selected.has(a.id));
+  const textFor = (account: ComposerAccount) => plan?.targets.find((t) => t.accountId === account.id)?.text ?? text;
+  const empty = !text.trim() && media.length === 0;
+  const allIssuesFor = (account: ComposerAccount) =>
+    validateContent(catalog[account.provider], { text: textFor(account), media, options: options[account.provider] ?? {} }, { maxLength: account.maxLength ?? undefined });
+  // Before anything is written, "add some text" under every account is just noise; the button stays disabled.
+  const issuesFor = (account: ComposerAccount) => (empty ? [] : allIssuesFor(account));
+  const missing = plan ? plan.targets.filter((t) => !byId.has(t.accountId)).length : 0;
+  const blocked = empty || chosen.some((account) => allIssuesFor(account).length > 0) || mediaErrors.length > 0 || Boolean(plan?.errors.length) || missing > 0;
   const optionProviders = [...new Set(chosen.map((a) => a.provider))].filter((id) => catalog[id].capabilities.options.length > 0);
   // datetime-local has no time zone; convert in the browser so the server gets an exact instant.
   const scheduledAt = localTime ? new Date(localTime).toISOString() : '';
@@ -77,14 +99,58 @@ export function Composer({ accounts, action }: Props) {
         ))}
       </label>
 
-      <fieldset className="stack">
+      <input type="hidden" name="returnTo" value={returnTo} />
+      {flows.length > 0 && (
+        <label>
+          Flow
+          <select name="flowId" value={flowId} onChange={(e) => setFlowId(e.target.value)}>
+            <option value="">No flow — choose accounts below</option>
+            {flows.map((f) => (
+              <option key={f.id} value={f.id}>{f.name}</option>
+            ))}
+          </select>
+        </label>
+      )}
+
+      {plan && (
+        <fieldset className="stack">
+          <legend>The flow publishes to</legend>
+          {plan.errors.map((error) => (
+            <small key={error} className="error">{error}</small>
+          ))}
+          {missing > 0 && <small className="error">The flow uses an account that was disconnected.</small>}
+          {chosen.map((account) => {
+            const target = plan.targets.find((t) => t.accountId === account.id)!;
+            const info = catalog[account.provider];
+            const max = textLimit(info, { media }, { maxLength: account.maxLength ?? undefined });
+            const length = countText(target.text, info.capabilities.text.counter);
+            return (
+              <div key={account.id} className="stack-sm flow-target">
+                <div className="row-tight">
+                  <span className="grow">
+                    {account.handle} <span className="muted">· {info.name}</span>
+                    {target.delayMinutes > 0 && <span className="muted"> · after {target.delayMinutes} min</span>}
+                  </span>
+                  <span className={length > max ? 'error counter' : 'muted counter'}>{length}/{max}</span>
+                </div>
+                {target.text !== text && <pre className="flow-text">{target.text}</pre>}
+                {issuesFor(account).map((issue) => (
+                  <small key={issue} className="error">{issue}</small>
+                ))}
+              </div>
+            );
+          })}
+        </fieldset>
+      )}
+
+      <fieldset className="stack" hidden={Boolean(plan)}>
         <legend>Publish to</legend>
         {accounts.map((account) => {
           const info = catalog[account.provider];
           const content = { media };
           const max = textLimit(info, content, { maxLength: account.maxLength ?? undefined });
           const length = countText(text, info.capabilities.text.counter);
-          const issues = selected.has(account.id) ? issuesFor(account) : [];
+          const issues = !plan && selected.has(account.id) ? issuesFor(account) : [];
           return (
             <div key={account.id} className="stack-sm">
               <label className="row check">
@@ -93,7 +159,7 @@ export function Composer({ accounts, action }: Props) {
                   name="accountIds"
                   value={account.id}
                   checked={selected.has(account.id)}
-                  disabled={Boolean(account.disabledReason)}
+                  disabled={Boolean(account.disabledReason) || Boolean(plan)}
                   onChange={() => toggle(account.id)}
                 />
                 <span className="grow">

@@ -6,6 +6,6 @@ import { logIn } from '../actions';
 export const metadata = { title: 'Log in · Postwerk' };
 
 export default async function LoginPage() {
-  if (await getSession()) redirect('/posts');
+  if (await getSession()) redirect('/canvas');
   return <AuthForm mode="login" action={logIn} />;
 }

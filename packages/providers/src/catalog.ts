@@ -314,3 +314,4 @@ export function getProviderInfo(id: ProviderId): ProviderInfo {
 }
 
 export type { OptionField, ProviderId, ProviderInfo } from './types';
+export type { FormField } from './types';

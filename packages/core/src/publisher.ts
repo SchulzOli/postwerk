@@ -56,7 +56,7 @@ export async function publishTarget(db: Database, targetId: string, now = () => 
     const credentials = await currentCredentials(db, target.account.id, now());
     const result = await provider.publish(
       credentials,
-      { text: target.post.text, media: target.post.media, options: target.options },
+      { text: target.text ?? target.post.text, media: target.post.media, options: target.options },
       { idempotencyKey: target.id, client: oauthClientFor(target.account.provider) },
     );
     await db
