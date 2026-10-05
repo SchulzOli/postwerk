@@ -49,6 +49,7 @@ export async function connectWithForm(providerId: string, _: ConnectState, form:
     const accounts = await provider.connector.connect(values);
     await saveConnectedAccounts(getDb(), workspace.id, providerId, accounts);
     revalidatePath('/accounts');
+    revalidatePath('/canvas');
     return { success: `Connected ${accounts.map((a) => a.profile.handle).join(', ')}.` };
   } catch (error) {
     return { error: message(error), values: echo };
@@ -62,7 +63,7 @@ export async function startOAuth(providerId: string) {
   const provider = getProvider(providerId);
   const client = oauthClientFor(providerId);
   if (provider.connector.kind !== 'oauth2' || !client) {
-    redirect(`/accounts?${new URLSearchParams({ error: `${provider.name} is not set up on this server yet.` })}`);
+    redirect(`/canvas?${new URLSearchParams({ error: `${provider.name} is not set up on this server yet.` })}#n=network:${providerId}`);
   }
 
   const codeVerifier = provider.connector.pkce ? generateCodeVerifier() : undefined;
@@ -85,4 +86,5 @@ export async function disconnectAccount(form: FormData) {
   const { workspace } = await requireAdmin();
   await deleteAccount(getDb(), workspace.id, String(form.get('accountId')));
   revalidatePath('/accounts');
+  revalidatePath('/canvas');
 }

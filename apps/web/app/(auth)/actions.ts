@@ -33,7 +33,7 @@ export async function signUp(_: FormState, form: FormData): Promise<FormState> {
   if (!userId) return { error: 'An account with this email already exists.', values };
 
   await createSession(userId);
-  redirect('/accounts');
+  redirect('/canvas#n=region:networks');
 }
 
 export async function logIn(_: FormState, form: FormData): Promise<FormState> {
@@ -44,7 +44,7 @@ export async function logIn(_: FormState, form: FormData): Promise<FormState> {
   if (!user || !valid) return { error: 'Email or password is wrong.', values: { email } };
 
   await createSession(user.id);
-  redirect('/posts');
+  redirect('/canvas');
 }
 
 export async function logOut() {

@@ -35,22 +35,25 @@ export async function submitPost(_: ComposeState, form: FormData): Promise<Compo
     if (scheduledAt.getTime() < Date.now() - 60_000) return { errors: ['The scheduled time is in the past.'] };
   }
 
+  const flowId = String(form.get('flowId') ?? '') || undefined;
   const result = await createPost(getDb(), {
     workspaceId: workspace.id,
     authorId: user.id,
     text,
     media,
     options: readOptions(form),
-    accountIds,
+    ...(flowId ? { flowId } : { accountIds }),
     scheduledAt,
   });
   if (!result.ok) return { errors: result.errors };
   revalidatePath('/posts');
-  redirect('/posts');
+  revalidatePath('/canvas');
+  redirect(form.get('returnTo') === '/canvas' ? '/canvas#n=panel:posts' : '/posts');
 }
 
 export async function removePost(form: FormData) {
   const { workspace } = await requireSession();
   await deletePost(getDb(), workspace.id, String(form.get('postId')));
   revalidatePath('/posts');
+  revalidatePath('/canvas');
 }

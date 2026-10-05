@@ -6,6 +6,6 @@ import { signUp } from '../actions';
 export const metadata = { title: 'Sign up · Postwerk' };
 
 export default async function SignupPage() {
-  if (await getSession()) redirect('/posts');
+  if (await getSession()) redirect('/canvas');
   return <AuthForm mode="signup" action={signUp} />;
 }

@@ -114,6 +114,31 @@ export const socialAccounts = pgTable(
   (t) => [uniqueIndex('social_accounts_workspace_external_idx').on(t.workspaceId, t.provider, t.externalId)],
 );
 
+/** Saved publishing flows (graph of steps, see @postwerk/core/flow). */
+export const flows = pgTable('flows', {
+  id: id(),
+  workspaceId: uuid('workspace_id').notNull().references(() => workspaces.id, { onDelete: 'cascade' }),
+  name: text('name').notNull(),
+  graph: jsonb('graph').$type<{ steps: unknown[]; edges: unknown[] }>().notNull(),
+  /** Where the flow's frame sits on the canvas. */
+  x: integer('x').notNull().default(0),
+  y: integer('y').notNull().default(0),
+  createdAt: createdAt(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+});
+
+/** Positions of canvas nodes the user moved (networks, accounts, panels), per workspace. */
+export const canvasPositions = pgTable(
+  'canvas_positions',
+  {
+    workspaceId: uuid('workspace_id').notNull().references(() => workspaces.id, { onDelete: 'cascade' }),
+    nodeKey: text('node_key').notNull(),
+    x: integer('x').notNull(),
+    y: integer('y').notNull(),
+  },
+  (t) => [primaryKey({ columns: [t.workspaceId, t.nodeKey] })],
+);
+
 export const posts = pgTable(
   'posts',
   {
@@ -122,6 +147,7 @@ export const posts = pgTable(
     authorId: uuid('author_id').references(() => users.id, { onDelete: 'set null' }),
     text: text('text').notNull(),
     media: jsonb('media').$type<PostMedia[]>().notNull().default([]),
+    flowId: uuid('flow_id').references(() => flows.id, { onDelete: 'set null' }),
     status: postStatus('status').notNull().default('draft'),
     scheduledAt: timestamp('scheduled_at', { withTimezone: true }),
     createdAt: createdAt(),
@@ -139,6 +165,8 @@ export const postTargets = pgTable(
     socialAccountId: uuid('social_account_id').notNull().references(() => socialAccounts.id, { onDelete: 'cascade' }),
     /** Network-specific fields (subreddit, video title, privacy…), defaults already applied. */
     options: jsonb('options').$type<Record<string, string>>().notNull().default({}),
+    /** Text adapted by a flow for this account; null means the post's text. */
+    text: text('text'),
     status: targetStatus('status').notNull().default('pending'),
     attempts: integer('attempts').notNull().default(0),
     nextAttemptAt: timestamp('next_attempt_at', { withTimezone: true }).notNull().defaultNow(),
@@ -170,6 +198,7 @@ export type User = typeof users.$inferSelect;
 export type Workspace = typeof workspaces.$inferSelect;
 export type SocialAccount = typeof socialAccounts.$inferSelect;
 export type Post = typeof posts.$inferSelect;
+export type Flow = typeof flows.$inferSelect;
 export type PostTarget = typeof postTargets.$inferSelect;
 export type PostStatus = (typeof postStatus.enumValues)[number];
 export type TargetStatus = (typeof targetStatus.enumValues)[number];
