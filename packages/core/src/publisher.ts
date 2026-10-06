@@ -1,6 +1,7 @@
 import { and, eq, inArray, lt, ne, sql } from 'drizzle-orm';
 import { posts, postTargets, socialAccounts, type Database, type PostStatus } from '@postwerk/db';
 import { getProvider, ProviderError } from '@postwerk/providers';
+import { blueskyKeyset } from './bluesky';
 import { oauthClientFor } from './clients';
 import { decryptJson, encryptJson } from './crypto';
 import { mediaForPublishing } from './media';
@@ -105,7 +106,9 @@ async function currentCredentials(db: Database, accountId: string, now: Date): P
     const provider = getProvider(account.provider);
     if (!provider.refresh || !provider.needsRefresh?.(credentials, now.getTime())) return credentials;
 
-    const refreshed = await provider.refresh(credentials, oauthClientFor(account.provider));
+    // Bluesky sessions refresh with Postwerk's own signing key; other networks with the operator's app.
+    const client = account.provider === 'bluesky' ? await blueskyKeyset(db) : oauthClientFor(account.provider);
+    const refreshed = await provider.refresh(credentials, client);
     await tx.update(socialAccounts).set({ credentialsEnc: encryptJson(refreshed), updatedAt: now }).where(eq(socialAccounts.id, account.id));
     await updateSiblingGrants(tx, account, credentials, refreshed, now);
     return refreshed;

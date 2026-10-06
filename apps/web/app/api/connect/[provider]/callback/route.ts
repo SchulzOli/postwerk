@@ -1,5 +1,5 @@
 import { NextResponse, type NextRequest } from 'next/server';
-import { consumeOAuthState, getOrRegisterMastodonApp, oauthClientFor, saveConnectedAccounts } from '@postwerk/core';
+import { consumeOAuthState, finishBlueskyLogin, getOrRegisterMastodonApp, oauthClientFor, saveConnectedAccounts } from '@postwerk/core';
 import { getDb } from '@postwerk/db';
 import { getProvider, isProviderId, Mastodon, ProviderError, type ConnectedAccount } from '@postwerk/providers';
 import { record } from '@/lib/audit';
@@ -14,6 +14,12 @@ function back(params: Record<string, string>, provider?: string) {
 export async function GET(request: NextRequest, { params }: { params: Promise<{ provider: string }> }) {
   const { provider: providerId } = await params;
   if (!isProviderId(providerId)) return new NextResponse('Not found', { status: 404 });
+  // Bluesky's development (loopback) client comes back to 127.0.0.1; continue on the
+  // app's own address, where the session cookie is.
+  // (nextUrl names the server's own host, so look at the Host header the browser sent.)
+  if (new URL(appUrl).hostname === 'localhost' && request.headers.get('host')?.startsWith('127.0.0.1')) {
+    return NextResponse.redirect(`${appUrl}${request.nextUrl.pathname}${request.nextUrl.search}`);
+  }
   const session = await getSession();
   if (!session) return NextResponse.redirect(`${appUrl}/login`);
 
@@ -37,6 +43,8 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       const credentials = { instanceUrl, accessToken: await Mastodon.exchangeCode(instanceUrl, app, redirectUri, code) };
       const [profile, maxLength] = await Promise.all([Mastodon.fetchProfile(credentials), Mastodon.fetchMaxLength(instanceUrl)]);
       accounts = [{ profile, credentials, limits: { maxLength } }];
+    } else if (providerId === 'bluesky') {
+      accounts = [await finishBlueskyLogin(db, state.data, { code, iss: searchParams.get('iss') })];
     } else {
       const client = oauthClientFor(providerId);
       if (provider.connector.kind !== 'oauth2' || !client) return back({ error: `${provider.name} is not set up on this server.` }, providerId);

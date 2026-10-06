@@ -140,6 +140,13 @@ export const plugins = pgTable(
   (t) => [primaryKey({ columns: [t.workspaceId, t.pluginId] })],
 );
 
+/** Secrets the server creates for itself, encrypted (e.g. the signing key of its Bluesky OAuth client). */
+export const serverSecrets = pgTable('server_secrets', {
+  name: text('name').primaryKey(),
+  valueEnc: text('value_enc').notNull(),
+  createdAt: createdAt(),
+});
+
 /** OAuth clients we registered ourselves on Mastodon servers (one per server). */
 export const mastodonApps = pgTable(
   'mastodon_apps',

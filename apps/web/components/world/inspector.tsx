@@ -4,6 +4,7 @@ import { useActionState, useMemo, useState, useTransition } from 'react';
 import { parseThemeManifest, type ThemeManifest } from '@postwerk/core/theme';
 import { catalog } from '@postwerk/providers/catalog';
 import { connectMastodon, connectWithForm, disconnectAccount, startOAuth } from '@/app/(app)/accounts/actions';
+import { BlueskyConnect } from '@/components/bluesky-connect';
 import { chooseThemeAction, installBuiltinPluginAction, installPluginAction, uninstallPluginAction } from '@/app/(world)/canvas/actions';
 import { ConnectForm } from '@/components/connect-form';
 import { ThemePreview } from '@/components/theme-preview';
@@ -79,6 +80,7 @@ function NetworkInspector({ node }: { node: Extract<WorldNode, { type: 'network'
             <ConnectForm action={connectMastodon} submitLabel="Continue to Mastodon" fields={[{ name: 'instance', label: 'Server', placeholder: 'mastodon.social' }]} />
           )}
           {connector.kind === 'form' && <ConnectForm action={connectWithForm.bind(null, info.id)} submitLabel={`Connect ${info.name}`} fields={connector.fields} />}
+          {connector.kind === 'atproto' && <BlueskyConnect fields={connector.fields} oauth={connector.oauth} />}
           {connector.kind === 'oauth2' && (
             <form action={startOAuth.bind(null, info.id)}>
               <button type="submit">Continue to {info.name}</button>

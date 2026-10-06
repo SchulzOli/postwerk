@@ -9,7 +9,11 @@ import type { ProviderId, ProviderInfo } from '@postwerk/providers/catalog';
 export interface NetworkData {
   info: ProviderInfo;
   available: boolean;
-  connector: { kind: 'form'; fields: FormField[] } | { kind: 'oauth2' | 'mastodon' };
+  connector:
+    | { kind: 'form'; fields: FormField[] }
+    | { kind: 'oauth2' | 'mastodon' }
+    /** Bluesky: sign in on the user's server when `oauth` (this server's address allows it), else app passwords. */
+    | { kind: 'atproto'; fields: FormField[]; oauth: boolean };
 }
 
 export interface AccountData {

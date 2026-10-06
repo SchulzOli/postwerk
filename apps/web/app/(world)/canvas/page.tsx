@@ -1,11 +1,12 @@
 import { asc, eq } from 'drizzle-orm';
-import { isProviderAvailable, listFlows, listPosts, listWorkspaceAudit, loadCanvasPositions, needsEmailVerification } from '@postwerk/core';
+import { isBlueskyOAuthAvailable, isProviderAvailable, listFlows, listPosts, listWorkspaceAudit, loadCanvasPositions, needsEmailVerification } from '@postwerk/core';
 import { builtinThemes, defaultCanvas } from '@postwerk/core/theme';
 import { getDb, socialAccounts } from '@postwerk/db';
 import { getProvider, providerInfos } from '@postwerk/providers';
 import { World, type WorldData } from '@/components/world/world';
 import { toActivity } from '@/lib/activity-server';
 import { loadCalendarAroundNow } from '@/lib/calendar-server';
+import { appUrl } from '@/lib/env';
 import { getAppearance } from '@/lib/appearance';
 import { requireSession } from '@/lib/session';
 import { loadTeam } from '@/lib/team';
@@ -47,7 +48,12 @@ export default async function CanvasPage({ searchParams }: { searchParams: Promi
         return {
           info,
           available: isProviderAvailable(info.id),
-          connector: connector.kind === 'form' ? { kind: 'form' as const, fields: connector.fields } : { kind: connector.kind },
+          connector:
+            connector.kind === 'form'
+              ? { kind: 'form' as const, fields: connector.fields }
+              : connector.kind === 'atproto'
+                ? { kind: 'atproto' as const, fields: connector.fields, oauth: isBlueskyOAuthAvailable(appUrl) }
+                : { kind: connector.kind },
         };
       }),
     accounts: accounts.map((account) => ({

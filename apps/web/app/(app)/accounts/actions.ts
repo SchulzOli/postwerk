@@ -2,7 +2,7 @@
 
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
-import { createOAuthState, deleteAccount, getOrRegisterMastodonApp, isProviderAvailable, oauthClientFor, saveConnectedAccounts } from '@postwerk/core';
+import { createOAuthState, deleteAccount, getOrRegisterMastodonApp, isProviderAvailable, oauthClientFor, saveConnectedAccounts, startBlueskyLogin } from '@postwerk/core';
 import { getDb } from '@postwerk/db';
 import { codeChallenge, generateCodeVerifier, getProvider, isProviderId, Mastodon, ProviderError } from '@postwerk/providers';
 import { record } from '@/lib/audit';
@@ -33,12 +33,25 @@ export async function connectMastodon(_: ConnectState, form: FormData): Promise<
   redirect(target);
 }
 
+/** Sends the browser to the user's Bluesky server to sign in (AT Protocol OAuth). */
+export async function connectBluesky(_: ConnectState, form: FormData): Promise<ConnectState> {
+  const { user, workspace } = await requireAdmin();
+  const handle = String(form.get('handle') ?? '');
+  let target: string;
+  try {
+    target = await startBlueskyLogin(getDb(), { workspaceId: workspace.id, userId: user.id, handle, appUrl });
+  } catch (error) {
+    return { error: message(error), values: { handle } };
+  }
+  redirect(target);
+}
+
 /** Networks connected with a form (Bluesky app password, Telegram bot, Discord webhook, Sandbox). */
 export async function connectWithForm(providerId: string, _: ConnectState, form: FormData): Promise<ConnectState> {
   const { user, workspace } = await requireAdmin();
   if (!isProviderId(providerId) || !isProviderAvailable(providerId)) return { error: 'This network is not available.' };
   const provider = getProvider(providerId);
-  if (provider.connector.kind !== 'form') return { error: 'This network is not connected with a form.' };
+  if (provider.connector.kind !== 'form' && provider.connector.kind !== 'atproto') return { error: 'This network is not connected with a form.' };
 
   const values: Record<string, string> = {};
   const echo: Record<string, string> = {};

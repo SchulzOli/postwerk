@@ -22,6 +22,7 @@ export { formatBytes, validateContent, resolveOptions, textLimit } from './valid
 export { codeChallenge, generateCodeVerifier } from './oauth';
 export * as Mastodon from './mastodon';
 export * as Bluesky from './bluesky';
+export * as Atproto from './atproto';
 
 const providers: Record<ProviderId, Provider> = {
   mastodon,

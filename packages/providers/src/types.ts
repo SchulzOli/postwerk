@@ -114,7 +114,7 @@ export interface ProviderInfo {
   name: string;
   /** Short line shown on the connect card. */
   description: string;
-  connect: 'oauth2' | 'mastodon' | 'form';
+  connect: 'oauth2' | 'mastodon' | 'atproto' | 'form';
   capabilities: Capabilities;
   setup: ProviderSetup;
 }
@@ -183,6 +183,33 @@ export interface MastodonConnect {
   kind: 'mastodon';
 }
 
+/**
+ * AT Protocol (Bluesky): users sign in on their own server with OAuth; the
+ * form is the fallback (app password) for servers Postwerk cannot be an OAuth
+ * client on, or that do not support it.
+ */
+export interface AtprotoConnect<C> extends Omit<FormConnect<C>, 'kind'> {
+  kind: 'atproto';
+}
+
+/** The signing keys of Postwerk's AT Protocol client; sessions refresh with the key they started with. */
+export interface AtprotoKeyset {
+  keys: PrivateJwk[];
+}
+
+/** An ES256 (P-256) key as JWK; `d` is the private part. */
+export interface PrivateJwk {
+  kty: string;
+  crv: string;
+  x: string;
+  y: string;
+  d?: string;
+  kid?: string;
+}
+
+/** What a network's refresh needs from the server: an operator app, or Postwerk's own AT Protocol keys. */
+export type ProviderClient = OAuthClient | AtprotoKeyset;
+
 export interface PublishContext {
   /** Stable per-target key so a retried publish does not create a duplicate post. */
   idempotencyKey: string;
@@ -201,12 +228,12 @@ export interface PublishResult {
 }
 
 export interface Provider<C = any> extends ProviderInfo {
-  connector: OAuthConnect<C> | FormConnect<C> | MastodonConnect;
+  connector: OAuthConnect<C> | FormConnect<C> | MastodonConnect | AtprotoConnect<C>;
   /** Network-specific checks on top of the generic capability checks (see `validateContent`). */
   validate?(content: PostContent, limits?: AccountLimits): string[];
   publish(credentials: C, content: PostContent, context: PublishContext): Promise<PublishResult>;
   /** Present for networks with expiring tokens. Returns updated credentials. */
-  refresh?(credentials: C, client: OAuthClient | undefined): Promise<C>;
+  refresh?(credentials: C, client: ProviderClient | undefined): Promise<C>;
   /** Whether `refresh` should run before publishing. */
   needsRefresh?(credentials: C, now: number): boolean;
 }

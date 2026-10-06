@@ -30,8 +30,8 @@ export const catalog: Record<ProviderId, ProviderInfo> = {
   bluesky: {
     id: 'bluesky',
     name: 'Bluesky',
-    description: 'Sign in with an app password so your main password stays private.',
-    connect: 'form',
+    description: 'Sign in with your Bluesky account, or use an app password.',
+    connect: 'atproto',
     capabilities: {
       text: { maxLength: 300, counter: 'graphemes', required: false },
       media: { maxImages: 4, maxVideos: 0, required: false, mixed: false, altText: true, maxImageBytes: 1_000_000 },

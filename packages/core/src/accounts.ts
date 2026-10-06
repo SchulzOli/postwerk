@@ -90,10 +90,11 @@ const STATE_TTL_MS = 10 * 60_000;
 
 export async function createOAuthState(
   db: Database,
-  input: { workspaceId: string; userId: string; provider: ProviderId; data: Record<string, string> },
+  input: { workspaceId: string; userId: string; provider: ProviderId; data: Record<string, string>; state?: string },
 ): Promise<string> {
-  const state = generateToken();
-  await db.insert(oauthStates).values({ ...input, state, expiresAt: new Date(Date.now() + STATE_TTL_MS) });
+  // Bluesky sends the state to the server before the row exists, so it may come pre-made.
+  const { state = generateToken(), ...rest } = input;
+  await db.insert(oauthStates).values({ ...rest, state, expiresAt: new Date(Date.now() + STATE_TTL_MS) });
   return state;
 }
 

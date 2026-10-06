@@ -1,8 +1,10 @@
 import { asc, eq } from 'drizzle-orm';
-import { isProviderAvailable } from '@postwerk/core';
+import { isBlueskyOAuthAvailable, isProviderAvailable } from '@postwerk/core';
 import { getDb, socialAccounts } from '@postwerk/db';
 import { getProvider, providerInfos } from '@postwerk/providers';
+import { BlueskyConnect } from '@/components/bluesky-connect';
 import { ConnectForm } from '@/components/connect-form';
+import { appUrl } from '@/lib/env';
 import { providerLabels } from '@/lib/platforms';
 import { requireSession } from '@/lib/session';
 import { connectMastodon, connectWithForm, disconnectAccount, startOAuth } from './actions';
@@ -75,6 +77,7 @@ export default async function AccountsPage({ searchParams }: { searchParams: Pro
                   {connector.kind === 'form' && (
                     <ConnectForm action={connectWithForm.bind(null, info.id)} submitLabel={`Connect ${info.name}`} fields={connector.fields} />
                   )}
+                  {connector.kind === 'atproto' && <BlueskyConnect fields={connector.fields} oauth={isBlueskyOAuthAvailable(appUrl)} />}
                   {connector.kind === 'oauth2' && (
                     <form action={startOAuth.bind(null, info.id)}>
                       <button type="submit">Continue to {info.name}</button>
