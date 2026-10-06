@@ -17,3 +17,5 @@ export * from './mail';
 export * from './mail-templates';
 export * from './users';
 export * from './notifications';
+export * from './storage';
+export * from './media';

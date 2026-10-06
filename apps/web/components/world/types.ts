@@ -35,6 +35,8 @@ export interface PostData {
   status: PostStatus;
   scheduledAt: string | null;
   mediaCount: number;
+  /** The first few attachments, for thumbnails. */
+  media: { url: string; kind: 'image' | 'video'; altText?: string }[];
   targets: { accountId: string; status: TargetStatus; url: string | null; error: string | null }[];
 }
 

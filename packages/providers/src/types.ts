@@ -31,6 +31,8 @@ export interface MediaItem {
   kind: MediaKind;
   mimeType?: string;
   altText?: string;
+  /** File size in bytes, when known (uploads), so size limits can be checked before publishing. */
+  size?: number;
 }
 
 export interface PostContent {
@@ -82,6 +84,10 @@ export interface Capabilities {
     mixed: boolean;
     /** Alt text is sent to the network. */
     altText: boolean;
+    /** Largest image file the network accepts, in bytes. */
+    maxImageBytes?: number;
+    /** Largest video file the network accepts, in bytes. */
+    maxVideoBytes?: number;
   };
   options: OptionField[];
 }
@@ -182,6 +188,11 @@ export interface PublishContext {
   idempotencyKey: string;
   /** Operator app credentials, for networks that need them at publish time. */
   client?: OAuthClient;
+  /**
+   * Reads an uploaded file straight from Postwerk's storage, so networks we
+   * upload bytes to do not depend on the public URL. Undefined for other media.
+   */
+  loadMedia?(item: MediaItem): Promise<{ blob: Blob; mimeType: string } | undefined>;
 }
 
 export interface PublishResult {

@@ -3,6 +3,7 @@ import { posts, postTargets, socialAccounts, type Database, type PostStatus } fr
 import { getProvider, ProviderError } from '@postwerk/providers';
 import { oauthClientFor } from './clients';
 import { decryptJson, encryptJson } from './crypto';
+import { mediaForPublishing } from './media';
 import { aggregatePostStatus, backoffMs, MAX_ATTEMPTS } from './status';
 
 const STALE_LOCK_MS = 10 * 60_000;
@@ -61,10 +62,11 @@ export async function publishTarget(db: Database, targetId: string, now = () => 
     }
     const provider = getProvider(target.account.provider);
     const credentials = await currentCredentials(db, target.account.id, now());
+    const { media, loadMedia } = await mediaForPublishing(target.post.media);
     const result = await provider.publish(
       credentials,
-      { text: target.text ?? target.post.text, media: target.post.media, options: target.options },
-      { idempotencyKey: target.id, client: oauthClientFor(target.account.provider) },
+      { text: target.text ?? target.post.text, media, options: target.options },
+      { idempotencyKey: target.id, client: oauthClientFor(target.account.provider), loadMedia },
     );
     await db
       .update(postTargets)

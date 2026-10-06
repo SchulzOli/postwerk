@@ -25,9 +25,15 @@ export const provider = pgEnum('provider', [
 ]);
 
 export interface PostMedia {
+  /** A public https URL, or /media/<key> for uploads. */
   url: string;
   kind: 'image' | 'video';
   altText?: string;
+  /** Set for uploads: the media row and storage key. */
+  mediaId?: string;
+  key?: string;
+  mimeType?: string;
+  size?: number;
 }
 export const accountStatus = pgEnum('account_status', ['active', 'needs_reauth']);
 export const postStatus = pgEnum('post_status', ['draft', 'scheduled', 'publishing', 'published', 'partial', 'failed']);
@@ -191,6 +197,25 @@ export const flows = pgTable('flows', {
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
 });
 
+export const mediaKind = pgEnum('media_kind', ['image', 'video']);
+
+/** Uploaded files (local disk or S3, see @postwerk/core storage). Unused uploads are cleaned up after a day. */
+export const media = pgTable(
+  'media',
+  {
+    id: id(),
+    workspaceId: uuid('workspace_id').notNull().references(() => workspaces.id, { onDelete: 'cascade' }),
+    /** "<workspace id>/<uuid>.<ext>" in the storage. */
+    key: text('key').notNull(),
+    kind: mediaKind('kind').notNull(),
+    mimeType: text('mime_type').notNull(),
+    size: integer('size').notNull(),
+    uploadedBy: uuid('uploaded_by').references(() => users.id, { onDelete: 'set null' }),
+    createdAt: createdAt(),
+  },
+  (t) => [uniqueIndex('media_key_idx').on(t.key), index('media_workspace_idx').on(t.workspaceId, t.createdAt)],
+);
+
 /** Positions of canvas nodes the user moved (networks, accounts, panels), per workspace. */
 export const canvasPositions = pgTable(
   'canvas_positions',
@@ -301,6 +326,7 @@ export type PostTarget = typeof postTargets.$inferSelect;
 export type Plugin = typeof plugins.$inferSelect;
 export type AuditEntry = typeof auditLog.$inferSelect;
 export type Invite = typeof invites.$inferSelect;
+export type Media = typeof media.$inferSelect;
 export type MemberRole = (typeof memberRole.enumValues)[number];
 export type PostStatus = (typeof postStatus.enumValues)[number];
 export type TargetStatus = (typeof targetStatus.enumValues)[number];

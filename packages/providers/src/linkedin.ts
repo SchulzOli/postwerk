@@ -1,7 +1,7 @@
 import { catalog } from './catalog';
-import { bearer, downloadMedia, json, request, requestJson, withQuery } from './http';
+import { bearer, fetchMedia, json, request, requestJson, withQuery } from './http';
 import { authorizeUrl, expiresSoon, requireClient, tokenRequest } from './oauth';
-import { ProviderError, type ConnectedAccount, type MediaItem, type OAuthTokens, type Provider, type ProviderInfo } from './types';
+import { ProviderError, type ConnectedAccount, type MediaItem, type OAuthTokens, type Provider, type ProviderInfo, type PublishContext } from './types';
 
 const AUTHORIZE_URL = 'https://www.linkedin.com/oauth/v2/authorization';
 const TOKEN_URL = 'https://www.linkedin.com/oauth/v2/accessToken';
@@ -30,19 +30,19 @@ export function escapeCommentary(text: string): string {
   return text.replace(/[\\|{}@[\]()<>*_~]/g, (char) => `\\${char}`);
 }
 
-async function uploadImage(token: string, owner: string, item: MediaItem): Promise<{ id: string; altText?: string }> {
+async function uploadImage(token: string, owner: string, item: MediaItem, context?: PublishContext): Promise<{ id: string; altText?: string }> {
   const init = await requestJson<{ value: { uploadUrl: string; image: string } }>(
     `${API}/rest/images?action=initializeUpload`,
     json({ initializeUploadRequest: { owner } }, apiHeaders(token)),
   );
-  const { blob } = await downloadMedia(item.url);
+  const { blob } = await fetchMedia(item, context);
   await request(init.value.uploadUrl, { method: 'PUT', headers: bearer(token), body: blob, timeoutMs: 120_000 });
   return { id: init.value.image, altText: item.altText };
 }
 
-async function publish(credentials: LinkedInCredentials, content: { text: string; media: MediaItem[] }) {
+async function publish(credentials: LinkedInCredentials, content: { text: string; media: MediaItem[] }, context?: PublishContext) {
   const images = [];
-  for (const item of content.media) images.push(await uploadImage(credentials.accessToken, credentials.author, item));
+  for (const item of content.media) images.push(await uploadImage(credentials.accessToken, credentials.author, item, context));
   const media =
     images.length === 1
       ? { media: { id: images[0]!.id, ...(images[0]!.altText && { altText: images[0]!.altText }) } }
@@ -96,7 +96,7 @@ function createProvider(
         return listAccounts(tokens);
       },
     },
-    publish: (credentials, content) => publish(credentials, content),
+    publish: (credentials, content, context) => publish(credentials, content, context),
     // Refresh tokens are only issued to approved partners; without one the user reconnects after ~60 days.
     needsRefresh: (credentials, now) => Boolean(credentials.refreshToken) && expiresSoon(credentials, now),
     refresh,

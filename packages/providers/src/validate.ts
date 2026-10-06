@@ -49,6 +49,10 @@ export function validateContent(info: ProviderInfo, content: PostContent, limits
     issues.push(media.maxVideos === 0 ? `${info.name} does not support videos.` : `${info.name} allows at most ${media.maxVideos} video${media.maxVideos === 1 ? '' : 's'}.`);
   }
   if (!media.mixed && images > 0 && videos > 0) issues.push(`${info.name} cannot combine images and videos in one post.`);
+  for (const [kind, limit] of [['image', media.maxImageBytes], ['video', media.maxVideoBytes]] as const) {
+    const tooBig = limit === undefined ? 0 : content.media.filter((item) => item.kind === kind && item.size !== undefined && item.size > limit).length;
+    if (tooBig > 0) issues.push(`${info.name} accepts ${kind}s up to ${formatBytes(limit!)}; ${tooBig === 1 ? `one ${kind} is` : `${tooBig} ${kind}s are`} larger.`);
+  }
 
   const resolved = resolveOptions(info, content.options);
   for (const field of options) {
@@ -61,4 +65,10 @@ export function validateContent(info: ProviderInfo, content: PostContent, limits
     if (field.maxLength !== undefined && value.length > field.maxLength) issues.push(`${field.label} is longer than ${field.maxLength} characters.`);
   }
   return issues;
+}
+
+/** "1 MB", "8 MB", "1.5 GB" */
+export function formatBytes(bytes: number): string {
+  const [value, unit] = bytes >= 1024 ** 3 ? [bytes / 1024 ** 3, 'GB'] : bytes >= 1_000_000 ? [bytes / (1024 * 1024), 'MB'] : [bytes / 1024, 'KB'];
+  return `${Number(value.toFixed(value < 10 ? 1 : 0))} ${unit}`;
 }

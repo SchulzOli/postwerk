@@ -323,6 +323,30 @@ button.small { padding: 0.25rem 0.6rem; font-size: 0.82rem; }
 .setup-box { border: 1px dashed var(--border); border-radius: var(--radius-card); padding: 0.75rem; }
 .preview { border-left: 3px solid var(--tint-account); padding-left: 0.6rem; }
 
+/* ------------------------------------------------------------------ media */
+.dropzone {
+  display: flex; align-items: center; justify-content: center; gap: 0.6rem; flex-wrap: wrap; padding: 0.9rem;
+  border: 1.5px dashed var(--border); border-radius: var(--radius-card); background: var(--field); color: var(--muted); font-size: 0.9rem;
+}
+.dropzone.is-dragging { border-color: var(--accent); color: var(--text); background: color-mix(in srgb, var(--accent) 8%, var(--field)); }
+.media-tiles { display: flex; flex-direction: column; gap: 0.45rem; }
+.media-tile { display: flex; gap: 0.6rem; align-items: flex-start; padding: 0.4rem; border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface); }
+.media-tile.has-error { border-color: var(--error); }
+.media-thumb { position: relative; width: 64px; height: 64px; flex-shrink: 0; overflow: hidden; border-radius: calc(var(--radius) - 2px); background: var(--field); }
+.media-thumb img, .media-thumb video { display: block; width: 100%; height: 100%; object-fit: cover; }
+.media-thumb-error { display: grid; place-items: center; width: 100%; height: 100%; color: var(--error); font-weight: 700; font-size: 1.4rem; }
+.media-progress { position: absolute; left: 4px; right: 4px; bottom: 4px; height: 4px; overflow: hidden; border-radius: 2px; background: rgb(0 0 0 / 0.35); }
+.media-progress span { display: block; height: 100%; background: var(--accent); transition: width 0.2s; }
+.media-actions { display: flex; }
+.media-link > summary { cursor: pointer; list-style: none; width: fit-content; }
+.media-link > summary::-webkit-details-marker { display: none; }
+.media-link[open] > summary { margin-bottom: 0.4rem; }
+.post-media { display: flex; gap: 0.35rem; flex-wrap: wrap; }
+.post-media a { display: block; }
+.post-media img, .post-media video {
+  display: block; width: 56px; height: 56px; object-fit: cover; border: 1px solid var(--border); border-radius: var(--radius); background: var(--field);
+}
+
 /* ------------------------------------------------------------------ menus, team */
 .menu { position: relative; }
 .menu > summary { list-style: none; cursor: pointer; display: inline-flex; align-items: center; gap: 0.3rem; max-width: 240px; color: var(--muted); }

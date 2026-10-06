@@ -1,4 +1,4 @@
-import { ProviderError } from './types';
+import { ProviderError, type MediaItem, type PublishContext } from './types';
 
 export type RequestOptions = RequestInit & {
   timeoutMs?: number;
@@ -69,6 +69,14 @@ export async function downloadMedia(url: string, maxBytes = MAX_MEDIA_BYTES): Pr
   const blob = await response.blob();
   if (blob.size > maxBytes) throw new ProviderError(`Media file is too large (${Math.round(blob.size / 1e6)} MB).`);
   return { blob, mimeType: blob.type || response.headers.get('content-type') || 'application/octet-stream' };
+}
+
+/** The bytes of a media item: from our own storage when the publisher can provide them, else downloaded. */
+export async function fetchMedia(item: MediaItem, context: Pick<PublishContext, 'loadMedia'> | undefined, maxBytes = MAX_MEDIA_BYTES): Promise<{ blob: Blob; mimeType: string }> {
+  const stored = await context?.loadMedia?.(item);
+  if (!stored) return downloadMedia(item.url, maxBytes);
+  if (stored.blob.size > maxBytes) throw new ProviderError(`Media file is too large (${Math.round(stored.blob.size / 1e6)} MB).`);
+  return stored;
 }
 
 /** Polls until `check` returns a value, for networks that process media asynchronously. */

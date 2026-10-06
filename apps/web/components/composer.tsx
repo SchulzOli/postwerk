@@ -6,7 +6,7 @@ import { catalog, type ProviderId } from '@postwerk/providers/catalog';
 import { countText } from '@postwerk/providers/text';
 import { textLimit, validateContent } from '@postwerk/providers/validate';
 import type { ComposeState } from '@/app/(app)/posts/actions';
-import { parseMediaLines } from '@/lib/media';
+import { isReady, MediaPicker, mediaField, type ComposerMedia } from './media-picker';
 
 export interface ComposerAccount {
   id: string;
@@ -30,14 +30,17 @@ type Options = Partial<Record<ProviderId, Record<string, string>>>;
 export function Composer({ accounts, flows = [], action, returnTo = '/posts' }: Props) {
   const [state, formAction, pending] = useActionState(action, {});
   const [text, setText] = useState('');
-  const [mediaInput, setMediaInput] = useState('');
+  const [attachments, setAttachments] = useState<ComposerMedia[]>([]);
   const [options, setOptions] = useState<Options>({});
   const [selected, setSelected] = useState<Set<string>>(() => new Set(accounts.filter((a) => !a.disabledReason).map((a) => a.id)));
   const [when, setWhen] = useState<'now' | 'later'>('now');
   const [localTime, setLocalTime] = useState('');
   const [flowId, setFlowId] = useState('');
 
-  const { media, errors: mediaErrors } = useMemo(() => parseMediaLines(mediaInput), [mediaInput]);
+  // Validation sees what will be posted: finished uploads and links, with their sizes.
+  const media = useMemo(() => attachments.filter(isReady).map(({ url, kind, size, altText }) => ({ url, kind, size, altText })), [attachments]);
+  const uploading = attachments.some((item) => item.progress !== undefined);
+  const failedUploads = attachments.some((item) => item.error);
   const byId = useMemo(() => new Map(accounts.map((a) => [a.id, a])), [accounts]);
   const flow = flows.find((f) => f.id === flowId);
   const plan = useMemo(() => {
@@ -57,7 +60,7 @@ export function Composer({ accounts, flows = [], action, returnTo = '/posts' }: 
   // Before anything is written, "add some text" under every account is just noise; the button stays disabled.
   const issuesFor = (account: ComposerAccount) => (empty ? [] : allIssuesFor(account));
   const missing = plan ? plan.targets.filter((t) => !byId.has(t.accountId)).length : 0;
-  const blocked = empty || chosen.some((account) => allIssuesFor(account).length > 0) || mediaErrors.length > 0 || Boolean(plan?.errors.length) || missing > 0;
+  const blocked = empty || uploading || failedUploads || chosen.some((account) => allIssuesFor(account).length > 0) || Boolean(plan?.errors.length) || missing > 0;
   const optionProviders = [...new Set(chosen.map((a) => a.provider))].filter((id) => catalog[id].capabilities.options.length > 0);
   // datetime-local has no time zone; convert in the browser so the server gets an exact instant.
   const scheduledAt = localTime ? new Date(localTime).toISOString() : '';
@@ -82,22 +85,14 @@ export function Composer({ accounts, flows = [], action, returnTo = '/posts' }: 
         <textarea name="text" rows={6} value={text} onChange={(e) => setText(e.target.value)} placeholder="What do you want to share?" />
       </label>
 
-      <label>
-        <span>
+      <fieldset className="stack-sm">
+        <legend>
           Media <span className="muted">(optional)</span>
-        </span>
-        <textarea
-          name="media"
-          rows={2}
-          value={mediaInput}
-          onChange={(e) => setMediaInput(e.target.value)}
-          placeholder={'https://example.com/photo.jpg | Alt text\nhttps://example.com/clip.mp4'}
-        />
-        <small className="muted">One public https link per line; add “| description” for alt text. Uploads are coming soon.</small>
-        {mediaErrors.map((error) => (
-          <small key={error} className="error">{error}</small>
-        ))}
-      </label>
+        </legend>
+        <MediaPicker items={attachments} setItems={setAttachments} />
+        {failedUploads && <small className="error">Remove the files that could not be uploaded to continue.</small>}
+        <input type="hidden" name="media" value={mediaField(attachments)} />
+      </fieldset>
 
       <input type="hidden" name="returnTo" value={returnTo} />
       {flows.length > 0 && (
@@ -229,7 +224,7 @@ export function Composer({ accounts, flows = [], action, returnTo = '/posts' }: 
         </ul>
       )}
       <button type="submit" disabled={pending || chosen.length === 0 || blocked}>
-        {pending ? 'Saving…' : when === 'now' ? 'Publish' : 'Schedule'}
+        {pending ? 'Saving…' : uploading ? 'Uploading…' : when === 'now' ? 'Publish' : 'Schedule'}
       </button>
     </form>
   );

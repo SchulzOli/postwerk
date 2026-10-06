@@ -241,6 +241,13 @@ export function PostsNode({ selected }: Props<'posts'>) {
               {post.mediaCount > 0 && <small className="muted">{post.mediaCount} media</small>}
             </div>
             <p className="clip-2">{post.text}</p>
+            {post.media.length > 0 && (
+              <div className="post-media">
+                {post.media.map((item) =>
+                  item.kind === 'video' ? <video key={item.url} src={item.url} muted preload="metadata" /> : <img key={item.url} src={item.url} alt={item.altText ?? ''} loading="lazy" />,
+                )}
+              </div>
+            )}
             <div className="chips">
               {post.targets.map((target) => {
                 const account = handles.get(target.accountId);

@@ -64,6 +64,7 @@ export default async function CanvasPage({ searchParams }: { searchParams: Promi
       status: post.status,
       scheduledAt: post.scheduledAt?.toISOString() ?? null,
       mediaCount: post.media.length,
+      media: post.media.slice(0, 4).map(({ url, kind, altText }) => ({ url, kind, altText })),
       targets: post.targets.map((target) => ({ accountId: target.socialAccountId, status: target.status, url: target.remoteUrl, error: target.lastError })),
     })),
     positions,

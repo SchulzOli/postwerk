@@ -44,6 +44,8 @@ services:
       ENCRYPTION_KEY: ${ENCRYPTION_KEY:-}
       APP_URL: ${APP_URL:-http://localhost:3000}
       ENABLE_SANDBOX: ${ENABLE_SANDBOX:-false}
+    volumes:
+      - media-data:/data/media
     depends_on:
       migrate:
         condition: service_completed_successfully
@@ -61,8 +63,10 @@ services:
     environment:
       DATABASE_URL: postgres://postwerk:${POSTGRES_PASSWORD:-postwerk}@postgres:5432/postwerk
       ENCRYPTION_KEY: ${ENCRYPTION_KEY:-}
-      # Links in emails (failed-post alerts) point here.
+      # Links in emails (failed-post alerts) and to uploaded media point here.
       APP_URL: ${APP_URL:-http://localhost:3000}
+    volumes:
+      - media-data:/data/media
     depends_on:
       migrate:
         condition: service_completed_successfully
@@ -70,3 +74,5 @@ services:
 
 volumes:
   postgres-data:
+  # Uploaded images and videos (unless MEDIA_STORAGE=s3).
+  media-data:

@@ -1,6 +1,6 @@
 import { AtpAgent, RichText, XRPCError } from '@atproto/api';
 import { catalog } from './catalog';
-import { downloadMedia } from './http';
+import { fetchMedia } from './http';
 import { ProviderError, type ConnectedAccount, type Provider } from './types';
 
 export const BLUESKY_DEFAULT_SERVICE = 'https://bsky.social';
@@ -84,12 +84,12 @@ export const bluesky: Provider<BlueskyCredentials> = {
       return [await connect(credentials)];
     },
   },
-  async publish(credentials, content) {
+  async publish(credentials, content, context) {
     const agent = await signIn(credentials);
     try {
       const images = [];
       for (const item of content.media) {
-        const { blob, mimeType } = await downloadMedia(item.url, MAX_IMAGE_BYTES);
+        const { blob, mimeType } = await fetchMedia(item, context, MAX_IMAGE_BYTES);
         const { data } = await agent.uploadBlob(new Uint8Array(await blob.arrayBuffer()), { encoding: mimeType });
         images.push({ image: data.blob, alt: item.altText ?? '' });
       }

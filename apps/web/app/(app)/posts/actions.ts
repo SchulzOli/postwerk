@@ -6,7 +6,7 @@ import { createPost, deletePost } from '@postwerk/core';
 import { getDb } from '@postwerk/db';
 import { isProviderId, type ProviderId } from '@postwerk/providers';
 import { record } from '@/lib/audit';
-import { parseMediaLines } from '@/lib/media';
+import { readComposerMedia } from '@/lib/media-server';
 import { requireSession } from '@/lib/session';
 
 export type ComposeState = { errors?: string[] };
@@ -29,7 +29,7 @@ export async function submitPost(_: ComposeState, form: FormData): Promise<Compo
   const { user, workspace } = await requireSession();
   const text = String(form.get('text') ?? '');
   const accountIds = form.getAll('accountIds').map(String);
-  const { media, errors: mediaErrors } = parseMediaLines(String(form.get('media') ?? ''));
+  const { media, errors: mediaErrors } = await readComposerMedia(String(form.get('media') ?? ''), workspace.id);
   if (mediaErrors.length > 0) return { errors: mediaErrors };
 
   let scheduledAt: Date | null = null;

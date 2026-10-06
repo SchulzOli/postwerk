@@ -56,6 +56,8 @@ This starts Postgres, runs migrations, and launches the web app (port 3000) and 
 | `APP_URL` | yes | Public URL without trailing slash |
 | `ENABLE_SANDBOX` | no | `true` shows the fake Sandbox network |
 | `WORKER_POLL_INTERVAL_MS` | no | How often the worker checks for due posts (default 10000) |
+| `MEDIA_STORAGE` | no | `local` (default) keeps uploads in `MEDIA_DIR` (a Docker volume), `s3` uses any S3-compatible storage (`S3_ENDPOINT`, `S3_BUCKET`, `S3_ACCESS_KEY_ID`, `S3_SECRET_ACCESS_KEY`, see `.env.example`) |
+| `MEDIA_MAX_VIDEO_MB` | no | Largest video upload (default 512; images up to 20 MB) |
 | `SMTP_URL` | no | Outgoing mail for password resets, invites, email confirmation and failed-post alerts, e.g. `smtp://user:pass@smtp.example.com:587`. Without it, emails are printed to the log |
 | `MAIL_FROM` | no | Sender address, e.g. `Postwerk <postwerk@example.com>` |
 | `<NETWORK>_CLIENT_ID` / `_CLIENT_SECRET` | no | Operator developer apps, e.g. `INSTAGRAM_CLIENT_ID`. See [docs/PLATFORMS.md](docs/PLATFORMS.md) |

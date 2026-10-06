@@ -49,13 +49,13 @@ export default async function PostsPage() {
               </div>
               <p className="post-text">{post.text}</p>
               {post.media.length > 0 && (
-                <ul className="chips">
+                <div className="post-media">
                   {post.media.map((item) => (
-                    <li key={item.url}>
-                      <a href={item.url} target="_blank" rel="noreferrer">{item.kind === 'video' ? 'Video' : 'Image'}</a>
-                    </li>
+                    <a key={item.url} href={item.url} target="_blank" rel="noreferrer" title={item.altText}>
+                      {item.kind === 'video' ? <video src={item.url} muted preload="metadata" /> : <img src={item.url} alt={item.altText ?? ''} loading="lazy" />}
+                    </a>
                   ))}
-                </ul>
+                </div>
               )}
               <ul className="targets">
                 {post.targets.map((target) => (

@@ -1,6 +1,6 @@
 import { catalog } from './catalog';
 import { googleConnector, googleJson, googleRequest, refreshGoogleTokens } from './google';
-import { bearer, downloadMedia, json, withQuery } from './http';
+import { bearer, fetchMedia, json, withQuery } from './http';
 import { expiresSoon } from './oauth';
 import { ProviderError, type OAuthTokens, type Provider } from './types';
 import { resolveOptions } from './validate';
@@ -46,13 +46,13 @@ export const youtube: Provider<YouTubeCredentials> = {
     return issues;
   },
 
-  async publish(credentials, content) {
+  async publish(credentials, content, context) {
     const video = content.media.find((item) => item.kind === 'video');
     if (!video) throw new ProviderError('YouTube needs a video.');
     const { title, privacy = 'public' } = resolveOptions(catalog.youtube, content.options);
     if (!title) throw new ProviderError('YouTube needs a video title.');
 
-    const { blob, mimeType } = await downloadMedia(video.url);
+    const { blob, mimeType } = await fetchMedia(video, context);
     const contentType = video.mimeType ?? mimeType;
 
     // Resumable upload, step 1: send the metadata and get a session URL in the Location header.
