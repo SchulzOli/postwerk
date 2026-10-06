@@ -119,6 +119,8 @@ export interface ProviderInfo {
   connect: 'oauth2' | 'mastodon' | 'atproto' | 'form';
   capabilities: Capabilities;
   setup: ProviderSetup;
+  /** The network's privacy policy, linked from the server's privacy page (Mastodon: each server has its own). */
+  privacyUrl?: string;
 }
 
 // ---------------------------------------------------------------------------

@@ -551,7 +551,7 @@ function WorldCanvas({ data }: { data: WorldData }) {
           <WorkspaceMenu current={data.workspace} workspaces={data.workspaces} teamHref={`#n=${ids.region('team')}`} />
           <ModeSwitch mode={data.appearance.mode} onChange={setMode} />
           <a href={`#n=${ids.region('plugins')}`}>{t.themesLink}</a>
-          <AccountMenu user={data.user} links={[{ href: '/posts', label: common.nav.listView }]} />
+          <AccountMenu user={data.user} links={[{ href: '/posts', label: common.nav.listView }]} legal={data.legal} />
         </Panel>
 
         {notice && (

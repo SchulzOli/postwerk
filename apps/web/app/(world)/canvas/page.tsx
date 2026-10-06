@@ -9,6 +9,7 @@ import { loadCalendarAroundNow } from '@/lib/calendar-server';
 import { appUrl } from '@/lib/env';
 import { getAppearance } from '@/lib/appearance';
 import { getLocale, getMessages } from '@/lib/i18n-server';
+import { legalLinks } from '@/lib/legal';
 import { requireSession } from '@/lib/session';
 import { loadTeam } from '@/lib/team';
 import { canvasMessages } from '@/messages/canvas';
@@ -96,6 +97,7 @@ export default async function CanvasPage({ searchParams }: { searchParams: Promi
       ...appearance.installed.filter((plugin) => !plugin.builtin).map((plugin) => ({ manifest: plugin.manifest, builtin: false, installed: true })),
     ],
     activity: activity?.map(toActivity) ?? null,
+    legal: legalLinks(),
     bridgeUsage: usage && { name: usage.name, accounts: usage.accounts, profiles: usage.profiles, months: usage.months, price: usage.price },
     appearance: { mode: appearance.mode, themeId: appearance.theme?.id ?? null, canvas: appearance.theme?.canvas ?? defaultCanvas },
     notice: connected

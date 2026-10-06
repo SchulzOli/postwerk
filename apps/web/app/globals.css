@@ -114,6 +114,14 @@ ul { margin: 0; padding: 0; list-style: none; }
 .page { max-width: 960px; margin: 0 auto; padding: 2rem 1rem 4rem; }
 .auth { min-height: 100vh; display: grid; place-content: center; gap: 1rem; padding: 1rem; justify-items: center; }
 .auth-card { width: min(380px, calc(100vw - 2rem)); }
+.legal { max-width: 46rem; margin: 0 auto; padding: 1.5rem 1rem 3rem; display: flex; flex-direction: column; gap: 1.5rem; min-height: 100vh; }
+.legal-page { flex: 1; line-height: 1.6; }
+.legal-page ul { list-style: disc; margin: 0; padding-left: 1.2rem; display: flex; flex-direction: column; gap: 0.4rem; }
+.legal-page address { font-style: normal; }
+.legal-footer { display: flex; flex-wrap: wrap; justify-content: center; gap: 0.4rem 1rem; font-size: 0.82rem; }
+.legal-footer a { color: var(--muted); }
+.menu-legal { display: flex; flex-wrap: wrap; gap: 0.2rem 0.7rem; padding: 0.4rem 0.6rem 0.1rem; border-top: 1px solid var(--border); font-size: 0.78rem; }
+.menu-legal a { color: var(--muted); }
 
 .card {
   background: var(--surface);

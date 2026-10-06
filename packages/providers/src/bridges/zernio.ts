@@ -210,6 +210,8 @@ async function publish(config: BridgeConfig, network: ProviderId, credentials: {
 export const zernio: Bridge = {
   id: 'zernio',
   name: 'Zernio',
+  company: 'ARBICHAT, S.L., Palamós (Girona), Spain',
+  privacyUrl: 'https://zernio.com/privacy-policy',
   platforms,
 
   async createProfile(config, name) {

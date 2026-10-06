@@ -91,5 +91,7 @@ export interface WorldData {
   /** Latest workspace activity; null for members who may not see it (editors). */
   activity: ActivityItem[] | null;
   bridgeUsage: BridgeUsageData | null;
+  /** The server's about and legal pages that are set up. */
+  legal: { page: 'about' | 'privacy' | 'terms' | 'imprint' | 'data-deletion'; href: string }[];
   notice: { kind: 'success' | 'error'; text: string } | null;
 }

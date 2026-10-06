@@ -69,6 +69,7 @@ This starts Postgres, runs migrations, and launches the web app (port 3000) and 
 | `MEDIA_MAX_VIDEO_MB` | no | Largest video upload (default 512; images up to 20 MB) |
 | `SMTP_URL` | no | Outgoing mail for password resets, invites, email confirmation and failed-post alerts, e.g. `smtp://user:pass@smtp.example.com:587`. Without it, emails are printed to the log |
 | `MAIL_FROM` | no | Sender address, e.g. `Postwerk <postwerk@example.com>` |
+| `OPERATOR_NAME`, `OPERATOR_EMAIL` | for app reviews | Who runs the server. Turns on `/about`, a privacy policy, terms and data deletion instructions; with `OPERATOR_ADDRESS` also an imprint. `LEGAL_*_URL` links your own pages instead. See [docs/legal.md](docs/legal.md) |
 | `<NETWORK>_CLIENT_ID` / `_CLIENT_SECRET` | no | Operator developer apps, e.g. `INSTAGRAM_CLIENT_ID`. See [docs/PLATFORMS.md](docs/PLATFORMS.md) |
 | `ZERNIO_API_KEY` | no | Connects every network without a developer app through [Zernio](https://zernio.com). `ZERNIO_NETWORKS` limits or forces the list, `ZERNIO_ACCOUNT_PRICE` (e.g. `6` or `5.50 EUR`) shows cost estimates. See [docs/BRIDGE.md](docs/BRIDGE.md) |
 

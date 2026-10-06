@@ -38,6 +38,7 @@ export const catalog: Record<ProviderId, ProviderInfo> = {
       options: [],
     },
     setup: { operator: 'none', docsUrl: 'https://docs.bsky.app/docs/advanced-guides/posts' },
+    privacyUrl: 'https://bsky.social/about/support/privacy-policy',
   },
 
   facebook: {
@@ -56,6 +57,7 @@ export const catalog: Record<ProviderId, ProviderInfo> = {
       review: 'Meta business verification and App Review for pages_show_list, pages_manage_posts, pages_read_engagement.',
       docsUrl: 'https://developers.facebook.com/docs/pages-api/posts',
     },
+    privacyUrl: 'https://www.facebook.com/privacy/policy',
   },
 
   instagram: {
@@ -74,6 +76,7 @@ export const catalog: Record<ProviderId, ProviderInfo> = {
       review: 'Instagram API with Instagram Login: App Review for instagram_business_basic and instagram_business_content_publish; business verification for advanced access.',
       docsUrl: 'https://developers.facebook.com/docs/instagram-platform/content-publishing',
     },
+    privacyUrl: 'https://privacycenter.instagram.com/policy',
   },
 
   threads: {
@@ -92,6 +95,7 @@ export const catalog: Record<ProviderId, ProviderInfo> = {
       review: 'App Review for threads_basic and threads_content_publish.',
       docsUrl: 'https://developers.facebook.com/docs/threads/posts',
     },
+    privacyUrl: 'https://help.instagram.com/515230437301944',
   },
 
   linkedin: {
@@ -110,6 +114,7 @@ export const catalog: Record<ProviderId, ProviderInfo> = {
       review: 'Self-serve: add the "Share on LinkedIn" and "Sign In with LinkedIn using OpenID Connect" products to the app.',
       docsUrl: 'https://learn.microsoft.com/linkedin/consumer/integrations/self-serve/share-on-linkedin',
     },
+    privacyUrl: 'https://www.linkedin.com/legal/privacy-policy',
   },
 
   linkedin_page: {
@@ -128,6 +133,7 @@ export const catalog: Record<ProviderId, ProviderInfo> = {
       review: 'Community Management API access (partner review; requires a registered legal entity).',
       docsUrl: 'https://learn.microsoft.com/linkedin/marketing/community-management/shares/posts-api',
     },
+    privacyUrl: 'https://www.linkedin.com/legal/privacy-policy',
   },
 
   x: {
@@ -146,6 +152,7 @@ export const catalog: Record<ProviderId, ProviderInfo> = {
       review: 'Paid API access (pay-per-use). OAuth 2.0 app with tweet.read, tweet.write, users.read, media.write, offline.access.',
       docsUrl: 'https://docs.x.com/x-api/posts/create-post',
     },
+    privacyUrl: 'https://x.com/en/privacy',
   },
 
   tiktok: {
@@ -177,6 +184,7 @@ export const catalog: Record<ProviderId, ProviderInfo> = {
       review: 'Content Posting API with Direct Post; audit required before posts can be public. Media URLs must be on a verified domain.',
       docsUrl: 'https://developers.tiktok.com/doc/content-posting-api-get-started',
     },
+    privacyUrl: 'https://www.tiktok.com/legal/page/eea/privacy-policy/en',
   },
 
   youtube: {
@@ -208,6 +216,7 @@ export const catalog: Record<ProviderId, ProviderInfo> = {
       review: 'Google OAuth verification for the youtube.upload scope and a quota extension; uploads from unverified projects stay private.',
       docsUrl: 'https://developers.google.com/youtube/v3/guides/uploading_a_video',
     },
+    privacyUrl: 'https://policies.google.com/privacy',
   },
 
   pinterest: {
@@ -229,6 +238,7 @@ export const catalog: Record<ProviderId, ProviderInfo> = {
       review: 'Trial access is granted on app creation; Standard access needs a review.',
       docsUrl: 'https://developers.pinterest.com/docs/api/v5/pins-create',
     },
+    privacyUrl: 'https://policy.pinterest.com/en/privacy-policy',
   },
 
   reddit: {
@@ -250,6 +260,7 @@ export const catalog: Record<ProviderId, ProviderInfo> = {
       review: 'Manual API approval under Reddit’s Responsible Builder Policy (self-service ended November 2025).',
       docsUrl: 'https://www.reddit.com/dev/api/#POST_api_submit',
     },
+    privacyUrl: 'https://www.reddit.com/policies/privacy-policy',
   },
 
   google_business: {
@@ -268,6 +279,7 @@ export const catalog: Record<ProviderId, ProviderInfo> = {
       review: 'Business Profile API access request form (approval takes days to weeks).',
       docsUrl: 'https://developers.google.com/my-business/content/posts-data',
     },
+    privacyUrl: 'https://policies.google.com/privacy',
   },
 
   telegram: {
@@ -282,6 +294,7 @@ export const catalog: Record<ProviderId, ProviderInfo> = {
       options: [],
     },
     setup: { operator: 'none', docsUrl: 'https://core.telegram.org/bots/api#sendmessage' },
+    privacyUrl: 'https://telegram.org/privacy',
   },
 
   discord: {
@@ -295,6 +308,7 @@ export const catalog: Record<ProviderId, ProviderInfo> = {
       options: [],
     },
     setup: { operator: 'none', docsUrl: 'https://discord.com/developers/docs/resources/webhook#execute-webhook' },
+    privacyUrl: 'https://discord.com/privacy',
   },
 
   sandbox: {

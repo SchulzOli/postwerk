@@ -6,6 +6,7 @@ import { VerifyBanner } from '@/components/verify-banner';
 import { WorkspaceMenu } from '@/components/workspace-menu';
 import { getAppearance } from '@/lib/appearance';
 import { getMessages } from '@/lib/i18n-server';
+import { legalLinks } from '@/lib/legal';
 import { requireSession } from '@/lib/session';
 import { commonMessages } from '@/messages/common';
 
@@ -27,7 +28,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
         <div className="who">
           <WorkspaceMenu current={workspace} workspaces={workspaces} teamHref="/team" />
           <ModeSwitch mode={mode} />
-          <AccountMenu user={{ name: user.name, email: user.email }} links={[{ href: '/canvas', label: t.nav.canvas }]} />
+          <AccountMenu user={{ name: user.name, email: user.email }} links={[{ href: '/canvas', label: t.nav.canvas }]} legal={legalLinks()} />
         </div>
       </header>
       {needsEmailVerification(user) && <VerifyBanner email={user.email} className="page-banner" />}

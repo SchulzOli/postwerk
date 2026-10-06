@@ -1,5 +1,6 @@
 import { localeNames } from '@postwerk/core/i18n';
 import { setLocaleAction } from '@/app/actions/locale';
+import { LegalFooter } from '@/components/legal-footer';
 import { getLocale } from '@/lib/i18n-server';
 
 export default async function AuthLayout({ children }: { children: React.ReactNode }) {
@@ -13,6 +14,7 @@ export default async function AuthLayout({ children }: { children: React.ReactNo
           {localeNames[other]}
         </button>
       </form>
+      <LegalFooter />
     </main>
   );
 }
