@@ -10,7 +10,7 @@ Self-hosted social media scheduling. Connect your accounts with one click, write
 - **Work as a team.** Several workspaces, invite links, roles (owner, admin, editor), an activity log, and an email when a post fails.
 - **German and English.** The UI, validation and emails follow the browser's language or the account setting.
 - **Make it yours.** The look is a plugin. Three themes come installed — *Aurora*, *Paper* and *Blueprint*, each with a light and a dark mode — and everyone picks their own. Uninstall the ones you don't want, or build your own in the theme editor on the canvas ([docs/THEMES.md](docs/THEMES.md)).
-- **15 networks behind one interface.** Mastodon, Bluesky (sign in on your own server, no app password needed), Telegram and Discord work out of the box. Facebook, Instagram, Threads, LinkedIn (profiles and pages), X, TikTok, YouTube, Google Business Profile, Pinterest and Reddit work as soon as the server admin registers one developer app per network — users then just click "Connect".
+- **15 networks behind one interface.** Mastodon, Bluesky (sign in on your own server, no app password needed), Telegram and Discord work out of the box. Facebook, Instagram, Threads, LinkedIn (profiles and pages), X, TikTok, YouTube, Google Business Profile, Pinterest and Reddit work through the [Zernio](https://zernio.com) bridge with just an API key, or through the server's own developer apps once they are approved — users then just click "Connect" ([docs/BRIDGE.md](docs/BRIDGE.md)).
 - **Validates as you type.** Each network's limits, media rules and required fields (subreddit, video title, TikTok privacy…) are checked live in the composer.
 - **Reliable publishing.** Every network is published and retried independently, with backoff, token refresh, crash recovery and clear "reconnect needed" states.
 - **Your data stays yours.** Tokens are encrypted at rest; runs anywhere Docker runs.
@@ -31,7 +31,7 @@ Self-hosted social media scheduling. Connect your accounts with one click, write
 
 ## Status
 
-Phases 0 (foundation) and 1 (uploads, editing, calendar, teams, email, Bluesky sign-in, German and English) are done, every network integration is implemented, and the canvas with flows is the main interface (the classic list pages remain under “List view”). Its look comes from theme plugins. Networks that need an operator app still have to be set up and live-verified — see [docs/PLATFORMS.md](docs/PLATFORMS.md). Next up: the bridge to aggregator APIs, so every network works without app reviews ([docs/PLAN.md](docs/PLAN.md)).
+Phases 0 (foundation), 1 (uploads, editing, calendar, teams, email, Bluesky sign-in, German and English) and 2 (the bridge: every network without app reviews, through Zernio) are done. Every network integration is implemented, and the canvas with flows is the main interface (the classic list pages remain under “List view”). Its look comes from theme plugins. The networks' own developer apps still have to be set up and live-verified — see [docs/PLATFORMS.md](docs/PLATFORMS.md); the bridge covers them meanwhile ([docs/BRIDGE.md](docs/BRIDGE.md)). Next up: native integrations as approvals come through ([docs/PLAN.md](docs/PLAN.md)).
 
 ## Quick start (development)
 
@@ -70,6 +70,7 @@ This starts Postgres, runs migrations, and launches the web app (port 3000) and 
 | `SMTP_URL` | no | Outgoing mail for password resets, invites, email confirmation and failed-post alerts, e.g. `smtp://user:pass@smtp.example.com:587`. Without it, emails are printed to the log |
 | `MAIL_FROM` | no | Sender address, e.g. `Postwerk <postwerk@example.com>` |
 | `<NETWORK>_CLIENT_ID` / `_CLIENT_SECRET` | no | Operator developer apps, e.g. `INSTAGRAM_CLIENT_ID`. See [docs/PLATFORMS.md](docs/PLATFORMS.md) |
+| `ZERNIO_API_KEY` | no | Connects every network without a developer app through [Zernio](https://zernio.com). `ZERNIO_NETWORKS` limits or forces the list, `ZERNIO_ACCOUNT_PRICE` (e.g. `6` or `5.50 EUR`) shows cost estimates. See [docs/BRIDGE.md](docs/BRIDGE.md) |
 
 ## Project structure
 
