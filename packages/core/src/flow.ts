@@ -173,3 +173,40 @@ export function parseFlowGraph(input: unknown): FlowGraph {
     .filter((edge) => ids.has(edge.source) && ids.has(edge.target) && edge.source !== edge.target);
   return { steps, edges };
 }
+
+/** Per-network versions of a post's text ("customize for LinkedIn"), keyed by provider id. */
+export type TextVariants = Partial<Record<string, string>>;
+
+/** The text a network starts from: its own version if it has one, else the main text. */
+export function baseText(text: string, variants: TextVariants, provider: string | undefined): string {
+  const variant = provider ? variants[provider] : undefined;
+  return variant?.trim() ? variant : text;
+}
+
+/**
+ * Plans a whole post: each account starts from its network's text, then
+ * either the flow adapts it (and decides the accounts and delays) or it goes
+ * straight to the chosen accounts. Shared by the composer and the server.
+ */
+export function planPost(
+  input: { text: string; variants: TextVariants; providerOf: (accountId: string) => string | undefined; graph?: FlowGraph; accountIds?: string[] },
+  measure?: Measure,
+): FlowPlan {
+  const baseFor = (accountId: string) => baseText(input.text, input.variants, input.providerOf(accountId));
+  if (!input.graph) {
+    return { targets: [...new Set(input.accountIds ?? [])].map((accountId) => ({ accountId, text: baseFor(accountId), delayMinutes: 0 })), errors: [] };
+  }
+  // Flow errors are about the graph, not the text, so the main plan's errors cover every network's.
+  const plans = new Map<string, FlowPlan>();
+  const planFor = (base: string) => {
+    let plan = plans.get(base);
+    if (!plan) plans.set(base, (plan = planFlow(input.graph!, base, measure)));
+    return plan;
+  };
+  const main = planFor(input.text);
+  const targets = main.targets.map((target) => {
+    const base = baseFor(target.accountId);
+    return base === input.text ? target : (planFor(base).targets.find((other) => other.accountId === target.accountId) ?? target);
+  });
+  return { targets, errors: main.errors };
+}

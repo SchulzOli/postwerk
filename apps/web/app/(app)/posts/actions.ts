@@ -2,14 +2,17 @@
 
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
-import { createPost, deletePost } from '@postwerk/core';
+import { createPost, deletePost, reschedulePost, retryPost, updatePost } from '@postwerk/core';
 import { getDb } from '@postwerk/db';
 import { isProviderId, type ProviderId } from '@postwerk/providers';
 import { record } from '@/lib/audit';
+import type { ComposerInitial } from '@/components/composer';
+import { loadComposerInitial } from '@/lib/compose';
 import { readComposerMedia } from '@/lib/media-server';
 import { requireSession } from '@/lib/session';
 
-export type ComposeState = { errors?: string[] };
+/** `saved` changes on every successful save from the canvas, which then resets the composer. */
+export type ComposeState = { errors?: string[]; saved?: number };
 
 /** The start of a post, for the activity log. */
 const excerpt = (text: string) => (text.length > 80 ? `${text.slice(0, 79)}…` : text) || '(media only)';
@@ -25,8 +28,20 @@ function readOptions(form: FormData): Partial<Record<ProviderId, Record<string, 
   return options;
 }
 
+/** Collects "variant:<provider>" fields: the per-network versions of the text. */
+function readVariants(form: FormData): Partial<Record<ProviderId, string>> {
+  const variants: Partial<Record<ProviderId, string>> = {};
+  for (const [name, value] of form.entries()) {
+    const [prefix, provider] = name.split(':');
+    if (prefix === 'variant' && provider && isProviderId(provider) && typeof value === 'string') variants[provider] = value;
+  }
+  return variants;
+}
+
+/** Creates a post, or saves changes to one when the form carries a postId. */
 export async function submitPost(_: ComposeState, form: FormData): Promise<ComposeState> {
   const { user, workspace } = await requireSession();
+  const postId = String(form.get('postId') ?? '') || undefined;
   const text = String(form.get('text') ?? '');
   const accountIds = form.getAll('accountIds').map(String);
   const { media, errors: mediaErrors } = await readComposerMedia(String(form.get('media') ?? ''), workspace.id);
@@ -40,20 +55,61 @@ export async function submitPost(_: ComposeState, form: FormData): Promise<Compo
   }
 
   const flowId = String(form.get('flowId') ?? '') || undefined;
-  const result = await createPost(getDb(), {
+  const input = {
     workspaceId: workspace.id,
-    authorId: user.id,
     text,
     media,
     options: readOptions(form),
+    variants: readVariants(form),
     ...(flowId ? { flowId } : { accountIds }),
     scheduledAt,
-  });
+  };
+  const db = getDb();
+  const result = postId ? await updatePost(db, postId, input) : await createPost(db, { ...input, authorId: user.id });
   if (!result.ok) return { errors: result.errors };
-  await record({ action: 'post.created', userId: user.id, workspaceId: workspace.id, target: excerpt(text), details: { scheduled: scheduledAt !== null } });
+  await record({
+    action: postId ? 'post.updated' : 'post.created',
+    userId: user.id,
+    workspaceId: workspace.id,
+    target: excerpt(text),
+    details: { scheduled: scheduledAt !== null },
+  });
   revalidatePath('/posts');
   revalidatePath('/canvas');
-  redirect(form.get('returnTo') === '/canvas' ? '/canvas#n=panel:posts' : '/posts');
+  if (form.get('returnTo') === '/canvas') return { saved: Date.now() };
+  redirect('/posts');
+}
+
+/** The composer's starting values for editing a post (or, with `asCopy`, posting it again). */
+export async function loadPostAction(postId: string, asCopy = false): Promise<ComposerInitial | { error: string }> {
+  const { workspace } = await requireSession();
+  return (await loadComposerInitial(workspace.id, postId, asCopy)) ?? { error: 'This post cannot be edited anymore.' };
+}
+
+export async function retryPostAction(postId: string): Promise<void> {
+  const { user, workspace } = await requireSession();
+  const db = getDb();
+  const post = await db.query.posts.findFirst({ where: (p, { and, eq }) => and(eq(p.id, postId), eq(p.workspaceId, workspace.id)) });
+  if (post && (await retryPost(db, workspace.id, postId))) {
+    await record({ action: 'post.retried', userId: user.id, workspaceId: workspace.id, target: excerpt(post.text) });
+  }
+  revalidatePath('/posts');
+  revalidatePath('/canvas');
+}
+
+/** Moves a scheduled post to another time (calendar drag and drop). */
+export async function reschedulePostAction(postId: string, iso: string): Promise<{ error?: string }> {
+  const { user, workspace } = await requireSession();
+  const at = new Date(iso);
+  if (at.getTime() < Date.now() - 60_000) return { error: 'Pick a time in the future.' };
+  const db = getDb();
+  const result = await reschedulePost(db, workspace.id, postId, at);
+  if (!result.ok) return { error: result.errors[0] };
+  const post = await db.query.posts.findFirst({ where: (p, { eq }) => eq(p.id, postId) });
+  await record({ action: 'post.updated', userId: user.id, workspaceId: workspace.id, target: excerpt(post?.text ?? ''), details: { rescheduled: true } });
+  revalidatePath('/posts');
+  revalidatePath('/canvas');
+  return {};
 }
 
 export async function removePost(form: FormData) {

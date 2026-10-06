@@ -9,11 +9,12 @@ import { LocalTime } from '@/components/local-time';
 import { RelativeTime } from '@/components/relative-time';
 import { TeamPanel } from '@/components/team';
 import { ThemePreview } from '@/components/theme-preview';
-import { submitPost } from '@/app/(app)/posts/actions';
+import { retryPostAction, submitPost } from '@/app/(app)/posts/actions';
 import { chooseThemeAction, installBuiltinPluginAction } from '@/app/(world)/canvas/actions';
 import { useWorld } from './context';
 import { describeActivity, isWarning } from '@/lib/activity';
 import { ids, type WorldNode } from './layout';
+import type { WorldData } from './types';
 
 type Props<T extends WorldNode['type']> = NodeProps<Extract<WorldNode, { type: T }>>;
 
@@ -198,6 +199,7 @@ export function StepNode({ data, selected }: Props<'step'>) {
 
 export function ComposerNode({ selected }: Props<'composer'>) {
   const world = useWorld();
+  const { composing } = world;
   const accounts = world.data.accounts.map((account) => ({
     id: account.id,
     handle: account.handle,
@@ -207,16 +209,56 @@ export function ComposerNode({ selected }: Props<'composer'>) {
   }));
   return (
     <div className={`world-panel ${selected ? 'is-selected' : ''}`}>
-      <header className="panel-drag">New post</header>
+      <header className="panel-drag">{composing?.postId ? 'Edit post' : composing ? 'Post again' : 'New post'}</header>
       <div className="nodrag nowheel nopan panel-body">
         {accounts.length === 0 ? (
           <p className="muted">
             Connect an account in <a href={`#n=${ids.region('networks')}`}>Networks</a> first.
           </p>
         ) : (
-          <Composer accounts={accounts} flows={world.data.flows} action={submitPost} returnTo="/canvas" />
+          <Composer
+            key={world.composerKey}
+            accounts={accounts}
+            flows={world.data.flows}
+            action={submitPost}
+            returnTo="/canvas"
+            initial={composing}
+            onSaved={() => {
+              world.resetComposer();
+              world.focus(ids.posts);
+            }}
+            onCancel={composing ? world.resetComposer : undefined}
+          />
         )}
       </div>
+    </div>
+  );
+}
+
+function PostActions({ post }: { post: WorldData['posts'][number] }) {
+  const world = useWorld();
+  const [pending, startTransition] = useTransition();
+  const editable = post.status === 'draft' || post.status === 'scheduled' || post.status === 'failed';
+  const retry = post.status === 'failed' || post.status === 'partial';
+  const again = post.status === 'published' || post.status === 'partial';
+  if (!editable && !retry && !again) return null;
+  return (
+    <div className="row-tight post-actions">
+      {editable && (
+        <button type="button" className="link small-link" disabled={pending} onClick={() => startTransition(() => world.composeFrom(post.id))}>
+          Edit
+        </button>
+      )}
+      {retry && (
+        <button type="button" className="link small-link" disabled={pending} onClick={() => startTransition(() => retryPostAction(post.id))}>
+          {pending ? 'Retrying…' : 'Retry failed'}
+        </button>
+      )}
+      {again && (
+        <button type="button" className="link small-link" disabled={pending} onClick={() => startTransition(() => world.composeFrom(post.id, true))}>
+          Post again
+        </button>
+      )}
     </div>
   );
 }
@@ -248,6 +290,7 @@ export function PostsNode({ selected }: Props<'posts'>) {
                 )}
               </div>
             )}
+            <PostActions post={post} />
             <div className="chips">
               {post.targets.map((target) => {
                 const account = handles.get(target.accountId);

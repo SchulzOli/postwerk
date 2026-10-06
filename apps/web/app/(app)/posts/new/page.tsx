@@ -1,18 +1,19 @@
 import Link from 'next/link';
-import { asc, eq } from 'drizzle-orm';
-import { Composer, type ComposerAccount } from '@/components/composer';
-import { getDb, socialAccounts } from '@postwerk/db';
+import { Composer } from '@/components/composer';
+import { loadComposerChoices, loadComposerInitial } from '@/lib/compose';
 import { requireSession } from '@/lib/session';
 import { submitPost } from '../actions';
 
 export const metadata = { title: 'New post · Postwerk' };
 
-export default async function NewPostPage() {
+export default async function NewPostPage({ searchParams }: { searchParams: Promise<Record<string, string | undefined>> }) {
   const { workspace } = await requireSession();
-  const accounts = await getDb().query.socialAccounts.findMany({
-    where: eq(socialAccounts.workspaceId, workspace.id),
-    orderBy: [asc(socialAccounts.provider), asc(socialAccounts.handle)],
-  });
+  const { from } = await searchParams;
+  const [{ accounts, flows }, initial] = await Promise.all([
+    loadComposerChoices(workspace.id),
+    // "Post again" starts from an earlier post.
+    from ? loadComposerInitial(workspace.id, from, true) : undefined,
+  ]);
 
   if (accounts.length === 0) {
     return (
@@ -24,18 +25,10 @@ export default async function NewPostPage() {
     );
   }
 
-  const composerAccounts: ComposerAccount[] = accounts.map((account) => ({
-    id: account.id,
-    handle: account.handle,
-    provider: account.provider,
-    maxLength: account.maxLength,
-    disabledReason: account.status === 'needs_reauth' ? 'Reconnect needed' : undefined,
-  }));
-
   return (
     <div className="stack-lg">
       <h1>New post</h1>
-      <Composer accounts={composerAccounts} action={submitPost} />
+      <Composer accounts={accounts} flows={flows} action={submitPost} initial={initial} />
     </div>
   );
 }

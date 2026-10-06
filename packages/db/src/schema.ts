@@ -236,6 +236,8 @@ export const posts = pgTable(
     authorId: uuid('author_id').references(() => users.id, { onDelete: 'set null' }),
     text: text('text').notNull(),
     media: jsonb('media').$type<PostMedia[]>().notNull().default([]),
+    /** Per-network versions of the text ("customize for LinkedIn"), keyed by provider id. */
+    variants: jsonb('variants').$type<Partial<Record<string, string>>>().notNull().default({}),
     flowId: uuid('flow_id').references(() => flows.id, { onDelete: 'set null' }),
     status: postStatus('status').notNull().default('draft'),
     scheduledAt: timestamp('scheduled_at', { withTimezone: true }),
@@ -256,6 +258,8 @@ export const postTargets = pgTable(
     options: jsonb('options').$type<Record<string, string>>().notNull().default({}),
     /** Text adapted by a flow for this account; null means the post's text. */
     text: text('text'),
+    /** Minutes after the post's time (a flow's "Wait" steps), kept so rescheduling keeps the spacing. */
+    delayMinutes: integer('delay_minutes').notNull().default(0),
     status: targetStatus('status').notNull().default('pending'),
     attempts: integer('attempts').notNull().default(0),
     nextAttemptAt: timestamp('next_attempt_at', { withTimezone: true }).notNull().defaultNow(),

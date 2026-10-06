@@ -25,7 +25,9 @@ import type { ColorMode, ThemeCanvas } from '@postwerk/core/theme';
 import { catalog } from '@postwerk/providers/catalog';
 import { countText } from '@postwerk/providers/text';
 import { textLimit } from '@postwerk/providers/validate';
+import { loadPostAction } from '@/app/(app)/posts/actions';
 import { createFlowAction, deleteFlowAction, saveFlowAction, savePositionsAction } from '@/app/(world)/canvas/actions';
+import type { ComposerInitial } from '@/components/composer';
 import { AccountMenu } from '@/components/account-menu';
 import { ModeSwitch } from '@/components/mode-switch';
 import { VerifyBanner } from '@/components/verify-banner';
@@ -119,6 +121,8 @@ function WorldCanvas({ data }: { data: WorldData }) {
   const [selectedId, setSelectedId] = useState<string>();
   const [notice, setNotice] = useState(data.notice);
   const [mode, setMode] = useState<ColorMode>(data.appearance.mode);
+  const [composing, setComposing] = useState<ComposerInitial>();
+  const [composerKey, setComposerKey] = useState(0);
   const state = useRef({ nodes, edges });
   state.current = { nodes, edges };
   const timers = useRef(new Map<string, ReturnType<typeof setTimeout>>());
@@ -410,6 +414,24 @@ function WorldCanvas({ data }: { data: WorldData }) {
     [scheduleFlowSave, setNodes],
   );
 
+  const composeFrom = useCallback<WorldApi['composeFrom']>(
+    async (postId, asCopy = false) => {
+      const result = await loadPostAction(postId, asCopy);
+      if ('error' in result) {
+        setNotice({ kind: 'error', text: result.error });
+        return;
+      }
+      setComposing(result);
+      setComposerKey((key) => key + 1);
+      focus(ids.composer);
+    },
+    [focus],
+  );
+  const resetComposer = useCallback(() => {
+    setComposing(undefined);
+    setComposerKey((key) => key + 1);
+  }, []);
+
   // ---------------------------------------------------------------- render
   const api: WorldApi = useMemo(
     () => ({
@@ -423,8 +445,12 @@ function WorldCanvas({ data }: { data: WorldData }) {
       deleteFlow,
       saveState,
       plans,
+      composing,
+      composeFrom,
+      resetComposer,
+      composerKey,
     }),
-    [data, focus, addStep, updateStep, removeStep, renameFlow, deleteFlow, saveState, plans],
+    [data, focus, addStep, updateStep, removeStep, renameFlow, deleteFlow, saveState, plans, composing, composeFrom, resetComposer, composerKey],
   );
 
   const selected = nodes.find((node) => node.id === selectedId);

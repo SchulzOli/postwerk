@@ -4,7 +4,7 @@ import { getDb, type PostStatus } from '@postwerk/db';
 import { LocalTime } from '@/components/local-time';
 import { providerLabels } from '@/lib/platforms';
 import { requireSession } from '@/lib/session';
-import { removePost } from './actions';
+import { removePost, retryPostAction } from './actions';
 
 export const metadata = { title: 'Posts · Postwerk' };
 
@@ -40,6 +40,17 @@ export default async function PostsPage() {
               <div className="row">
                 <span className={`badge status-${post.status}`}>{statusLabels[post.status]}</span>
                 <span className="muted grow">{post.scheduledAt && <LocalTime iso={post.scheduledAt.toISOString()} />}</span>
+                {(post.status === 'scheduled' || post.status === 'draft' || post.status === 'failed') && (
+                  <Link href={`/posts/${post.id}/edit`} className="button secondary">Edit</Link>
+                )}
+                {(post.status === 'failed' || post.status === 'partial') && (
+                  <form action={retryPostAction.bind(null, post.id)}>
+                    <button type="submit" className="secondary">Retry failed</button>
+                  </form>
+                )}
+                {(post.status === 'published' || post.status === 'partial') && (
+                  <Link href={`/posts/new?from=${post.id}`} className="button secondary">Post again</Link>
+                )}
                 {(post.status === 'scheduled' || post.status === 'draft' || post.status === 'failed') && (
                   <form action={removePost}>
                     <input type="hidden" name="postId" value={post.id} />
