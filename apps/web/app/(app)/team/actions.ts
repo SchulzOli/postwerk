@@ -7,12 +7,15 @@ import {
   changeMemberRole,
   createInvite,
   createWorkspace,
+  inviteMail,
+  isMailConfigured,
   listMembers,
   PermissionError,
   removeMember,
   renameWorkspace,
   revokeInvite,
   roles,
+  sendMail,
   switchSessionWorkspace,
 } from '@postwerk/core';
 import { getDb, type MemberRole } from '@postwerk/db';
@@ -74,7 +77,17 @@ export async function inviteAction(_: TeamState, form: FormData): Promise<TeamSt
   if (!result.ok) return { error: result.error };
   await record({ action: 'member.invited', userId: session.user.id, workspaceId: session.workspace.id, target: email || 'an invite link', details: { role } });
   refresh();
-  return { success: email ? `Invite for ${email} created. Send them this link:` : 'Invite link created. Anyone with it can join once:', link: `${appUrl}/invite/${result.value.token}` };
+  const link = `${appUrl}/invite/${result.value.token}`;
+  if (email && isMailConfigured()) {
+    try {
+      await sendMail(inviteMail(email, { inviter: session.user.name, workspace: session.workspace.name, role: role === 'editor' ? 'an editor' : `an ${role}`, url: link }));
+      return { success: `We emailed the invite to ${email}. You can also share the link yourself:`, link };
+    } catch (error) {
+      console.error('invite email failed', error);
+      return { success: `The email to ${email} could not be sent. Share this link with them instead:`, link };
+    }
+  }
+  return { success: email ? `Invite for ${email} created. Send them this link:` : 'Invite link created. Anyone with it can join once:', link };
 }
 
 export async function revokeInviteAction(inviteId: string): Promise<{ error?: string }> {

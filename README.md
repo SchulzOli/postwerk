@@ -47,7 +47,7 @@ cp .env.example .env       # set ENCRYPTION_KEY, APP_URL, POSTGRES_PASSWORD
 docker compose --profile app up -d --build
 ```
 
-This starts Postgres, runs migrations, and launches the web app (port 3000) and the worker. Put a reverse proxy with HTTPS in front of the web app and set `APP_URL` to the public URL — OAuth callbacks depend on it.
+This starts Postgres, runs migrations, and launches the web app (port 3000) and the worker. Put a reverse proxy with HTTPS in front of the web app and set `APP_URL` to the public URL — OAuth callbacks and links in emails depend on it. The proxy should set `X-Forwarded-For`; login rate limits per IP rely on it (limits per email address do not).
 
 | Variable | Required | Description |
 |---|---|---|
@@ -56,6 +56,8 @@ This starts Postgres, runs migrations, and launches the web app (port 3000) and 
 | `APP_URL` | yes | Public URL without trailing slash |
 | `ENABLE_SANDBOX` | no | `true` shows the fake Sandbox network |
 | `WORKER_POLL_INTERVAL_MS` | no | How often the worker checks for due posts (default 10000) |
+| `SMTP_URL` | no | Outgoing mail for password resets, invites, email confirmation and failed-post alerts, e.g. `smtp://user:pass@smtp.example.com:587`. Without it, emails are printed to the log |
+| `MAIL_FROM` | no | Sender address, e.g. `Postwerk <postwerk@example.com>` |
 | `<NETWORK>_CLIENT_ID` / `_CLIENT_SECRET` | no | Operator developer apps, e.g. `INSTAGRAM_CLIENT_ID`. See [docs/PLATFORMS.md](docs/PLATFORMS.md) |
 
 ## Project structure

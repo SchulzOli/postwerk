@@ -1,5 +1,5 @@
 import { and, asc, eq, gt, isNull } from 'drizzle-orm';
-import { invites, sessions, users, workspaceMembers, workspaces, type Database, type MemberRole } from '@postwerk/db';
+import { invites, sessions, users, workspaceMembers, workspaces, type Database, type MemberRole, type Transaction as Tx } from '@postwerk/db';
 import { decrypt, encrypt } from './crypto';
 import { generateToken, hashToken } from './password';
 import { installBuiltinPlugins } from './plugins';
@@ -15,8 +15,6 @@ export interface Actor {
   userId: string;
   role: MemberRole;
 }
-
-type Tx = Parameters<Parameters<Database['transaction']>[0]>[0];
 
 export const canManageWorkspace = (role: MemberRole) => role === 'owner' || role === 'admin';
 

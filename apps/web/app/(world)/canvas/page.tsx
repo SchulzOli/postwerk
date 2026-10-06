@@ -1,5 +1,5 @@
 import { asc, eq } from 'drizzle-orm';
-import { isProviderAvailable, listFlows, listPosts, listWorkspaceAudit, loadCanvasPositions } from '@postwerk/core';
+import { isProviderAvailable, listFlows, listPosts, listWorkspaceAudit, loadCanvasPositions, needsEmailVerification } from '@postwerk/core';
 import { builtinThemes, defaultCanvas } from '@postwerk/core/theme';
 import { getDb, socialAccounts } from '@postwerk/db';
 import { getProvider, providerInfos } from '@postwerk/providers';
@@ -14,7 +14,7 @@ export const metadata = { title: 'Canvas · Postwerk' };
 export default async function CanvasPage({ searchParams }: { searchParams: Promise<Record<string, string | undefined>> }) {
   const session = await requireSession();
   const { user, workspace, role } = session;
-  const { connected, error } = await searchParams;
+  const { connected, error, notice } = await searchParams;
   const db = getDb();
   const canManage = role !== 'editor';
   const [accounts, flows, posts, positions, appearance, activity, team] = await Promise.all([
@@ -33,6 +33,7 @@ export default async function CanvasPage({ searchParams }: { searchParams: Promi
 
   const data: WorldData = {
     user: { name: user.name, email: user.email },
+    needsVerification: needsEmailVerification(user),
     workspace,
     workspaces: session.workspaces,
     team,
@@ -72,7 +73,15 @@ export default async function CanvasPage({ searchParams }: { searchParams: Promi
     ],
     activity: activity?.map(toActivity) ?? null,
     appearance: { mode: appearance.mode, themeId: appearance.theme?.id ?? null, canvas: appearance.theme?.canvas ?? defaultCanvas },
-    notice: connected ? { kind: 'success', text: `Connected ${connected}.` } : error ? { kind: 'error', text: error } : null,
+    notice: connected
+      ? { kind: 'success', text: `Connected ${connected}.` }
+      : error
+        ? { kind: 'error', text: error }
+        : notice === 'verified'
+          ? { kind: 'success', text: 'Thanks, your email address is confirmed.' }
+          : notice === 'verify-expired'
+            ? { kind: 'error', text: 'That confirmation link has expired. Send a new one from your account settings.' }
+            : null,
   };
   // A different workspace is a different world: remount instead of merging.
   return <World key={workspace.id} data={data} />;

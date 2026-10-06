@@ -39,8 +39,29 @@ export const users = pgTable('users', {
   email: text('email').notNull().unique(),
   name: text('name').notNull(),
   passwordHash: text('password_hash').notNull(),
+  /** Set once the user clicked the link we emailed them. */
+  emailVerifiedAt: timestamp('email_verified_at', { withTimezone: true }),
+  /** Email the user when one of their posts fails. */
+  notifyFailures: boolean('notify_failures').notNull().default(true),
   createdAt: createdAt(),
 });
+
+export const emailTokenKind = pgEnum('email_token_kind', ['verify_email', 'reset_password']);
+
+/** Single-use links we email (verification, password reset); only the hash is stored. */
+export const emailTokens = pgTable(
+  'email_tokens',
+  {
+    tokenHash: text('token_hash').primaryKey(),
+    userId: uuid('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+    kind: emailTokenKind('kind').notNull(),
+    /** The address the link was sent to (verification confirms exactly this one). */
+    email: text('email').notNull(),
+    expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
+    createdAt: createdAt(),
+  },
+  (t) => [index('email_tokens_user_idx').on(t.userId)],
+);
 
 export const sessions = pgTable(
   'sessions',

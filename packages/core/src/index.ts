@@ -13,3 +13,7 @@ export * from './ratelimit';
 export * from './audit';
 export * from './housekeeping';
 export * from './workspaces';
+export * from './mail';
+export * from './mail-templates';
+export * from './users';
+export * from './notifications';

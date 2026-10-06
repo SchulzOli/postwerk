@@ -47,6 +47,8 @@ export interface PluginData {
 
 export interface WorldData {
   user: { name: string; email: string };
+  /** Show the "confirm your email" reminder. */
+  needsVerification: boolean;
   workspace: { id: string; name: string };
   /** Every workspace the user belongs to, for the switcher. */
   workspaces: { id: string; name: string }[];

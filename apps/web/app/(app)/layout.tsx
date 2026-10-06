@@ -1,6 +1,8 @@
 import Link from 'next/link';
-import { logOut } from '../(auth)/actions';
+import { needsEmailVerification } from '@postwerk/core';
+import { AccountMenu } from '@/components/account-menu';
 import { ModeSwitch } from '@/components/mode-switch';
+import { VerifyBanner } from '@/components/verify-banner';
 import { WorkspaceMenu } from '@/components/workspace-menu';
 import { getAppearance } from '@/lib/appearance';
 import { requireSession } from '@/lib/session';
@@ -22,11 +24,10 @@ export default async function AppLayout({ children }: { children: React.ReactNod
         <div className="who">
           <WorkspaceMenu current={workspace} workspaces={workspaces} teamHref="/team" />
           <ModeSwitch mode={mode} />
-          <form action={logOut}>
-            <button type="submit" className="link" title={user.email}>Log out</button>
-          </form>
+          <AccountMenu user={{ name: user.name, email: user.email }} links={[{ href: '/canvas', label: 'Canvas' }]} />
         </div>
       </header>
+      {needsEmailVerification(user) && <VerifyBanner email={user.email} className="page-banner" />}
       <main className="page">{children}</main>
     </>
   );

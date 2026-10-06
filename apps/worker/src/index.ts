@@ -1,7 +1,8 @@
-import { runHousekeeping, runPublishCycle } from '@postwerk/core';
+import { notifyPostProblem, runHousekeeping, runPublishCycle } from '@postwerk/core';
 import { getDb } from '@postwerk/db';
 
 const intervalMs = Number(process.env.WORKER_POLL_INTERVAL_MS ?? 10_000);
+const appUrl = (process.env.APP_URL ?? 'http://localhost:3000').replace(/\/$/, '');
 const HOUSEKEEPING_MS = 60 * 60_000;
 let lastHousekeeping = 0;
 const db = getDb();
@@ -12,7 +13,7 @@ async function loop() {
   console.log(`postwerk worker started (polling every ${intervalMs / 1000}s)`);
   while (!stopping) {
     try {
-      const processed = await runPublishCycle(db);
+      const processed = await runPublishCycle(db, { onPostFinished: (post) => notifyPostProblem(db, post, appUrl).then(() => undefined) });
       if (processed > 0) console.log(`published ${processed} target(s)`);
     } catch (error) {
       console.error('publish cycle failed', error);

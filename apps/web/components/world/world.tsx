@@ -26,8 +26,9 @@ import { catalog } from '@postwerk/providers/catalog';
 import { countText } from '@postwerk/providers/text';
 import { textLimit } from '@postwerk/providers/validate';
 import { createFlowAction, deleteFlowAction, saveFlowAction, savePositionsAction } from '@/app/(world)/canvas/actions';
-import { logOut } from '@/app/(auth)/actions';
+import { AccountMenu } from '@/components/account-menu';
 import { ModeSwitch } from '@/components/mode-switch';
+import { VerifyBanner } from '@/components/verify-banner';
 import { WorkspaceMenu } from '@/components/workspace-menu';
 import { WorldContext, type SaveState, type WorldApi } from './context';
 import { Inspector } from './inspector';
@@ -501,12 +502,7 @@ function WorldCanvas({ data }: { data: WorldData }) {
           <WorkspaceMenu current={data.workspace} workspaces={data.workspaces} teamHref={`#n=${ids.region('team')}`} />
           <ModeSwitch mode={data.appearance.mode} onChange={setMode} />
           <a href={`#n=${ids.region('plugins')}`}>Themes</a>
-          <a href="/posts">List view</a>
-          <form action={logOut}>
-            <button type="submit" className="link" title={data.user.email}>
-              Log out
-            </button>
-          </form>
+          <AccountMenu user={data.user} links={[{ href: '/posts', label: 'List view' }]} />
         </Panel>
 
         {notice && (
@@ -515,6 +511,11 @@ function WorldCanvas({ data }: { data: WorldData }) {
             <button type="button" className="icon-button" aria-label="Dismiss" onClick={() => setNotice(null)}>
               ×
             </button>
+          </Panel>
+        )}
+        {data.needsVerification && (
+          <Panel position="bottom-center">
+            <VerifyBanner email={data.user.email} className="world-notice" />
           </Panel>
         )}
       </ReactFlow>
