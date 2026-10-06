@@ -48,6 +48,8 @@ export const sessions = pgTable(
     /** SHA-256 of the session token; the raw token only lives in the cookie. */
     id: text('id').primaryKey(),
     userId: uuid('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+    /** The workspace this session works in (switchable); null falls back to the user's first one. */
+    workspaceId: uuid('workspace_id').references(() => workspaces.id, { onDelete: 'set null' }),
     expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
     createdAt: createdAt(),
   },
@@ -71,6 +73,27 @@ export const workspaceMembers = pgTable(
     createdAt: createdAt(),
   },
   (t) => [primaryKey({ columns: [t.workspaceId, t.userId] }), index('workspace_members_user_idx').on(t.userId)],
+);
+
+/** Invitations to join a workspace; each link works once and expires. */
+export const invites = pgTable(
+  'invites',
+  {
+    id: id(),
+    workspaceId: uuid('workspace_id').notNull().references(() => workspaces.id, { onDelete: 'cascade' }),
+    /** Who it is meant for (shown, prefilled and emailed); anyone with the link can use it once. */
+    email: text('email'),
+    role: memberRole('role').notNull().default('editor'),
+    /** SHA-256 of the token for lookup, plus the token encrypted so admins can copy the link again. */
+    tokenHash: text('token_hash').notNull(),
+    tokenEnc: text('token_enc').notNull(),
+    invitedBy: uuid('invited_by').references(() => users.id, { onDelete: 'set null' }),
+    expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
+    acceptedAt: timestamp('accepted_at', { withTimezone: true }),
+    acceptedBy: uuid('accepted_by').references(() => users.id, { onDelete: 'set null' }),
+    createdAt: createdAt(),
+  },
+  (t) => [uniqueIndex('invites_token_idx').on(t.tokenHash), index('invites_workspace_idx').on(t.workspaceId)],
 );
 
 /** Plugins installed in a workspace (themes for now, see @postwerk/core/theme). */
@@ -238,6 +261,11 @@ export const postTargetsRelations = relations(postTargets, ({ one }) => ({
   account: one(socialAccounts, { fields: [postTargets.socialAccountId], references: [socialAccounts.id] }),
 }));
 
+export const invitesRelations = relations(invites, ({ one }) => ({
+  workspace: one(workspaces, { fields: [invites.workspaceId], references: [workspaces.id] }),
+  inviter: one(users, { fields: [invites.invitedBy], references: [users.id] }),
+}));
+
 export const workspaceMembersRelations = relations(workspaceMembers, ({ one }) => ({
   workspace: one(workspaces, { fields: [workspaceMembers.workspaceId], references: [workspaces.id] }),
   user: one(users, { fields: [workspaceMembers.userId], references: [users.id] }),
@@ -251,5 +279,7 @@ export type Flow = typeof flows.$inferSelect;
 export type PostTarget = typeof postTargets.$inferSelect;
 export type Plugin = typeof plugins.$inferSelect;
 export type AuditEntry = typeof auditLog.$inferSelect;
+export type Invite = typeof invites.$inferSelect;
+export type MemberRole = (typeof memberRole.enumValues)[number];
 export type PostStatus = (typeof postStatus.enumValues)[number];
 export type TargetStatus = (typeof targetStatus.enumValues)[number];

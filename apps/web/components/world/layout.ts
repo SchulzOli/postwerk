@@ -14,7 +14,8 @@ export type WorldNode =
   | Node<Record<string, never>, 'posts'>
   | Node<{ plugin: PluginData }, 'plugin'>
   | Node<Record<string, never>, 'pluginInstall'>
-  | Node<Record<string, never>, 'activity'>;
+  | Node<Record<string, never>, 'activity'>
+  | Node<Record<string, never>, 'members'>;
 
 /** Stable node ids double as deep-link targets (#n=<id>). */
 export const ids = {
@@ -28,6 +29,7 @@ export const ids = {
   plugin: (id: string) => `plugin:${id}`,
   pluginInstall: 'panel:add-theme',
   activity: 'panel:activity',
+  members: 'panel:members',
 };
 
 export const regionInfo: Record<RegionKey, { title: string; subtitle: string }> = {
@@ -130,7 +132,7 @@ export function buildWorld(data: WorldData, saved: Record<string, { x: number; y
     { key: 'accounts', position: { x: networksSize.width + 80, y: 0 }, size: { width: accountsSize.width, height: topHeight } },
     { key: 'compose', position: { x: networksSize.width + accountsSize.width + 160, y: 0 }, size: { width: 600, height: Math.max(topHeight, 980) } },
     { key: 'posts', position: { x: networksSize.width + accountsSize.width + 840, y: 0 }, size: { width: 600, height: Math.max(topHeight, 980) } },
-    { key: 'team', position: { x: networksSize.width + accountsSize.width + 1520, y: 0 }, size: { width: 600, height: Math.max(topHeight, 980) } },
+    { key: 'team', position: { x: networksSize.width + accountsSize.width + 1520, y: 0 }, size: { width: 1168, height: Math.max(topHeight, 980) } },
     { key: 'flows', position: { x: 0, y: flowsY }, size: { width: FLOW.width + PAD.x * 2, height: flowsHeight } },
     { key: 'plugins', position: { x: FLOW.width + PAD.x * 2 + 80, y: flowsY }, size: pluginsSize },
   ];
@@ -175,7 +177,8 @@ export function buildWorld(data: WorldData, saved: Record<string, { x: number; y
   nodes.push(
     { id: ids.composer, type: 'composer', parentId: ids.region('compose'), position: place(ids.composer, { x: PAD.x, y: PAD.top }), data: {}, deletable: false, dragHandle: '.panel-drag', style: { width: 536 } },
     { id: ids.posts, type: 'posts', parentId: ids.region('posts'), position: place(ids.posts, { x: PAD.x, y: PAD.top }), data: {}, deletable: false, dragHandle: '.panel-drag', style: { width: 536 } },
-    { id: ids.activity, type: 'activity', parentId: ids.region('team'), position: place(ids.activity, { x: PAD.x, y: PAD.top }), data: {}, deletable: false, dragHandle: '.panel-drag', style: { width: 536 } },
+    { id: ids.members, type: 'members', parentId: ids.region('team'), position: place(ids.members, { x: PAD.x, y: PAD.top }), data: {}, deletable: false, dragHandle: '.panel-drag', style: { width: 536 } },
+    { id: ids.activity, type: 'activity', parentId: ids.region('team'), position: place(ids.activity, { x: PAD.x + 568, y: PAD.top }), data: {}, deletable: false, dragHandle: '.panel-drag', style: { width: 536 } },
   );
 
   nodes.push({

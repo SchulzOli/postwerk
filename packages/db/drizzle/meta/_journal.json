@@ -36,6 +36,13 @@
       "when": 1791300425822,
       "tag": "0004_rate_limits_audit",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1791300861492,
+      "tag": "0005_workspaces_invites",
+      "breakpoints": true
     }
   ]
 }

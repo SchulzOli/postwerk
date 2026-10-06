@@ -12,3 +12,4 @@ export * from './plugins';
 export * from './ratelimit';
 export * from './audit';
 export * from './housekeeping';
+export * from './workspaces';

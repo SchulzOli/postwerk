@@ -1,5 +1,6 @@
 import type { FlowGraph } from '@postwerk/core/flow';
 import type { ColorMode, ThemeCanvas, ThemeManifest } from '@postwerk/core/theme';
+import type { TeamData } from '@/components/team';
 import type { ActivityItem } from '@/lib/activity';
 import type { FormField, PostStatus, TargetStatus } from './shared-types';
 import type { ProviderId, ProviderInfo } from '@postwerk/providers/catalog';
@@ -46,7 +47,10 @@ export interface PluginData {
 
 export interface WorldData {
   user: { name: string; email: string };
-  workspace: { name: string };
+  workspace: { id: string; name: string };
+  /** Every workspace the user belongs to, for the switcher. */
+  workspaces: { id: string; name: string }[];
+  team: TeamData;
   canManage: boolean;
   networks: NetworkData[];
   accounts: AccountData[];

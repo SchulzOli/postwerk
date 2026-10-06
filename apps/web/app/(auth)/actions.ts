@@ -3,17 +3,19 @@
 import { eq } from 'drizzle-orm';
 import { redirect } from 'next/navigation';
 import {
+  acceptInvite,
   checkRateLimit,
   clearRateLimit,
+  createWorkspace,
   hashPassword,
   hitRateLimit,
-  installBuiltinPlugins,
   limits,
+  PermissionError,
   rateLimitKey,
   retryIn,
   verifyPassword,
 } from '@postwerk/core';
-import { getDb, users, workspaceMembers, workspaces } from '@postwerk/db';
+import { getDb, users, type Database } from '@postwerk/db';
 import { record } from '@/lib/audit';
 import { clientIp } from '@/lib/request';
 import { createSession, destroySession } from '@/lib/session';
@@ -23,6 +25,20 @@ export type FormState = { error?: string; values?: { name?: string; email?: stri
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 // A real hash to compare against when the email is unknown, so timing does not reveal accounts.
 const dummyHash = hashPassword('postwerk-dummy-password');
+
+/** Joins the workspace of an invite link, if one came with the form; returns its id. */
+async function joinInvite(db: Database, form: FormData, userId: string): Promise<string | undefined> {
+  const token = String(form.get('invite') ?? '');
+  if (!token) return undefined;
+  try {
+    const { workspaceId, role, joined } = await acceptInvite(db, token, userId);
+    if (joined) await record({ action: 'member.joined', userId, workspaceId, details: { role } });
+    return workspaceId;
+  } catch (error) {
+    if (error instanceof PermissionError) return undefined; // Expired meanwhile: carry on without it.
+    throw error;
+  }
+}
 
 export async function signUp(_: FormState, form: FormData): Promise<FormState> {
   const name = String(form.get('name') ?? '').trim();
@@ -37,19 +53,18 @@ export async function signUp(_: FormState, form: FormData): Promise<FormState> {
   const limit = await hitRateLimit(db, rateLimitKey('signup:ip', await clientIp()), limits.signupIp);
   if (!limit.allowed) return { error: `Too many sign-ups from your network. Please try again ${retryIn(limit.retryAfterMs)}.`, values };
   const passwordHash = await hashPassword(password);
-  const created = await db.transaction(async (tx) => {
-    const [user] = await tx.insert(users).values({ name, email, passwordHash }).onConflictDoNothing().returning({ id: users.id });
-    if (!user) return null;
-    const [workspace] = await tx.insert(workspaces).values({ name: `${name}'s workspace` }).returning({ id: workspaces.id });
-    await tx.insert(workspaceMembers).values({ workspaceId: workspace!.id, userId: user.id, role: 'owner' });
-    await installBuiltinPlugins(tx, workspace!.id);
-    return { user: user.id, workspace: workspace!.id };
-  });
-  if (!created) return { error: 'An account with this email already exists.', values };
-  await record({ action: 'user.signed_up', userId: created.user });
-  await record({ action: 'workspace.created', userId: created.user, workspaceId: created.workspace, target: `${name}'s workspace` });
+  const [user] = await db.insert(users).values({ name, email, passwordHash }).onConflictDoNothing().returning({ id: users.id });
+  if (!user) return { error: 'An account with this email already exists. Log in instead.', values };
+  await record({ action: 'user.signed_up', userId: user.id });
 
-  await createSession(created.user);
+  // Invited people land in that workspace; everyone else gets their own.
+  let workspaceId = await joinInvite(db, form, user.id);
+  if (!workspaceId) {
+    const workspace = await createWorkspace(db, user.id, `${name}'s workspace`);
+    await record({ action: 'workspace.created', userId: user.id, workspaceId: workspace.id, target: workspace.name });
+    workspaceId = workspace.id;
+  }
+  await createSession(user.id, workspaceId);
   redirect('/canvas#n=region:networks');
 }
 
@@ -80,7 +95,7 @@ export async function logIn(_: FormState, form: FormData): Promise<FormState> {
 
   await clearRateLimit(db, emailKey);
   await record({ action: 'login.succeeded', userId: user.id });
-  await createSession(user.id);
+  await createSession(user.id, await joinInvite(db, form, user.id));
   redirect('/canvas');
 }
 

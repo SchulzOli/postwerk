@@ -7,6 +7,7 @@ import { catalog } from '@postwerk/providers/catalog';
 import { Composer } from '@/components/composer';
 import { LocalTime } from '@/components/local-time';
 import { RelativeTime } from '@/components/relative-time';
+import { TeamPanel } from '@/components/team';
 import { ThemePreview } from '@/components/theme-preview';
 import { submitPost } from '@/app/(app)/posts/actions';
 import { chooseThemeAction, installBuiltinPluginAction } from '@/app/(world)/canvas/actions';
@@ -332,6 +333,20 @@ export function ActivityNode({ selected }: Props<'activity'>) {
   );
 }
 
+export function MembersNode({ selected }: Props<'members'>) {
+  const world = useWorld();
+  return (
+    <div className={`world-panel ${selected ? 'is-selected' : ''}`}>
+      <header className="panel-drag">
+        {world.data.workspace.name} <span className="muted">{world.data.team.members.length} {world.data.team.members.length === 1 ? 'member' : 'members'}</span>
+      </header>
+      <div className="nodrag nowheel nopan panel-body">
+        <TeamPanel data={world.data.team} />
+      </div>
+    </div>
+  );
+}
+
 export const nodeTypes = {
   region: RegionNode,
   network: NetworkNode,
@@ -343,4 +358,5 @@ export const nodeTypes = {
   plugin: PluginNode,
   pluginInstall: PluginInstallNode,
   activity: ActivityNode,
+  members: MembersNode,
 };

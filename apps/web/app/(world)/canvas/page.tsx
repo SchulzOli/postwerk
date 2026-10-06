@@ -7,15 +7,17 @@ import { World, type WorldData } from '@/components/world/world';
 import { toActivity } from '@/lib/activity-server';
 import { getAppearance } from '@/lib/appearance';
 import { requireSession } from '@/lib/session';
+import { loadTeam } from '@/lib/team';
 
 export const metadata = { title: 'Canvas · Postwerk' };
 
 export default async function CanvasPage({ searchParams }: { searchParams: Promise<Record<string, string | undefined>> }) {
-  const { user, workspace, role } = await requireSession();
+  const session = await requireSession();
+  const { user, workspace, role } = session;
   const { connected, error } = await searchParams;
   const db = getDb();
   const canManage = role !== 'editor';
-  const [accounts, flows, posts, positions, appearance, activity] = await Promise.all([
+  const [accounts, flows, posts, positions, appearance, activity, team] = await Promise.all([
     db.query.socialAccounts.findMany({
       where: eq(socialAccounts.workspaceId, workspace.id),
       orderBy: [asc(socialAccounts.provider), asc(socialAccounts.handle)],
@@ -25,12 +27,15 @@ export default async function CanvasPage({ searchParams }: { searchParams: Promi
     loadCanvasPositions(db, workspace.id),
     getAppearance(),
     canManage ? listWorkspaceAudit(db, workspace.id, { limit: 30 }) : null,
+    loadTeam(session),
   ]);
   const installed = new Set(appearance.installed.map((plugin) => plugin.id));
 
   const data: WorldData = {
     user: { name: user.name, email: user.email },
-    workspace: { name: workspace.name },
+    workspace,
+    workspaces: session.workspaces,
+    team,
     canManage,
     networks: providerInfos
       .filter((info) => info.id !== 'sandbox' || isProviderAvailable('sandbox'))
@@ -69,5 +74,6 @@ export default async function CanvasPage({ searchParams }: { searchParams: Promi
     appearance: { mode: appearance.mode, themeId: appearance.theme?.id ?? null, canvas: appearance.theme?.canvas ?? defaultCanvas },
     notice: connected ? { kind: 'success', text: `Connected ${connected}.` } : error ? { kind: 'error', text: error } : null,
   };
-  return <World data={data} />;
+  // A different workspace is a different world: remount instead of merging.
+  return <World key={workspace.id} data={data} />;
 }

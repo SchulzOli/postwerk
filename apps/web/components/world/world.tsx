@@ -28,6 +28,7 @@ import { textLimit } from '@postwerk/providers/validate';
 import { createFlowAction, deleteFlowAction, saveFlowAction, savePositionsAction } from '@/app/(world)/canvas/actions';
 import { logOut } from '@/app/(auth)/actions';
 import { ModeSwitch } from '@/components/mode-switch';
+import { WorkspaceMenu } from '@/components/workspace-menu';
 import { WorldContext, type SaveState, type WorldApi } from './context';
 import { Inspector } from './inspector';
 import { buildWorld, flowEdges, flowFrameHeight, flowNodes, FLOW, ids, nextFlowPosition, regionInfo, STEP_WIDTH, stepNode, type RegionKey, type WorldNode } from './layout';
@@ -46,7 +47,7 @@ const patterns: Record<Exclude<ThemeCanvas['pattern'], 'none'>, BackgroundVarian
 };
 const edgeTypes: Record<ThemeCanvas['edges'], string> = { smoothstep: 'smoothstep', bezier: 'default', step: 'step', straight: 'straight' };
 /** Minimap color per node type (theme tokens). */
-const tints: Partial<Record<string, string>> = { pluginInstall: 'plugin', activity: 'account' };
+const tints: Partial<Record<string, string>> = { pluginInstall: 'plugin', activity: 'account', members: 'account' };
 
 function serializeFlow(flowId: string, nodes: WorldNode[], edges: Edge[]): FlowGraph {
   const steps = nodes
@@ -93,6 +94,8 @@ function label(node: WorldNode): string {
       return 'Theme editor';
     case 'activity':
       return 'Activity';
+    case 'members':
+      return 'Members and invites';
     default:
       return '';
   }
@@ -495,7 +498,7 @@ function WorldCanvas({ data }: { data: WorldData }) {
         </Panel>
 
         <Panel position="top-right" className="world-account">
-          <span className="muted">{data.workspace.name}</span>
+          <WorkspaceMenu current={data.workspace} workspaces={data.workspaces} teamHref={`#n=${ids.region('team')}`} />
           <ModeSwitch mode={data.appearance.mode} onChange={setMode} />
           <a href={`#n=${ids.region('plugins')}`}>Themes</a>
           <a href="/posts">List view</a>

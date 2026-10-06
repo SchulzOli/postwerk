@@ -7,14 +7,19 @@ import type { FormState } from '@/app/(auth)/actions';
 interface Props {
   mode: 'login' | 'signup';
   action: (state: FormState, form: FormData) => Promise<FormState>;
+  /** An invite link this form should accept after signing in. */
+  invite?: { token: string; email: string | null; workspace: string };
 }
 
-export function AuthForm({ mode, action }: Props) {
+export function AuthForm({ mode, action, invite }: Props) {
   const [state, formAction, pending] = useActionState(action, {});
   const signup = mode === 'signup';
+  const query = invite ? `?invite=${encodeURIComponent(invite.token)}` : '';
   return (
     <form action={formAction} className="card stack auth-card">
       <h1>{signup ? 'Create your account' : 'Welcome back'}</h1>
+      {invite && <p className="muted">You will join {invite.workspace} right after.</p>}
+      {invite && <input type="hidden" name="invite" value={invite.token} />}
       {signup && (
         <label>
           Name
@@ -23,7 +28,7 @@ export function AuthForm({ mode, action }: Props) {
       )}
       <label>
         Email
-        <input name="email" type="email" autoComplete="email" defaultValue={state.values?.email} required />
+        <input name="email" type="email" autoComplete="email" defaultValue={state.values?.email ?? invite?.email ?? undefined} required />
       </label>
       <label>
         Password
@@ -41,9 +46,9 @@ export function AuthForm({ mode, action }: Props) {
       </button>
       <p className="muted">
         {signup ? (
-          <>Already have an account? <Link href="/login">Log in</Link></>
+          <>Already have an account? <Link href={`/login${query}`}>Log in</Link></>
         ) : (
-          <>New here? <Link href="/signup">Create an account</Link></>
+          <>New here? <Link href={`/signup${query}`}>Create an account</Link></>
         )}
       </p>
     </form>
