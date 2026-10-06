@@ -5,6 +5,7 @@ import { redirect } from 'next/navigation';
 import { createOAuthState, deleteAccount, getOrRegisterMastodonApp, isProviderAvailable, oauthClientFor, saveConnectedAccounts } from '@postwerk/core';
 import { getDb } from '@postwerk/db';
 import { codeChallenge, generateCodeVerifier, getProvider, isProviderId, Mastodon, ProviderError } from '@postwerk/providers';
+import { record } from '@/lib/audit';
 import { appUrl, redirectUriFor } from '@/lib/env';
 import { requireAdmin } from '@/lib/session';
 
@@ -34,7 +35,7 @@ export async function connectMastodon(_: ConnectState, form: FormData): Promise<
 
 /** Networks connected with a form (Bluesky app password, Telegram bot, Discord webhook, Sandbox). */
 export async function connectWithForm(providerId: string, _: ConnectState, form: FormData): Promise<ConnectState> {
-  const { workspace } = await requireAdmin();
+  const { user, workspace } = await requireAdmin();
   if (!isProviderId(providerId) || !isProviderAvailable(providerId)) return { error: 'This network is not available.' };
   const provider = getProvider(providerId);
   if (provider.connector.kind !== 'form') return { error: 'This network is not connected with a form.' };
@@ -48,6 +49,9 @@ export async function connectWithForm(providerId: string, _: ConnectState, form:
   try {
     const accounts = await provider.connector.connect(values);
     await saveConnectedAccounts(getDb(), workspace.id, providerId, accounts);
+    for (const account of accounts) {
+      await record({ action: 'account.connected', userId: user.id, workspaceId: workspace.id, target: account.profile.handle, details: { provider: providerId } });
+    }
     revalidatePath('/accounts');
     revalidatePath('/canvas');
     return { success: `Connected ${accounts.map((a) => a.profile.handle).join(', ')}.` };
@@ -83,8 +87,11 @@ export async function startOAuth(providerId: string) {
 }
 
 export async function disconnectAccount(form: FormData) {
-  const { workspace } = await requireAdmin();
-  await deleteAccount(getDb(), workspace.id, String(form.get('accountId')));
+  const { user, workspace } = await requireAdmin();
+  const deleted = await deleteAccount(getDb(), workspace.id, String(form.get('accountId')));
+  if (deleted) {
+    await record({ action: 'account.disconnected', userId: user.id, workspaceId: workspace.id, target: deleted.handle, details: { provider: deleted.provider } });
+  }
   revalidatePath('/accounts');
   revalidatePath('/canvas');
 }

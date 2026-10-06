@@ -2,6 +2,7 @@ import { NextResponse, type NextRequest } from 'next/server';
 import { consumeOAuthState, getOrRegisterMastodonApp, oauthClientFor, saveConnectedAccounts } from '@postwerk/core';
 import { getDb } from '@postwerk/db';
 import { getProvider, isProviderId, Mastodon, ProviderError, type ConnectedAccount } from '@postwerk/providers';
+import { record } from '@/lib/audit';
 import { appUrl, redirectUriFor } from '@/lib/env';
 import { getSession } from '@/lib/session';
 
@@ -42,6 +43,9 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       accounts = await provider.connector.exchange(client, { code, redirectUri, codeVerifier: state.data.codeVerifier });
     }
     await saveConnectedAccounts(db, state.workspaceId, providerId, accounts);
+    for (const account of accounts) {
+      await record({ action: 'account.connected', userId: session.user.id, workspaceId: state.workspaceId, target: account.profile.handle, details: { provider: providerId } });
+    }
     return back({ connected: accounts.map((account) => account.profile.handle).join(', ') }, providerId);
   } catch (error) {
     if (!(error instanceof ProviderError)) console.error(error);

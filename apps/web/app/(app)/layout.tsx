@@ -5,7 +5,7 @@ import { getAppearance } from '@/lib/appearance';
 import { requireSession } from '@/lib/session';
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
-  const { user, workspace } = await requireSession();
+  const { user, workspace, role } = await requireSession();
   const { mode } = await getAppearance();
   return (
     <>
@@ -15,6 +15,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
           <Link href="/canvas">Canvas</Link>
           <Link href="/posts">Posts</Link>
           <Link href="/accounts">Accounts</Link>
+          {role !== 'editor' && <Link href="/activity">Activity</Link>}
         </nav>
         <div className="who">
           <span className="muted">{workspace.name}</span>

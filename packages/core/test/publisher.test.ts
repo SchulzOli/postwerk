@@ -174,8 +174,8 @@ describe.skipIf(!url)('publishing (Postgres)', () => {
     const now = await post('Now', [account.id]);
     await runPublishCycle(db);
 
-    expect(await deletePost(db, workspaceId, now)).toBe(false);
-    expect(await deletePost(db, workspaceId, later)).toBe(true);
+    expect(await deletePost(db, workspaceId, now)).toBeUndefined();
+    expect(await deletePost(db, workspaceId, later)).toBe('Later');
     expect(await getPost(later)).toBeUndefined();
   });
 

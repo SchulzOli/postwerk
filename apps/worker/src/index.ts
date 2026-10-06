@@ -1,7 +1,9 @@
-import { runPublishCycle } from '@postwerk/core';
+import { runHousekeeping, runPublishCycle } from '@postwerk/core';
 import { getDb } from '@postwerk/db';
 
 const intervalMs = Number(process.env.WORKER_POLL_INTERVAL_MS ?? 10_000);
+const HOUSEKEEPING_MS = 60 * 60_000;
+let lastHousekeeping = 0;
 const db = getDb();
 let stopping = false;
 let wake: (() => void) | undefined;
@@ -14,6 +16,10 @@ async function loop() {
       if (processed > 0) console.log(`published ${processed} target(s)`);
     } catch (error) {
       console.error('publish cycle failed', error);
+    }
+    if (Date.now() - lastHousekeeping > HOUSEKEEPING_MS) {
+      lastHousekeeping = Date.now();
+      await runHousekeeping(db).catch((error: unknown) => console.error('housekeeping failed', error));
     }
     await new Promise<void>((resolve) => {
       wake = resolve;

@@ -5,10 +5,14 @@ import { redirect } from 'next/navigation';
 import { createPost, deletePost } from '@postwerk/core';
 import { getDb } from '@postwerk/db';
 import { isProviderId, type ProviderId } from '@postwerk/providers';
+import { record } from '@/lib/audit';
 import { parseMediaLines } from '@/lib/media';
 import { requireSession } from '@/lib/session';
 
 export type ComposeState = { errors?: string[] };
+
+/** The start of a post, for the activity log. */
+const excerpt = (text: string) => (text.length > 80 ? `${text.slice(0, 79)}…` : text) || '(media only)';
 
 /** Collects "option:<provider>:<key>" form fields into `{ provider: { key: value } }`. */
 function readOptions(form: FormData): Partial<Record<ProviderId, Record<string, string>>> {
@@ -46,14 +50,16 @@ export async function submitPost(_: ComposeState, form: FormData): Promise<Compo
     scheduledAt,
   });
   if (!result.ok) return { errors: result.errors };
+  await record({ action: 'post.created', userId: user.id, workspaceId: workspace.id, target: excerpt(text), details: { scheduled: scheduledAt !== null } });
   revalidatePath('/posts');
   revalidatePath('/canvas');
   redirect(form.get('returnTo') === '/canvas' ? '/canvas#n=panel:posts' : '/posts');
 }
 
 export async function removePost(form: FormData) {
-  const { workspace } = await requireSession();
-  await deletePost(getDb(), workspace.id, String(form.get('postId')));
+  const { user, workspace } = await requireSession();
+  const text = await deletePost(getDb(), workspace.id, String(form.get('postId')));
+  if (text !== undefined) await record({ action: 'post.deleted', userId: user.id, workspaceId: workspace.id, target: excerpt(text) });
   revalidatePath('/posts');
   revalidatePath('/canvas');
 }

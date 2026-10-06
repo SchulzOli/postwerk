@@ -2,7 +2,7 @@ import type { Edge, Node } from '@xyflow/react';
 import type { FlowStep } from '@postwerk/core/flow';
 import type { AccountData, FlowData, NetworkData, PluginData, WorldData } from './types';
 
-export type RegionKey = 'networks' | 'accounts' | 'flows' | 'compose' | 'posts' | 'plugins';
+export type RegionKey = 'networks' | 'accounts' | 'flows' | 'compose' | 'posts' | 'plugins' | 'team';
 
 export type WorldNode =
   | Node<{ region: RegionKey; title: string; subtitle: string }, 'region'>
@@ -13,7 +13,8 @@ export type WorldNode =
   | Node<Record<string, never>, 'composer'>
   | Node<Record<string, never>, 'posts'>
   | Node<{ plugin: PluginData }, 'plugin'>
-  | Node<Record<string, never>, 'pluginInstall'>;
+  | Node<Record<string, never>, 'pluginInstall'>
+  | Node<Record<string, never>, 'activity'>;
 
 /** Stable node ids double as deep-link targets (#n=<id>). */
 export const ids = {
@@ -26,6 +27,7 @@ export const ids = {
   posts: 'panel:posts',
   plugin: (id: string) => `plugin:${id}`,
   pluginInstall: 'panel:add-theme',
+  activity: 'panel:activity',
 };
 
 export const regionInfo: Record<RegionKey, { title: string; subtitle: string }> = {
@@ -35,6 +37,7 @@ export const regionInfo: Record<RegionKey, { title: string; subtitle: string }> 
   compose: { title: 'Compose', subtitle: 'Write once, publish everywhere' },
   posts: { title: 'Posts', subtitle: 'What went out and what is coming' },
   plugins: { title: 'Plugins', subtitle: 'Themes for how Postwerk looks — each one with a light and a dark mode' },
+  team: { title: 'Team', subtitle: 'Who works here and what happened' },
 };
 
 const NETWORK = { width: 240, height: 112, gap: 20, columns: 4 };
@@ -127,6 +130,7 @@ export function buildWorld(data: WorldData, saved: Record<string, { x: number; y
     { key: 'accounts', position: { x: networksSize.width + 80, y: 0 }, size: { width: accountsSize.width, height: topHeight } },
     { key: 'compose', position: { x: networksSize.width + accountsSize.width + 160, y: 0 }, size: { width: 600, height: Math.max(topHeight, 980) } },
     { key: 'posts', position: { x: networksSize.width + accountsSize.width + 840, y: 0 }, size: { width: 600, height: Math.max(topHeight, 980) } },
+    { key: 'team', position: { x: networksSize.width + accountsSize.width + 1520, y: 0 }, size: { width: 600, height: Math.max(topHeight, 980) } },
     { key: 'flows', position: { x: 0, y: flowsY }, size: { width: FLOW.width + PAD.x * 2, height: flowsHeight } },
     { key: 'plugins', position: { x: FLOW.width + PAD.x * 2 + 80, y: flowsY }, size: pluginsSize },
   ];
@@ -171,6 +175,7 @@ export function buildWorld(data: WorldData, saved: Record<string, { x: number; y
   nodes.push(
     { id: ids.composer, type: 'composer', parentId: ids.region('compose'), position: place(ids.composer, { x: PAD.x, y: PAD.top }), data: {}, deletable: false, dragHandle: '.panel-drag', style: { width: 536 } },
     { id: ids.posts, type: 'posts', parentId: ids.region('posts'), position: place(ids.posts, { x: PAD.x, y: PAD.top }), data: {}, deletable: false, dragHandle: '.panel-drag', style: { width: 536 } },
+    { id: ids.activity, type: 'activity', parentId: ids.region('team'), position: place(ids.activity, { x: PAD.x, y: PAD.top }), data: {}, deletable: false, dragHandle: '.panel-drag', style: { width: 536 } },
   );
 
   nodes.push({

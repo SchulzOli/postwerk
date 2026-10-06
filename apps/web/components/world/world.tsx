@@ -46,7 +46,7 @@ const patterns: Record<Exclude<ThemeCanvas['pattern'], 'none'>, BackgroundVarian
 };
 const edgeTypes: Record<ThemeCanvas['edges'], string> = { smoothstep: 'smoothstep', bezier: 'default', step: 'step', straight: 'straight' };
 /** Minimap color per node type (theme tokens). */
-const tints: Partial<Record<string, string>> = { pluginInstall: 'plugin' };
+const tints: Partial<Record<string, string>> = { pluginInstall: 'plugin', activity: 'account' };
 
 function serializeFlow(flowId: string, nodes: WorldNode[], edges: Edge[]): FlowGraph {
   const steps = nodes
@@ -91,6 +91,8 @@ function label(node: WorldNode): string {
       return `${node.data.plugin.manifest.name} (theme)`;
     case 'pluginInstall':
       return 'Theme editor';
+    case 'activity':
+      return 'Activity';
     default:
       return '';
   }

@@ -1,5 +1,6 @@
 import type { FlowGraph } from '@postwerk/core/flow';
 import type { ColorMode, ThemeCanvas, ThemeManifest } from '@postwerk/core/theme';
+import type { ActivityItem } from '@/lib/activity';
 import type { FormField, PostStatus, TargetStatus } from './shared-types';
 import type { ProviderId, ProviderInfo } from '@postwerk/providers/catalog';
 
@@ -55,5 +56,7 @@ export interface WorldData {
   /** Built-ins first (installed or not, so their cards keep their place), then custom themes. */
   plugins: PluginData[];
   appearance: { mode: ColorMode; themeId: string | null; canvas: ThemeCanvas };
+  /** Latest workspace activity; null for members who may not see it (editors). */
+  activity: ActivityItem[] | null;
   notice: { kind: 'success' | 'error'; text: string } | null;
 }

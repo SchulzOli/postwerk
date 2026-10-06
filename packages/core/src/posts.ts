@@ -92,13 +92,13 @@ export async function createPost(db: Database, input: CreatePostInput): Promise<
   return { ok: true, postId };
 }
 
-/** Deletes a post unless it has already (partly) gone out. */
-export async function deletePost(db: Database, workspaceId: string, postId: string): Promise<boolean> {
-  const deleted = await db
+/** Deletes a post unless it has already (partly) gone out; returns its text, or undefined if nothing was deleted. */
+export async function deletePost(db: Database, workspaceId: string, postId: string): Promise<string | undefined> {
+  const [deleted] = await db
     .delete(posts)
     .where(and(eq(posts.id, postId), eq(posts.workspaceId, workspaceId), notInArray(posts.status, ['publishing', 'published', 'partial'])))
-    .returning({ id: posts.id });
-  return deleted.length > 0;
+    .returning({ text: posts.text });
+  return deleted?.text;
 }
 
 export async function listPosts(db: Database, workspaceId: string) {

@@ -6,10 +6,12 @@ import { stepLabels, type FlowStep } from '@postwerk/core/flow';
 import { catalog } from '@postwerk/providers/catalog';
 import { Composer } from '@/components/composer';
 import { LocalTime } from '@/components/local-time';
+import { RelativeTime } from '@/components/relative-time';
 import { ThemePreview } from '@/components/theme-preview';
 import { submitPost } from '@/app/(app)/posts/actions';
 import { chooseThemeAction, installBuiltinPluginAction } from '@/app/(world)/canvas/actions';
 import { useWorld } from './context';
+import { describeActivity, isWarning } from '@/lib/activity';
 import { ids, type WorldNode } from './layout';
 
 type Props<T extends WorldNode['type']> = NodeProps<Extract<WorldNode, { type: T }>>;
@@ -303,6 +305,33 @@ export function PluginInstallNode({ id, selected }: Props<'pluginInstall'>) {
   );
 }
 
+export function ActivityNode({ selected }: Props<'activity'>) {
+  const world = useWorld();
+  const items = world.data.activity;
+  return (
+    <div className={`world-panel ${selected ? 'is-selected' : ''}`}>
+      <header className="panel-drag">
+        Activity {items && <a className="small-link nodrag" href="/activity">All activity →</a>}
+      </header>
+      <div className="nodrag nowheel nopan panel-body">
+        {items === null ? (
+          <p className="muted">Only workspace owners and admins can see the activity log.</p>
+        ) : items.length === 0 ? (
+          <p className="muted">Nothing has happened yet.</p>
+        ) : (
+          <ul className="activity-list">
+            {items.map((item) => (
+              <li key={item.id} className={isWarning(item) ? 'activity-warn' : undefined}>
+                <span>{describeActivity(item)}</span> <small className="muted"><RelativeTime iso={item.createdAt} /></small>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+    </div>
+  );
+}
+
 export const nodeTypes = {
   region: RegionNode,
   network: NetworkNode,
@@ -313,4 +342,5 @@ export const nodeTypes = {
   posts: PostsNode,
   plugin: PluginNode,
   pluginInstall: PluginInstallNode,
+  activity: ActivityNode,
 };

@@ -31,8 +31,10 @@ export async function saveFlow(db: Database, workspaceId: string, flowId: string
   return updated.length > 0;
 }
 
+/** Returns the deleted flow's name, or undefined if there was none. */
 export async function deleteFlow(db: Database, workspaceId: string, flowId: string) {
-  await db.delete(flows).where(and(eq(flows.id, flowId), eq(flows.workspaceId, workspaceId)));
+  const [deleted] = await db.delete(flows).where(and(eq(flows.id, flowId), eq(flows.workspaceId, workspaceId))).returning({ name: flows.name });
+  return deleted?.name;
 }
 
 export async function loadCanvasPositions(db: Database, workspaceId: string): Promise<Record<string, { x: number; y: number }>> {

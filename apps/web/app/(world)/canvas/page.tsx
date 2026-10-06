@@ -1,9 +1,10 @@
 import { asc, eq } from 'drizzle-orm';
-import { isProviderAvailable, listFlows, listPosts, loadCanvasPositions } from '@postwerk/core';
+import { isProviderAvailable, listFlows, listPosts, listWorkspaceAudit, loadCanvasPositions } from '@postwerk/core';
 import { builtinThemes, defaultCanvas } from '@postwerk/core/theme';
 import { getDb, socialAccounts } from '@postwerk/db';
 import { getProvider, providerInfos } from '@postwerk/providers';
 import { World, type WorldData } from '@/components/world/world';
+import { toActivity } from '@/lib/activity-server';
 import { getAppearance } from '@/lib/appearance';
 import { requireSession } from '@/lib/session';
 
@@ -13,7 +14,8 @@ export default async function CanvasPage({ searchParams }: { searchParams: Promi
   const { user, workspace, role } = await requireSession();
   const { connected, error } = await searchParams;
   const db = getDb();
-  const [accounts, flows, posts, positions, appearance] = await Promise.all([
+  const canManage = role !== 'editor';
+  const [accounts, flows, posts, positions, appearance, activity] = await Promise.all([
     db.query.socialAccounts.findMany({
       where: eq(socialAccounts.workspaceId, workspace.id),
       orderBy: [asc(socialAccounts.provider), asc(socialAccounts.handle)],
@@ -22,13 +24,14 @@ export default async function CanvasPage({ searchParams }: { searchParams: Promi
     listPosts(db, workspace.id),
     loadCanvasPositions(db, workspace.id),
     getAppearance(),
+    canManage ? listWorkspaceAudit(db, workspace.id, { limit: 30 }) : null,
   ]);
   const installed = new Set(appearance.installed.map((plugin) => plugin.id));
 
   const data: WorldData = {
     user: { name: user.name, email: user.email },
     workspace: { name: workspace.name },
-    canManage: role !== 'editor',
+    canManage,
     networks: providerInfos
       .filter((info) => info.id !== 'sandbox' || isProviderAvailable('sandbox'))
       .map((info) => {
@@ -62,6 +65,7 @@ export default async function CanvasPage({ searchParams }: { searchParams: Promi
       ...builtinThemes.map((manifest) => ({ manifest, builtin: true, installed: installed.has(manifest.id) })),
       ...appearance.installed.filter((plugin) => !plugin.builtin).map((plugin) => ({ manifest: plugin.manifest, builtin: false, installed: true })),
     ],
+    activity: activity?.map(toActivity) ?? null,
     appearance: { mode: appearance.mode, themeId: appearance.theme?.id ?? null, canvas: appearance.theme?.canvas ?? defaultCanvas },
     notice: connected ? { kind: 'success', text: `Connected ${connected}.` } : error ? { kind: 'error', text: error } : null,
   };

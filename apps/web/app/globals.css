@@ -239,6 +239,7 @@ code { font-family: var(--font-mono); font-size: 0.85em; background: var(--field
 .region-compose { border-color: color-mix(in srgb, var(--tint-composer) 45%, var(--border)); }
 .region-posts { border-color: color-mix(in srgb, var(--tint-posts) 45%, var(--border)); }
 .region-plugins { border-color: color-mix(in srgb, var(--tint-plugin) 45%, var(--border)); }
+.region-team { border-color: color-mix(in srgb, var(--tint-account) 45%, var(--border)); }
 
 .world-card {
   background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-card);
@@ -284,6 +285,9 @@ code { font-family: var(--font-mono); font-size: 0.85em; background: var(--field
 .panel-body { padding: 1rem; max-height: 900px; overflow: auto; cursor: auto; }
 .world-panel .card { border: 0; padding: 0; background: transparent; }
 .post-mini { border-bottom: 1px solid var(--border); padding-bottom: 0.6rem; display: flex; flex-direction: column; gap: 0.3rem; }
+.activity-list { display: flex; flex-direction: column; gap: 0.45rem; font-size: 0.9rem; }
+.activity-list li + li { border-top: 1px solid var(--border); padding-top: 0.45rem; }
+.activity-warn > span { color: var(--warn); }
 .chip { font-size: 0.78rem; border: 1px solid var(--border); border-radius: 999px; padding: 0.05rem 0.55rem; text-decoration: none; color: var(--muted); }
 .chip-published { color: var(--success); border-color: currentColor; }
 .chip-failed { color: var(--error); border-color: currentColor; }

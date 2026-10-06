@@ -202,7 +202,36 @@ export const postTargets = pgTable(
   ],
 );
 
+/** Fixed-window counters for rate limits (login attempts, sign-ups, reset emails…), shared by all app instances. */
+export const rateLimits = pgTable('rate_limits', {
+  key: text('key').primaryKey(),
+  count: integer('count').notNull(),
+  resetAt: timestamp('reset_at', { withTimezone: true }).notNull(),
+});
+
+/** Security and admin events. Workspace events are shown to owners and admins; sign-ins belong to the user only. */
+export const auditLog = pgTable(
+  'audit_log',
+  {
+    id: id(),
+    workspaceId: uuid('workspace_id').references(() => workspaces.id, { onDelete: 'cascade' }),
+    userId: uuid('user_id').references(() => users.id, { onDelete: 'set null' }),
+    /** e.g. "login.failed", "account.connected", "member.role_changed". */
+    action: text('action').notNull(),
+    /** What it was about, in words: an account handle, a member's email, a flow name. */
+    target: text('target'),
+    details: jsonb('details').$type<Record<string, string | number | boolean | null>>().notNull().default({}),
+    ip: text('ip'),
+    createdAt: createdAt(),
+  },
+  (t) => [index('audit_log_workspace_idx').on(t.workspaceId, t.createdAt), index('audit_log_user_idx').on(t.userId, t.createdAt)],
+);
+
 export const postsRelations = relations(posts, ({ many }) => ({ targets: many(postTargets) }));
+
+export const auditLogRelations = relations(auditLog, ({ one }) => ({
+  user: one(users, { fields: [auditLog.userId], references: [users.id] }),
+}));
 
 export const postTargetsRelations = relations(postTargets, ({ one }) => ({
   post: one(posts, { fields: [postTargets.postId], references: [posts.id] }),
@@ -221,5 +250,6 @@ export type Post = typeof posts.$inferSelect;
 export type Flow = typeof flows.$inferSelect;
 export type PostTarget = typeof postTargets.$inferSelect;
 export type Plugin = typeof plugins.$inferSelect;
+export type AuditEntry = typeof auditLog.$inferSelect;
 export type PostStatus = (typeof postStatus.enumValues)[number];
 export type TargetStatus = (typeof targetStatus.enumValues)[number];

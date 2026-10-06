@@ -16,11 +16,13 @@ import {
   uninstallPlugin,
 } from '@postwerk/core';
 import { getDb } from '@postwerk/db';
+import { record } from '@/lib/audit';
 import { requireAdmin, requireSession } from '@/lib/session';
 
 export async function createFlowAction(input: { name: string; x: number; y: number }) {
-  const { workspace } = await requireSession();
+  const { user, workspace } = await requireSession();
   const flow = await createFlow(getDb(), workspace.id, input);
+  await record({ action: 'flow.created', userId: user.id, workspaceId: workspace.id, target: flow.name });
   revalidatePath('/canvas');
   return { id: flow.id, name: flow.name, graph: parseFlowGraph(flow.graph), x: flow.x, y: flow.y };
 }
@@ -35,8 +37,9 @@ export async function saveFlowAction(flowId: string, input: { name?: string; gra
 }
 
 export async function deleteFlowAction(flowId: string) {
-  const { workspace } = await requireSession();
-  await deleteFlow(getDb(), workspace.id, flowId);
+  const { user, workspace } = await requireSession();
+  const name = await deleteFlow(getDb(), workspace.id, flowId);
+  if (name !== undefined) await record({ action: 'flow.deleted', userId: user.id, workspaceId: workspace.id, target: name });
   revalidatePath('/canvas');
 }
 
@@ -59,6 +62,7 @@ export async function installPluginAction(_: PluginState, form: FormData): Promi
     const db = getDb();
     const theme = await installPlugin(db, workspace.id, source);
     await setMemberTheme(db, workspace.id, user.id, theme.id);
+    await record({ action: 'plugin.installed', userId: user.id, workspaceId: workspace.id, target: theme.name, details: { id: theme.id, version: theme.version } });
     revalidatePath('/', 'layout');
     return { success: `${theme.name} is installed and in use.` };
   } catch (error) {
@@ -68,15 +72,21 @@ export async function installPluginAction(_: PluginState, form: FormData): Promi
 }
 
 export async function installBuiltinPluginAction(pluginId: string) {
-  const { workspace } = await requireAdmin();
-  if (!builtinTheme(pluginId)) return;
+  const { user, workspace } = await requireAdmin();
+  const theme = builtinTheme(pluginId);
+  if (!theme) return;
   await installBuiltinPlugin(getDb(), workspace.id, pluginId);
+  await record({ action: 'plugin.installed', userId: user.id, workspaceId: workspace.id, target: theme.name, details: { id: theme.id, builtin: true } });
   revalidatePath('/', 'layout');
 }
 
 export async function uninstallPluginAction(pluginId: string) {
-  const { workspace } = await requireAdmin();
-  await uninstallPlugin(getDb(), workspace.id, pluginId);
+  const { user, workspace } = await requireAdmin();
+  const db = getDb();
+  const plugin = (await listPlugins(db, workspace.id)).find((candidate) => candidate.id === pluginId);
+  if (!plugin) return;
+  await uninstallPlugin(db, workspace.id, pluginId);
+  await record({ action: 'plugin.uninstalled', userId: user.id, workspaceId: workspace.id, target: plugin.manifest.name, details: { id: pluginId } });
   revalidatePath('/', 'layout');
 }
 
