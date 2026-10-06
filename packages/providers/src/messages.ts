@@ -123,7 +123,7 @@ const germanInfo: Partial<Record<ProviderId, InfoText>> = {
     description: 'Erstelle Pins auf deinen Pinnwänden. Jede Pinnwand wird als eigenes Konto verbunden.',
     options: { title: { label: 'Pin-Titel' }, link: { label: 'Ziel-Link', hint: 'Wohin der Pin beim Anklicken führt.' } },
     setup: {
-      ownUse: 'Testzugang (Trial) gibt es mit der App, er kann aber auf Pinterests Sandbox beschränkt sein; Standard Access braucht eine Prüfung mit Demo-Video.',
+      ownUse: 'Testzugang (Trial) gibt es mit der App; er veröffentlicht nur in das Konto, dem die App gehört. Standard Access braucht eine Prüfung mit Demo-Video.',
       review: 'Standard Access (Prüfung mit Demo-Video).',
     },
   },
@@ -138,7 +138,7 @@ const germanInfo: Partial<Record<ProviderId, InfoText>> = {
   google_business: {
     description: 'Veröffentliche Neuigkeiten zu deinem Unternehmen in der Google-Suche und in Maps.',
     setup: {
-      ownUse: 'Beantrage den Zugang zu den Business Profile APIs über Googles Formular (Freigabe dauert Tage bis Wochen). Im Modus „Testing“ laufen Anmeldungen nach 7 Tagen ab.',
+      ownUse: 'Beantrage den Zugang zu den Business Profile APIs (für ein seit 60+ Tagen verifiziertes Profil; Freigabe dauert Tage bis Wochen). Im Modus „Testing“ laufen Anmeldungen nach 7 Tagen ab.',
       review: 'Derselbe Zugang und dazu die Google-OAuth-Verifizierung.',
     },
   },

@@ -1,4 +1,4 @@
-# Platform guide
+# Network status
 
 Every network is a module in `packages/providers/src/` behind one interface (`Provider` in `types.ts`). Its static rules — text limits, media, per-post fields, setup — live in `catalog.ts` as plain data, so the composer validates in the browser with exactly the rules the server enforces.
 
@@ -25,38 +25,9 @@ All networks below are implemented and unit-tested against mocked APIs. **"Live-
 | Reddit | OAuth | `REDDIT` | — (text posts) | subreddit, title | 1 h tokens | — |
 | Sandbox | name | `ENABLE_SANDBOX=true` | anything | — | — | n/a |
 
-## Without a developer app: the bridge
+## Setting networks up
 
-Every network that needs an operator app can also connect through [Zernio](https://zernio.com), an aggregator that already passed the reviews: set `ZERNIO_API_KEY`, and those networks show "Ready to connect · via Zernio". A network uses its own developer app once one is set up, unless it is listed in `ZERNIO_NETWORKS`. Setup, costs and privacy: [BRIDGE.md](BRIDGE.md).
-
-## Bluesky sign-in
-
-Bluesky needs no developer app. Postwerk describes itself in a client metadata document at its own address, and the user's server reads it:
-
-- **On https** (`APP_URL=https://…`), Postwerk is a confidential client: `${APP_URL}/oauth/bluesky/client-metadata.json` is its client id, and it signs token requests with an ES256 key that it creates on first use, stores encrypted (`server_secrets`), and publishes at `/oauth/bluesky/jwks.json`. Sessions last as long as the user's server allows confidential clients.
-- **On `http://localhost`** (development), it is a "loopback" client without a key; Bluesky sends people back to `127.0.0.1`, and the callback continues on `localhost`. Loopback sessions are shorter.
-- **Elsewhere on plain http** (e.g. a LAN address), OAuth is not possible and people connect with app passwords.
-
-Tokens are bound to a per-account DPoP key. If `ENCRYPTION_KEY` changes, the signing key is replaced and OAuth accounts must reconnect. Accounts connected with app passwords keep working; connecting the same account with OAuth replaces its app password.
-
-## Setting up an operator app
-
-1. Create the developer app in the network's console (links in the table below).
-2. Register the callback URL **`${APP_URL}/api/connect/<network>/callback`** (e.g. `https://postwerk.example.com/api/connect/instagram/callback`). LinkedIn profile and page use `linkedin` and `linkedin_page`; YouTube and Business Profile use `youtube` and `google_business` — add both if you use both.
-3. Set `<PREFIX>_CLIENT_ID` and `<PREFIX>_CLIENT_SECRET` (see `.env.example`) and restart. The network moves from "needs setup" (or "via Zernio") to "Connect" on the accounts page. Accounts connected through Zernio keep working; see [BRIDGE.md](BRIDGE.md#moving-a-network-to-its-own-developer-app).
-4. Until the app passes review, only you and the testers you add in the console can connect.
-
-| Network | Developer console / docs | Review before strangers can connect |
-|---|---|---|
-| Facebook | developers.facebook.com → Facebook Login for Business | Business verification + App Review: `pages_show_list`, `pages_manage_posts`, `pages_read_engagement` |
-| Instagram | developers.facebook.com → Instagram API with Instagram Login | App Review: `instagram_business_basic`, `instagram_business_content_publish`; business verification for advanced access |
-| Threads | developers.facebook.com → Threads API | App Review: `threads_basic`, `threads_content_publish` |
-| LinkedIn | linkedin.com/developers | Profile: self-serve products "Share on LinkedIn" + "Sign In with LinkedIn using OpenID Connect". Pages: Community Management API (partner review, registered legal entity) |
-| X | developer.x.com | Paid API access; enable OAuth 2.0 (confidential client) with `tweet.read tweet.write users.read media.write offline.access` |
-| TikTok | developers.tiktok.com → Content Posting API (Direct Post) | Audit before posts can be public; media URLs must be on a verified domain |
-| Google | console.cloud.google.com | YouTube: OAuth verification for `youtube.upload` + quota extension. Business Profile: API access request form. Apps in "Testing" get refresh tokens that expire after 7 days |
-| Pinterest | developers.pinterest.com | Trial access on creation (may be limited to the sandbox API); Standard access needs review |
-| Reddit | reddit.com/prefs/apps | Manual approval under the Responsible Builder Policy |
+How to offer each network on your server (your own developer app, the Zernio bridge, or not at all), and step-by-step guides with callback URLs and review texts: [Choose how to offer each network](networks/index.md). Bluesky's sign-in is described under [open networks](networks/open.md#bluesky).
 
 ## Known gaps and unverified details
 
@@ -66,7 +37,8 @@ The developer docs of most networks were not reachable while these modules were 
 - **X**: v2 media upload request/response shape; alt text is not sent yet.
 - **TikTok**: PKCE not used (web app); exact error codes; `publicaly_available_post_id` field name; brand-content disclosure fields not sent.
 - **Google**: `languageCode` in the Business Information read mask; YouTube `categoryId` fixed to 22 (People & Blogs). A YouTube upload whose response is lost may be retried and upload twice (no idempotency key).
-- **Pinterest**: trial apps may only write to `api-sandbox.pinterest.com`.
+- **Pinterest**: trial apps publish only to the app owner's account, and have at times been limited to `api-sandbox.pinterest.com`.
+- **TikTok audit**: the composer lacks parts of TikTok's required posting screen (creator info, interaction switches, commercial content disclosure); see [TikTok](networks/tiktok.md).
 - **Telegram / Discord**: error description wording; Discord avatar CDN path.
 - **Bluesky OAuth**: implemented from the AT Protocol OAuth spec and tested against fake servers that check PAR, PKCE, DPoP nonces and proofs, client assertions and refresh-token rotation, not yet against bsky.social. It asks for `atproto transition:generic` (the same access as an app password), not the newer fine-grained scopes.
 - **Media links (security)**: besides uploads, the composer accepts public media links, which the server downloads for Mastodon, Bluesky, LinkedIn, X and YouTube. Obviously internal hosts are refused, but DNS is not resolved, so a hostname pointing at an internal address is not caught. On multi-tenant instances, prefer uploads.
@@ -75,7 +47,8 @@ The developer docs of most networks were not reachable while these modules were 
 ## Adding a network
 
 1. Add the id to `PROVIDER_IDS` (`types.ts`) and the `provider` enum in `packages/db/src/schema.ts` (a test fails if they differ), then `npm run db:generate`.
-2. Describe it in `catalog.ts`: limits, media, options, setup.
+2. Describe it in `catalog.ts`: limits, media, options, setup (`ownUse` and `review`: what an operator app needs for the operator's own accounts and for other people's; `guide`: its page on the docs site) and `privacyUrl`. Add the German texts in `messages.ts`.
 3. Create `packages/providers/src/<network>.ts` exporting a `Provider`: spread the catalog entry, add a `connector` (`oauth2`, `form` or `mastodon`), `publish`, and `refresh`/`needsRefresh` if tokens expire. `linkedin.ts` is the reference implementation.
 4. Use `http.ts` helpers so errors map to `ProviderError` (`retryable`, `needsReauth`); pass a `mapError` when the network encodes errors in the body.
 5. Register it in `index.ts` and write tests with `test/helpers.ts` (`mockFetch`).
+6. Write its guide in `docs/networks/` (setup steps, callback URL, scopes and why Postwerk needs each) and add it to the table in [Choose how to offer each network](networks/index.md).

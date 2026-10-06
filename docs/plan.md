@@ -10,27 +10,27 @@ This document is the long-term plan. It is a living document; update it when dec
 
 Every major network (Instagram, Facebook, LinkedIn, Reddit, TikTok, YouTube, X, Pinterest, Google Business Profile) only allows posting through a **registered developer app** that the network has reviewed. Self-hosted tools usually push this onto every user ("create a Meta app, paste your client ID…"). That is the part we want to remove.
 
-How Buffer & co. solve it — and how we will too:
+Hosted tools like Buffer register one app per network, get it approved once, and every user just clicks "Connect". Postwerk is self-hosted, so there is no central operator: **whoever runs a Postwerk server registers the apps for that server**, and everyone on that server then just clicks "Connect".
 
-> **The operator registers one app per network, gets it approved once, and every user just clicks "Connect" and logs in.**
+> **The Postwerk project does not register apps or apply for reviews on behalf of the people who use it.** Each operator does that for their own server, only as far as they need it; for their own accounts, many networks need no review at all. The author applies only for the server he runs for his own work as a self-employed person.
 
 Postwerk therefore distinguishes three kinds of connections:
 
 | Kind | Who needs a developer app? | Networks |
 |---|---|---|
 | **Open protocol** | Nobody | Mastodon (we register an OAuth client on each server automatically), Bluesky (AT Protocol OAuth on the user's own server; app passwords as a fallback) |
-| **Native (operator app)** | Only the operator, once | Instagram, Facebook, Threads, LinkedIn, Reddit, YouTube, TikTok, Pinterest, Google Business Profile, X |
+| **Native (operator app)** | The operator of each server, for that server | Instagram, Facebook, Threads, LinkedIn, Reddit, YouTube, TikTok, Pinterest, Google Business Profile, X |
 | **Bridge (aggregator)** | Nobody — the aggregator has the approvals | Everything an aggregator supports, until our own native approval is in place |
 
-The **bridge** is the shortcut: services like [Ayrshare](https://www.ayrshare.com), [Upload-Post](https://www.upload-post.com) or [Zernio](https://zernio.com) (formerly Late) have already passed every platform review. We plug one of them in as a provider so users can connect Instagram, TikTok, LinkedIn pages, etc. **on day one**, then switch each network to our own native integration as our approvals come through. New connections then go direct and get cheaper; accounts already connected through the bridge keep working until they are connected again directly ([BRIDGE.md](BRIDGE.md)).
+The **bridge** is the shortcut: services like [Ayrshare](https://www.ayrshare.com), [Upload-Post](https://www.upload-post.com) or [Zernio](https://zernio.com) (formerly Late) have already passed every platform review. We plug one of them in as a provider so users can connect Instagram, TikTok, LinkedIn pages, etc. **on day one**, then switch each network to our own native integration as our approvals come through. New connections then go direct and get cheaper; accounts already connected through the bridge keep working until they are connected again directly ([the bridge](bridge.md)).
 
-Per network, the operator configures which path is active:
+Per network, the operator decides which path is active ([guide](networks/index.md)):
 
 ```
-native (if credentials configured)  →  bridge (if aggregator key configured)  →  "coming soon"
+native (if credentials configured)  →  bridge (if aggregator key configured)  →  "needs setup"
 ```
 
-Self-hosters who prefer it can also enter their own platform credentials ("bring your own app").
+`ZERNIO_NETWORKS` sends chosen networks through the bridge even when an app exists; `HIDE_NETWORKS` switches networks off.
 
 ---
 
@@ -79,7 +79,7 @@ Sizes: **S** ≈ days, **M** ≈ 1–2 weeks, **L** ≈ several weeks (one devel
 - Next for flows: approval step, recurring triggers (RSS, schedule), conditions (e.g. only if media), flow templates
 
 ### Themes as plugins ✅
-- The whole look is a plugin: a theme is a JSON manifest with design tokens for light **and** dark mode (both required), canvas options (grid, connection style) and optional extra CSS — format in [THEMES.md](THEMES.md)
+- The whole look is a plugin: a theme is a JSON manifest with design tokens for light **and** dark mode (both required), canvas options (grid, connection style) and optional extra CSS — format in [themes.md](themes.md)
 - Three built-in themes — Aurora (default), Paper, Blueprint — installed in every workspace; owners/admins can uninstall and reinstall them; without any theme the plain base look remains
 - Everyone picks their own theme; light / dark / system is remembered per browser
 - Theme editor on the canvas: start from any theme, live preview of both modes, install, update by id, download and share
@@ -98,7 +98,7 @@ Sizes: **S** ≈ days, **M** ≈ 1–2 weeks, **L** ≈ several weeks (one devel
 - Next: two-factor sign-in, "Sign in with Google", per-network previews in the calendar, recurring posts
 
 ### Phase 2 — The bridge: every network, no approvals needed ✅
-- **Aggregator chosen: [Zernio](https://zernio.com)** after comparing Ayrshare, Upload-Post and Zernio on price, EU data handling and API quality: an EU company with a DPA, billed per connected account (2 free), with idempotent publishing and per-network error categories. Evaluation in [BRIDGE.md](BRIDGE.md)
+- **Aggregator chosen: [Zernio](https://zernio.com)** after comparing Ayrshare, Upload-Post and Zernio on price, EU data handling and API quality: an EU company with a DPA, billed per connected account (2 free), with idempotent publishing and per-network error categories. Evaluation in [the bridge](bridge.md)
 - **`Bridge` interface** next to `Provider` (`packages/providers/src/bridge.ts`), Zernio as the first implementation: profiles, hosted connect links, accounts, publishing with presigned media uploads, polling for videos, and errors mapped to retry / reconnect / give up
 - **Hosted account linking**: "Continue to …" → Zernio's pages → `/api/bridge/callback` → the account appears, marked "via Zernio". Each workspace gets Zernio profiles as needed, so it can connect several accounts per network; expired accounts can be reconnected in place; disconnecting removes them on Zernio
 - **Routing per network**: native (developer app) → bridge (`ZERNIO_API_KEY`) → "needs setup"; `ZERNIO_NETWORKS` forces or limits the bridged networks
@@ -107,21 +107,28 @@ Sizes: **S** ≈ days, **M** ≈ 1–2 weeks, **L** ≈ several weeks (one devel
 
 With a Zernio API key, users can post to Instagram, Facebook, LinkedIn, TikTok, YouTube, Pinterest, Threads, Reddit, X and Google Business Profile.
 
-### Phase 3 — Native integrations (start approvals early; they run in parallel)
-**Code status:** all networks below are implemented behind the common provider interface (built breadth-first, ahead of Phases 1–2) and unit-tested against mocked APIs. What remains per network is the operator app, its review, and a first live post to verify the integration. Details and checklists in [PLATFORMS.md](PLATFORMS.md).
+### Phase 3 — Native integrations, each operator for their own server ✅ (prepared)
+**Who applies:** every server's operator, for that server. The project ships the code, the guides and the pages reviews ask for; it holds no apps and applies for no reviews on anyone's behalf. The author applies only for the server he uses for his own work.
 
-Ordered by value ÷ approval effort:
+**Code status:** all networks are implemented behind the common provider interface and unit-tested against mocked APIs. What software can prepare is done:
 
-1. **LinkedIn personal profiles** — self-serve "Share on LinkedIn" (S)
-2. **Meta: Facebook Pages + Instagram** — one Meta app, business verification + app review (L)
-3. **Threads** — same Meta app, separate permissions (S once Meta is done)
-4. **Google Business Profile** — access request form; very valuable for local businesses like a physio practice (M)
-5. **LinkedIn company pages** — Community Management API, partner review, weeks to months (M)
-6. **YouTube** — Google OAuth verification + quota extension (M)
-7. **Reddit** — manual approval since Nov 2025 (Responsible Builder Policy) (M)
-8. **TikTok** — Content Posting API audit; unaudited apps can only post privately (M)
-9. **Pinterest** — trial → standard access review (S)
-10. **X** — paid API (pay-per-use); decide based on demand (S)
+- **A choice per network** for the server admin: own developer app (for their own accounts only, or for other people's too), the Zernio bridge, or off (`HIDE_NETWORKS`). The canvas shows what each path needs, the exact callback URL and the legal page URLs to paste into the developer console.
+- **Pages for reviews and EU law** on every server, from `OPERATOR_*`: about, privacy policy (from what Postwerk really stores, with the networks, processors and YouTube API wording), terms, imprint, data deletion. IP addresses in the activity log are deleted after 90 days.
+- **A documentation website** ([schulzoli.github.io/postwerk](https://schulzoli.github.io/postwerk/)) with a step-by-step guide per network, the scopes and why Postwerk needs each, and a screencast script for reviews. Links are checked in CI.
+
+**What remains** happens per server with a real app: register it, pass a review where needed, and make a first live post (then mark the network "live-verified" in [platforms.md](platforms.md)). For one person's own accounts, ordered by value ÷ effort:
+
+1. **LinkedIn profile** — self-serve products, minutes (S)
+2. **Meta: Facebook Pages, Instagram, Threads** — standard access with app roles/testers, no review (S); for other people's accounts business verification and App Review (L)
+3. **Google Business Profile** — access request for a profile verified 60+ days (M)
+4. **Pinterest** — trial access publishes to the app owner's account (S); standard access after a review (S)
+5. **Reddit** — manual approval under the Responsible Builder Policy (M)
+6. **X** — paid API, no review (S); decide on demand
+7. **YouTube** — even own-channel uploads stay private until the API audit (M); bridge meanwhile
+8. **LinkedIn company pages** — Community Management API, registered companies only (M); bridge meanwhile
+9. **TikTok** — tools for one's own accounts are not approved; bridge. Public services would also need TikTok's posting screen in the composer (L, open)
+
+Open code tasks: TikTok's required posting screen (only for public services), an optional Meta data deletion callback (the instructions page is enough for Meta), self-service account deletion (now by email).
 
 ### Phase 4 — Delight
 - Live post previews per network
@@ -140,19 +147,18 @@ Ordered by value ÷ approval effort:
 
 ---
 
-## 4. Platform approvals: start now
+## 4. Setting up your own server
 
-Approvals are the critical path, not code. Things the operator should start in parallel with Phase 1:
+The operator's checklist (the author works through the same list for his own server). Guides: [Choose how to offer each network](networks/index.md).
 
-- [ ] Company details ready: legal name, address, website with **privacy policy** and **terms** pages, support email
-- [ ] Meta Business account → business verification → create app (Instagram + Facebook Login for Business + Threads)
-- [ ] LinkedIn app: request "Share on LinkedIn"; apply for Community Management API
-- [ ] Google Cloud project: Business Profile API access form; YouTube Data API + OAuth consent screen verification
-- [ ] Reddit: submit request under the Responsible Builder Policy
-- [ ] TikTok developer app: Content Posting API, plan the audit
-- [ ] Open a Zernio account for the bridge and set `ZERNIO_API_KEY` ([BRIDGE.md](BRIDGE.md))
+- [ ] Server on a public https address (`APP_URL`), `OPERATOR_NAME`, `OPERATOR_EMAIL` and `OPERATOR_ADDRESS` set; `/about` and the [legal pages](legal.md) reachable
+- [ ] LinkedIn app with "Share on LinkedIn" and "Sign In with LinkedIn using OpenID Connect" ([guide](networks/linkedin.md))
+- [ ] Meta app with standard access and your accounts as admins/testers ([guide](networks/meta.md))
+- [ ] Google Cloud project; Business Profile API access request ([guide](networks/google.md))
+- [ ] Zernio account for TikTok, YouTube and LinkedIn Pages, or switch them off ([bridge](bridge.md))
+- [ ] Optional: Pinterest, Reddit, X ([guides](networks/index.md))
 
-Every review asks for a **screencast of the real flow**, so the corresponding UI must exist first (Phase 1 media upload is needed for Instagram/TikTok/YouTube).
+Only if other people should connect their accounts through your apps: business verification and reviews, with a screencast of the real flow ([App reviews](networks/reviews.md)).
 
 ---
 

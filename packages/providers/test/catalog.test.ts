@@ -1,3 +1,4 @@
+import { existsSync, readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { catalog, guideUrl, providerInfos } from '../src/catalog';
 import { localizeInfo } from '../src/messages';
@@ -14,8 +15,20 @@ describe('setup notes', () => {
     }
   });
 
-  it('link every network to its guide on the docs site', () => {
+  it('link every network to an existing guide and heading on the docs site', () => {
     expect(guideUrl(catalog.instagram)).toBe('https://schulzoli.github.io/postwerk/networks/meta#instagram');
-    for (const info of providerInfos) expect(info.setup.guide, info.id).toMatch(/^[a-z-]+(\/[a-z-]+)?(#[a-z-]+)?$/);
+    // Headings become anchors like the docs site makes them: lowercase, spaces → "-".
+    const slug = (heading: string) => heading.trim().toLowerCase().replace(/[^\w\s-]/g, '').replace(/\s+/g, '-');
+    for (const info of providerInfos) {
+      const [path, anchor] = info.setup.guide.split('#');
+      const file = new URL(`../../../docs/${path}.md`, import.meta.url);
+      expect(existsSync(file), `${info.id}: docs/${path}.md`).toBe(true);
+      if (!anchor) continue;
+      const headings = readFileSync(file, 'utf8')
+        .split('\n')
+        .filter((line) => /^#{2,3} /.test(line))
+        .map((line) => slug(line.replace(/^#+ /, '')));
+      expect(headings, `${info.id}: #${anchor}`).toContain(anchor);
+    }
   });
 });

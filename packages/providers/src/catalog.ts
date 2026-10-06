@@ -251,7 +251,7 @@ export const catalog: Record<ProviderId, ProviderInfo> = {
     setup: {
       operator: 'operator-app',
       envPrefix: 'PINTEREST',
-      ownUse: 'Trial access comes with the app but may be limited to Pinterest’s sandbox; standard access needs a review with a demo video.',
+      ownUse: 'Trial access comes with the app and only publishes to the account that owns it; standard access needs a review with a demo video.',
       review: 'Standard access (review with a demo video).',
       docsUrl: 'https://developers.pinterest.com/docs/api/v5/pins-create',
       guide: 'networks/pinterest',
@@ -296,7 +296,7 @@ export const catalog: Record<ProviderId, ProviderInfo> = {
     setup: {
       operator: 'operator-app',
       envPrefix: 'GOOGLE',
-      ownUse: 'Request access to the Business Profile APIs with Google’s form (approval takes days to weeks). In "Testing" mode, sign-ins expire after 7 days.',
+      ownUse: 'Request access to the Business Profile APIs (for a profile verified for 60+ days; approval takes days to weeks). In "Testing" mode, sign-ins expire after 7 days.',
       review: 'The same access, plus Google OAuth verification.',
       docsUrl: 'https://developers.google.com/my-business/content/posts-data',
       guide: 'networks/google#business-profile',
