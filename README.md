@@ -19,6 +19,10 @@ Self-hosted social media scheduling. Connect your accounts with one click, write
 |---|---|
 | ![Flow](docs/screenshots/canvas-flow.png) | ![Composer](docs/screenshots/canvas-composer.png) |
 
+| Calendar | Auf Deutsch |
+|---|---|
+| ![Calendar](docs/screenshots/canvas-calendar.png) | ![German UI](docs/screenshots/canvas-german.png) |
+
 | Aurora | Paper | Blueprint |
 |---|---|---|
 | ![Aurora](docs/screenshots/theme-aurora-dark.png) | ![Paper](docs/screenshots/theme-paper-light.png) | ![Blueprint](docs/screenshots/theme-blueprint-dark.png) |

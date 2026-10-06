@@ -18,7 +18,7 @@ Postwerk therefore distinguishes three kinds of connections:
 
 | Kind | Who needs a developer app? | Networks |
 |---|---|---|
-| **Open protocol** | Nobody | Mastodon (we register an OAuth client on each server automatically), Bluesky (app password today, AT Protocol OAuth later) |
+| **Open protocol** | Nobody | Mastodon (we register an OAuth client on each server automatically), Bluesky (AT Protocol OAuth on the user's own server; app passwords as a fallback) |
 | **Native (operator app)** | Only the operator, once | Instagram, Facebook, Threads, LinkedIn, Reddit, YouTube, TikTok, Pinterest, Google Business Profile, X |
 | **Bridge (aggregator)** | Nobody — the aggregator has the approvals | Everything an aggregator supports, until our own native approval is in place |
 
@@ -52,7 +52,7 @@ packages/providers   One module per network behind a common Provider interface
 |---|---|---|
 | Postgres is the job queue (`FOR UPDATE SKIP LOCKED` polling) | One less service, no dual writes between DB and queue, transactional | > ~50 posts/second or sub-second scheduling needed → add a queue (BullMQ/pg-boss) |
 | Credentials encrypted with AES-256-GCM (`ENCRYPTION_KEY`) | A leaked database alone exposes no tokens | Hosted version: move key to KMS, add key rotation |
-| Minimal own auth (scrypt + hashed session tokens) | Small, auditable, no framework lock-in | Phase 1: add password reset, 2FA, "Sign in with Google" — evaluate Better Auth then |
+| Minimal own auth (scrypt + hashed session tokens) | Small, auditable, no framework lock-in | Password reset, verification and rate limiting added in Phase 1; next: 2FA, "Sign in with Google" — evaluate Better Auth then |
 | Provider errors carry `retryable` / `needsReauth` | Worker decides retry vs. fail vs. "please reconnect" uniformly | — |
 | Idempotency key per target | A retried publish must never double-post (Mastodon supports it natively) | Add per-network dedupe where APIs allow |
 | TypeScript monorepo, npm workspaces | One language end to end; matches the physio site | — |
@@ -76,7 +76,7 @@ Sizes: **S** ≈ days, **M** ≈ 1–2 weeks, **L** ≈ several weeks (one devel
 - One zoomable 2D world (React Flow): regions for Networks (provider overview), Accounts, Flows, Compose and Posts; positions persist per workspace
 - Deep links to every node (`#n=<id>`) and every view (`#@x,y,zoom`); inspector side panel per node
 - Flow builder: New post → Add text / Shorten to fit / Wait → Publish to account; autosaved, previewed live, used by the composer
-- Next for flows: approval step, per-network text variants, recurring triggers (RSS, schedule), conditions (e.g. only if media), flow templates
+- Next for flows: approval step, recurring triggers (RSS, schedule), conditions (e.g. only if media), flow templates
 
 ### Themes as plugins ✅
 - The whole look is a plugin: a theme is a JSON manifest with design tokens for light **and** dark mode (both required), canvas options (grid, connection style) and optional extra CSS — format in [THEMES.md](THEMES.md)
@@ -86,17 +86,16 @@ Sizes: **S** ≈ days, **M** ≈ 1–2 weeks, **L** ≈ several weeks (one devel
 - Themes are self-contained by design: no remote URLs, imports or fonts, so a theme cannot track users or leak data
 - Next: more plugin kinds behind the same install/uninstall model (e.g. flow steps, composer helpers), a shared theme gallery, trying a theme on the whole canvas before installing it
 
-### Phase 1 — A product people can use daily
-| Item | Size |
-|---|---|
-| Media uploads (S3-compatible or local disk) — the composer currently takes public media URLs; per-network media rules and alt text already exist | L |
-| Edit and reschedule posts; per-network text variants ("customize for LinkedIn") | M |
-| Calendar region on the canvas (week/month), drag to reschedule | M |
-| Bluesky via AT Protocol OAuth (no app password needed) | S |
-| Workspace invites, roles (owner/admin/editor), workspace switcher | M |
-| Email: password reset, verification, "post failed" notifications | M |
-| Login rate limiting, audit log | S |
-| German + English UI (i18n) | S |
+### Phase 1 — A product people can use daily ✅
+- **Media uploads** to local disk or any S3-compatible storage (custom SigV4, no SDK): drag and drop with progress, files checked by their content (not their name), served with strict headers; networks that need the bytes read them straight from storage. Media links still work for files hosted elsewhere
+- **Edit, reschedule, retry**: scheduled, draft and failed posts open in the composer again; flows keep their delays when a post moves; failed networks can be retried; published posts can be posted again. **Per-network text versions** ("customize for LinkedIn") — each network starts from its own text, then flows apply
+- **Calendar region** (and `/calendar`): week and month views in the viewer's time zone and first day of the week; drag a post to another slot or day, or move it from its details; double-click to plan a new post at that time
+- **Bluesky via AT Protocol OAuth**: sign in on your own server (PAR, PKCE, DPoP); Postwerk is a confidential client on https with its own signing key, a loopback client on localhost; app passwords stay as the fallback
+- **Teams**: several workspaces per user with a switcher, invite links (optionally emailed), roles owner / admin / editor, and a rule that a workspace always keeps an owner
+- **Email** (any SMTP server): address verification, password reset, invites, and an email to the author when a post fails or goes out only partly (can be turned off)
+- **Security**: login and sign-up rate limiting per email and per IP, and an audit log of sign-ins, account, post, flow, plugin and team changes (Team region and `/activity`)
+- **German and English UI**: everything people see, including validation, errors, emails and network texts; the language follows the browser or the account setting. Messages that come from the networks' APIs stay as the networks send them
+- Next: two-factor sign-in, "Sign in with Google", per-network previews in the calendar, recurring posts
 
 ### Phase 2 — The bridge: every network, no approvals needed
 | Item | Size |
