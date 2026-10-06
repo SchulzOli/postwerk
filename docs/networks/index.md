@@ -37,6 +37,8 @@ Every network that needs an app can also go through [Zernio](../bridge.md).
 
 Postwerk shows the same overview on the canvas: click a network to see what it needs, the exact callback URL to register, and the addresses of your legal pages to paste into the developer console.
 
+![A network's setup on the canvas: own app, Zernio or off](../screenshots/setup-choice.png)
+
 ## How Postwerk picks the route
 
 For each network, Postwerk uses the first that works:

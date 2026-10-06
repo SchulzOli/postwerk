@@ -25,6 +25,8 @@ With name and email set, these pages appear (in English and German, following th
 | `/legal/data-deletion` | data deletion instructions URL (Meta) |
 | `/legal/imprint` | imprint (Impressum, § 5 DDG); needs `OPERATOR_ADDRESS` |
 
+![The privacy policy of a Postwerk server](screenshots/legal-privacy.png)
+
 They are linked from the sign-in pages and from the account menu. The canvas lists their full addresses next to each network's setup, ready to copy.
 
 ## What the pages say
