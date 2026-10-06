@@ -36,6 +36,7 @@ export const canvasMessages = defineMessages({
       themeEditor: 'Theme editor',
       activity: 'Activity',
       members: 'Members and invites',
+      bridgeUsage: 'Costs of connected accounts',
     },
     // Durations ("1 d 2 h 30 min")
     duration: {
@@ -144,6 +145,7 @@ export const canvasMessages = defineMessages({
       themeEditor: 'Design-Editor',
       activity: 'Aktivität',
       members: 'Mitglieder und Einladungen',
+      bridgeUsage: 'Kosten verbundener Konten',
     },
     duration: {
       minutes: (count) => `${count} Min.`,

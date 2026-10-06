@@ -8,7 +8,12 @@ import type { ProviderId, ProviderInfo } from '@postwerk/providers/catalog';
 
 export interface NetworkData {
   info: ProviderInfo;
+  /** People can connect it here: natively, or through the bridge. */
   available: boolean;
+  /** Name of the bridge it connects through ("Zernio"), or null when it connects natively or not at all. */
+  bridge: string | null;
+  /** The bridge that could connect it once the admin sets it up (for the setup notes), or null. */
+  bridgeable: { name: string; env: string } | null;
   connector:
     | { kind: 'form'; fields: FormField[] }
     | { kind: 'oauth2' | 'mastodon' }
@@ -24,6 +29,8 @@ export interface AccountData {
   avatarUrl: string | null;
   maxLength: number | null;
   status: 'active' | 'needs_reauth';
+  /** Name of the bridge it publishes through, or null. */
+  bridge: string | null;
 }
 
 export interface FlowData {
@@ -52,6 +59,16 @@ export interface PluginData {
   installed: boolean;
 }
 
+/** What the workspace uses of the bridge (admins only). */
+export interface BridgeUsageData {
+  name: string;
+  accounts: number;
+  profiles: number;
+  /** Newest first; the first is the current month ("2026-10"). */
+  months: { month: string; peakAccounts: number; peakProfiles: number }[];
+  price: { amount: number; currency: string } | null;
+}
+
 export interface WorldData {
   user: { name: string; email: string };
   /** Show the "confirm your email" reminder. */
@@ -73,5 +90,6 @@ export interface WorldData {
   appearance: { mode: ColorMode; themeId: string | null; canvas: ThemeCanvas };
   /** Latest workspace activity; null for members who may not see it (editors). */
   activity: ActivityItem[] | null;
+  bridgeUsage: BridgeUsageData | null;
   notice: { kind: 'success' | 'error'; text: string } | null;
 }

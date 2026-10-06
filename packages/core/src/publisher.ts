@@ -2,6 +2,7 @@ import { and, eq, inArray, lt, ne, sql } from 'drizzle-orm';
 import { posts, postTargets, socialAccounts, type Database, type PostStatus } from '@postwerk/db';
 import { getProvider, ProviderError } from '@postwerk/providers';
 import { blueskyKeyset } from './bluesky';
+import { publishViaBridge } from './bridge';
 import { oauthClientFor } from './clients';
 import { decryptJson, encryptJson } from './crypto';
 import { mediaForPublishing } from './media';
@@ -61,14 +62,13 @@ export async function publishTarget(db: Database, targetId: string, now = () => 
     if (target.account.status === 'needs_reauth') {
       throw new ProviderError('Account needs to be reconnected.', { needsReauth: true });
     }
-    const provider = getProvider(target.account.provider);
-    const credentials = await currentCredentials(db, target.account.id, now());
     const { media, loadMedia } = await mediaForPublishing(target.post.media);
-    const result = await provider.publish(
-      credentials,
-      { text: target.text ?? target.post.text, media, options: target.options },
-      { idempotencyKey: target.id, client: oauthClientFor(target.account.provider), loadMedia },
-    );
+    const content = { text: target.text ?? target.post.text, media, options: target.options };
+    const context = { idempotencyKey: target.id, client: oauthClientFor(target.account.provider), loadMedia };
+    // Bridged accounts publish through the aggregator, which keeps the network tokens fresh itself.
+    const result = target.account.bridge
+      ? await publishViaBridge(target.account.provider, readCredentials(target.account.credentialsEnc), content, context)
+      : await getProvider(target.account.provider).publish(await currentCredentials(db, target.account.id, now()), content, context);
     await db
       .update(postTargets)
       .set({ status: 'published', lockedAt: null, lastError: null, remoteId: result.remoteId, remoteUrl: result.url ?? null, publishedAt: now() })

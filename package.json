@@ -1,6 +1,16 @@
 {
   "name": "postwerk",
   "private": true,
+  "description": "Self-hosted social media scheduler: write once, publish everywhere.",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/SchulzOli/postwerk.git"
+  },
+  "homepage": "https://github.com/SchulzOli/postwerk#readme",
+  "bugs": {
+    "url": "https://github.com/SchulzOli/postwerk/issues"
+  },
   "type": "module",
   "workspaces": [
     "packages/*",

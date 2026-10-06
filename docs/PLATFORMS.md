@@ -25,6 +25,10 @@ All networks below are implemented and unit-tested against mocked APIs. **"Live-
 | Reddit | OAuth | `REDDIT` | — (text posts) | subreddit, title | 1 h tokens | — |
 | Sandbox | name | `ENABLE_SANDBOX=true` | anything | — | — | n/a |
 
+## Without a developer app: the bridge
+
+Every network that needs an operator app can also connect through [Zernio](https://zernio.com), an aggregator that already passed the reviews: set `ZERNIO_API_KEY`, and those networks show "Ready to connect · via Zernio". A network uses its own developer app once one is set up, unless it is listed in `ZERNIO_NETWORKS`. Setup, costs and privacy: [BRIDGE.md](BRIDGE.md).
+
 ## Bluesky sign-in
 
 Bluesky needs no developer app. Postwerk describes itself in a client metadata document at its own address, and the user's server reads it:
@@ -39,7 +43,7 @@ Tokens are bound to a per-account DPoP key. If `ENCRYPTION_KEY` changes, the sig
 
 1. Create the developer app in the network's console (links in the table below).
 2. Register the callback URL **`${APP_URL}/api/connect/<network>/callback`** (e.g. `https://postwerk.example.com/api/connect/instagram/callback`). LinkedIn profile and page use `linkedin` and `linkedin_page`; YouTube and Business Profile use `youtube` and `google_business` — add both if you use both.
-3. Set `<PREFIX>_CLIENT_ID` and `<PREFIX>_CLIENT_SECRET` (see `.env.example`) and restart. The network moves from "needs setup" to "Connect" on the accounts page.
+3. Set `<PREFIX>_CLIENT_ID` and `<PREFIX>_CLIENT_SECRET` (see `.env.example`) and restart. The network moves from "needs setup" (or "via Zernio") to "Connect" on the accounts page. Accounts connected through Zernio keep working; see [BRIDGE.md](BRIDGE.md#moving-a-network-to-its-own-developer-app).
 4. Until the app passes review, only you and the testers you add in the console can connect.
 
 | Network | Developer console / docs | Review before strangers can connect |

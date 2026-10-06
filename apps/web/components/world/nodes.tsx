@@ -19,7 +19,7 @@ import { canEdit, canPostAgain, canRetry } from '@/lib/post-status';
 import { Calendar } from '@/components/calendar';
 import { canvasMessages, formatMinutes } from '@/messages/canvas';
 import { commonMessages } from '@/messages/common';
-import { mediaSummary, networksMessages } from '@/messages/networks';
+import { mediaSummary, networksMessages, usageCost } from '@/messages/networks';
 import { themesMessages } from '@/messages/themes';
 import { ids, type WorldNode } from './layout';
 import type { WorldData } from './types';
@@ -41,9 +41,9 @@ export function RegionNode({ data }: Props<'region'>) {
 export function NetworkNode({ data, selected }: Props<'network'>) {
   const t = useMessages(networksMessages);
   const locale = useLocale();
-  const { info, available } = data.network;
+  const { info, available, bridge } = data.network;
   const status = data.accountCount > 0 ? 'connected' : available ? 'ready' : 'setup';
-  const label = { connected: t.statusConnected(data.accountCount), ready: t.statusReady, setup: t.statusSetup }[status];
+  const label = { connected: t.statusConnected(data.accountCount), ready: bridge ? t.statusReadyVia(bridge) : t.statusReady, setup: t.statusSetup }[status];
   return (
     <div className={`world-card network-node ${selected ? 'is-selected' : ''}`}>
       <div className="row-tight">
@@ -61,6 +61,7 @@ export function NetworkNode({ data, selected }: Props<'network'>) {
 
 export function AccountNode({ data, selected }: Props<'account'>) {
   const common = useMessages(commonMessages);
+  const networks = useMessages(networksMessages);
   const { account } = data;
   return (
     <div className={`world-card account-node ${selected ? 'is-selected' : ''}`}>
@@ -71,10 +72,29 @@ export function AccountNode({ data, selected }: Props<'account'>) {
           <strong className="clip">{account.displayName ?? account.handle}</strong>
           <small className="muted clip">
             {catalog[account.provider].name} · {account.handle}
+            {account.bridge && ` · ${networks.via(account.bridge)}`}
           </small>
         </div>
       </div>
       {account.status === 'needs_reauth' && <span className="badge badge-warn">{common.reconnectNeeded}</span>}
+    </div>
+  );
+}
+
+export function BridgeUsageNode({ selected }: Props<'bridgeUsage'>) {
+  const t = useMessages(networksMessages);
+  const locale = intlLocale(useLocale());
+  const usage = useWorld().data.bridgeUsage;
+  if (!usage) return null;
+  const month = usage.months[0]!;
+  return (
+    <div className={`world-card ${selected ? 'is-selected' : ''}`}>
+      <strong>{t.usageTitle(usage.name)}</strong>
+      <span>{t.usageNow(usage)}</span>
+      <small className="muted">
+        {t.usageThisMonth(month.peakAccounts)}
+        {usage.price && ` · ${t.usageCost(usageCost(month.peakAccounts, usage.price, locale))}`}
+      </small>
     </div>
   );
 }
@@ -437,4 +457,5 @@ export const nodeTypes = {
   pluginInstall: PluginInstallNode,
   activity: ActivityNode,
   members: MembersNode,
+  bridgeUsage: BridgeUsageNode,
 };

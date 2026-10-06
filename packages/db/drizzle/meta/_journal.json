@@ -78,6 +78,20 @@
       "when": 1791305291882,
       "tag": "0010_user_locale",
       "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1791308352440,
+      "tag": "0011_bridge",
+      "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1791309538792,
+      "tag": "0012_bridge_usage",
+      "breakpoints": true
     }
   ]
 }

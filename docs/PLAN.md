@@ -22,7 +22,7 @@ Postwerk therefore distinguishes three kinds of connections:
 | **Native (operator app)** | Only the operator, once | Instagram, Facebook, Threads, LinkedIn, Reddit, YouTube, TikTok, Pinterest, Google Business Profile, X |
 | **Bridge (aggregator)** | Nobody — the aggregator has the approvals | Everything an aggregator supports, until our own native approval is in place |
 
-The **bridge** is the shortcut: services like [Ayrshare](https://www.ayrshare.com), [Upload-Post](https://www.upload-post.com) or [Zernio](https://zernio.com) (formerly Late) have already passed every platform review. We plug one of them in as a provider so users can connect Instagram, TikTok, LinkedIn pages, etc. **on day one**, then switch each network to our own native integration as our approvals come through. Users never notice the switch except that it gets cheaper.
+The **bridge** is the shortcut: services like [Ayrshare](https://www.ayrshare.com), [Upload-Post](https://www.upload-post.com) or [Zernio](https://zernio.com) (formerly Late) have already passed every platform review. We plug one of them in as a provider so users can connect Instagram, TikTok, LinkedIn pages, etc. **on day one**, then switch each network to our own native integration as our approvals come through. New connections then go direct and get cheaper; accounts already connected through the bridge keep working until they are connected again directly ([BRIDGE.md](BRIDGE.md)).
 
 Per network, the operator configures which path is active:
 
@@ -97,15 +97,15 @@ Sizes: **S** ≈ days, **M** ≈ 1–2 weeks, **L** ≈ several weeks (one devel
 - **German and English UI**: everything people see, including validation, errors, emails and network texts; the language follows the browser or the account setting. Messages that come from the networks' APIs stay as the networks send them
 - Next: two-factor sign-in, "Sign in with Google", per-network previews in the calendar, recurring posts
 
-### Phase 2 — The bridge: every network, no approvals needed
-| Item | Size |
-|---|---|
-| `bridge` provider type wrapping one aggregator API (evaluate Ayrshare, Upload-Post, Zernio on price, EU data handling, API quality) | M |
-| Hosted account-linking flow (aggregator's connect URL → callback → account appears in Postwerk) | M |
-| Per-network routing config: native → bridge → coming soon | S |
-| Cost tracking per connected profile (aggregators bill per profile) | S |
+### Phase 2 — The bridge: every network, no approvals needed ✅
+- **Aggregator chosen: [Zernio](https://zernio.com)** after comparing Ayrshare, Upload-Post and Zernio on price, EU data handling and API quality: an EU company with a DPA, billed per connected account (2 free), with idempotent publishing and per-network error categories. Evaluation in [BRIDGE.md](BRIDGE.md)
+- **`Bridge` interface** next to `Provider` (`packages/providers/src/bridge.ts`), Zernio as the first implementation: profiles, hosted connect links, accounts, publishing with presigned media uploads, polling for videos, and errors mapped to retry / reconnect / give up
+- **Hosted account linking**: "Continue to …" → Zernio's pages → `/api/bridge/callback` → the account appears, marked "via Zernio". Each workspace gets Zernio profiles as needed, so it can connect several accounts per network; expired accounts can be reconnected in place; disconnecting removes them on Zernio
+- **Routing per network**: native (developer app) → bridge (`ZERNIO_API_KEY`) → "needs setup"; `ZERNIO_NETWORKS` forces or limits the bridged networks
+- **Cost tracking**: bridged accounts and profiles per workspace and month (peak), shown to admins with an estimate from `ZERNIO_ACCOUNT_PRICE`
+- Next: a live run against a real Zernio account; a second aggregator only if needed
 
-After Phase 2 users can post to Instagram, Facebook, LinkedIn, TikTok, YouTube, Pinterest, Threads, Reddit, X and Google Business Profile.
+With a Zernio API key, users can post to Instagram, Facebook, LinkedIn, TikTok, YouTube, Pinterest, Threads, Reddit, X and Google Business Profile.
 
 ### Phase 3 — Native integrations (start approvals early; they run in parallel)
 **Code status:** all networks below are implemented behind the common provider interface (built breadth-first, ahead of Phases 1–2) and unit-tested against mocked APIs. What remains per network is the operator app, its review, and a first live post to verify the integration. Details and checklists in [PLATFORMS.md](PLATFORMS.md).
@@ -150,7 +150,7 @@ Approvals are the critical path, not code. Things the operator should start in p
 - [ ] Google Cloud project: Business Profile API access form; YouTube Data API + OAuth consent screen verification
 - [ ] Reddit: submit request under the Responsible Builder Policy
 - [ ] TikTok developer app: Content Posting API, plan the audit
-- [ ] Pick an aggregator for the bridge and open an account
+- [ ] Open a Zernio account for the bridge and set `ZERNIO_API_KEY` ([BRIDGE.md](BRIDGE.md))
 
 Every review asks for a **screencast of the real flow**, so the corresponding UI must exist first (Phase 1 media upload is needed for Instagram/TikTok/YouTube).
 

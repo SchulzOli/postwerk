@@ -11,6 +11,7 @@ Self-hosted social media scheduler. TypeScript monorepo (npm workspaces). Plan: 
 - `packages/core` — business logic; web and worker only call into this.
 - `packages/db` — Drizzle schema. After schema changes: `npm run db:generate`, commit the SQL in `packages/db/drizzle/`.
 - `packages/providers` — one file per network implementing `Provider`; static limits/options in `catalog.ts` (browser-safe). Throw `ProviderError` with `retryable`/`needsReauth`. `linkedin.ts` is the reference; see `docs/PLATFORMS.md` → "Adding a network".
+  - Aggregators (Zernio) implement `Bridge` in `bridges/`; routing, linking and usage live in `@postwerk/core` (`bridge.ts`, `bridge-usage.ts`). See `docs/BRIDGE.md`.
 
 ## Checks before committing
 ```bash

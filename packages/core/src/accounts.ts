@@ -1,12 +1,13 @@
 import { and, eq, inArray, sql } from 'drizzle-orm';
 import { mastodonApps, oauthStates, posts, postTargets, socialAccounts, type Database } from '@postwerk/db';
-import { Mastodon, type AccountProfile, type ConnectedAccount, type ProviderId } from '@postwerk/providers';
+import { Mastodon, type AccountProfile, type BridgeId, type ConnectedAccount, type ProviderId } from '@postwerk/providers';
+import { recordBridgeUsage } from './bridge-usage';
 import { decrypt, encrypt, encryptJson } from './crypto';
 import { generateToken } from './password';
 
 export async function saveAccount(
   db: Database,
-  input: { workspaceId: string; provider: ProviderId; profile: AccountProfile; credentials: unknown; maxLength?: number },
+  input: { workspaceId: string; provider: ProviderId; profile: AccountProfile; credentials: unknown; maxLength?: number; bridge?: BridgeId | null },
 ) {
   // A reconnect replaces credentials and clears "needs reconnect"; the account keeps its id and posts.
   const values = {
@@ -18,6 +19,8 @@ export async function saveAccount(
     avatarUrl: input.profile.avatarUrl ?? null,
     credentialsEnc: encryptJson(input.credentials),
     maxLength: input.maxLength ?? null,
+    // A native reconnect of a bridged account (or the other way round) switches how it publishes.
+    bridge: input.bridge ?? null,
     status: 'active' as const,
     updatedAt: new Date(),
   };
@@ -76,13 +79,14 @@ export async function getOrRegisterMastodonApp(db: Database, instanceUrl: string
 }
 
 /** Saves every account a connect flow returned (one login can grant several pages/boards/locations). */
-export async function saveConnectedAccounts(db: Database, workspaceId: string, provider: ProviderId, accounts: ConnectedAccount<unknown>[]) {
+export async function saveConnectedAccounts(db: Database, workspaceId: string, provider: ProviderId, accounts: ConnectedAccount<unknown>[], bridge?: BridgeId) {
   const saved = [];
   for (const account of accounts) {
     saved.push(
-      await saveAccount(db, { workspaceId, provider, profile: account.profile, credentials: account.credentials, maxLength: account.limits?.maxLength }),
+      await saveAccount(db, { workspaceId, provider, profile: account.profile, credentials: account.credentials, maxLength: account.limits?.maxLength, bridge }),
     );
   }
+  if (bridge) await recordBridgeUsage(db, workspaceId);
   return saved;
 }
 
