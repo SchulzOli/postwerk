@@ -187,10 +187,25 @@ export const socialAccounts = pgTable(
     credentialsEnc: text('credentials_enc').notNull(),
     maxLength: integer('max_length'),
     status: accountStatus('status').notNull().default('active'),
+    /** Set when the account publishes through a bridge (an aggregator API, e.g. "zernio") instead of the network's own API. */
+    bridge: text('bridge'),
     createdAt: createdAt(),
     updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [uniqueIndex('social_accounts_workspace_external_idx').on(t.workspaceId, t.provider, t.externalId)],
+);
+
+/** A workspace's profiles on a bridge. A profile holds at most one account per network, so a workspace may need several. */
+export const bridgeProfiles = pgTable(
+  'bridge_profiles',
+  {
+    id: id(),
+    workspaceId: uuid('workspace_id').notNull().references(() => workspaces.id, { onDelete: 'cascade' }),
+    bridge: text('bridge').notNull(),
+    profileId: text('profile_id').notNull(),
+    createdAt: createdAt(),
+  },
+  (t) => [uniqueIndex('bridge_profiles_bridge_profile_idx').on(t.bridge, t.profileId), index('bridge_profiles_workspace_idx').on(t.workspaceId, t.bridge)],
 );
 
 /** Saved publishing flows (graph of steps, see @postwerk/core/flow). */
@@ -333,6 +348,7 @@ export const workspaceMembersRelations = relations(workspaceMembers, ({ one }) =
 export type User = typeof users.$inferSelect;
 export type Workspace = typeof workspaces.$inferSelect;
 export type SocialAccount = typeof socialAccounts.$inferSelect;
+export type BridgeProfile = typeof bridgeProfiles.$inferSelect;
 export type Post = typeof posts.$inferSelect;
 export type Flow = typeof flows.$inferSelect;
 export type PostTarget = typeof postTargets.$inferSelect;

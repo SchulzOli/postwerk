@@ -25,6 +25,9 @@ export { codeChallenge, generateCodeVerifier } from './oauth';
 export * as Mastodon from './mastodon';
 export * as Bluesky from './bluesky';
 export * as Atproto from './atproto';
+export * from './bridge';
+export { bridges, getBridge } from './bridges';
+export { ZERNIO_BASE_URL } from './bridges/zernio';
 
 const providers: Record<ProviderId, Provider> = {
   mastodon,
