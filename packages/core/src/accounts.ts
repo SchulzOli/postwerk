@@ -32,9 +32,13 @@ export async function saveAccount(
   return account!;
 }
 
+/** Disconnects an account; returns what was removed (undefined if nothing was). */
 export async function deleteAccount(db: Database, workspaceId: string, accountId: string) {
-  await db.transaction(async (tx) => {
-    await tx.delete(socialAccounts).where(and(eq(socialAccounts.id, accountId), eq(socialAccounts.workspaceId, workspaceId)));
+  return db.transaction(async (tx) => {
+    const [deleted] = await tx
+      .delete(socialAccounts)
+      .where(and(eq(socialAccounts.id, accountId), eq(socialAccounts.workspaceId, workspaceId)))
+      .returning({ handle: socialAccounts.handle, provider: socialAccounts.provider });
     // Targets cascade away with the account; unpublished posts left without any target would never run.
     await tx
       .delete(posts)
@@ -45,6 +49,7 @@ export async function deleteAccount(db: Database, workspaceId: string, accountId
           sql`NOT EXISTS (SELECT 1 FROM ${postTargets} WHERE ${postTargets.postId} = ${posts.id})`,
         ),
       );
+    return deleted;
   });
 }
 
@@ -85,10 +90,11 @@ const STATE_TTL_MS = 10 * 60_000;
 
 export async function createOAuthState(
   db: Database,
-  input: { workspaceId: string; userId: string; provider: ProviderId; data: Record<string, string> },
+  input: { workspaceId: string; userId: string; provider: ProviderId; data: Record<string, string>; state?: string },
 ): Promise<string> {
-  const state = generateToken();
-  await db.insert(oauthStates).values({ ...input, state, expiresAt: new Date(Date.now() + STATE_TTL_MS) });
+  // Bluesky sends the state to the server before the row exists, so it may come pre-made.
+  const { state = generateToken(), ...rest } = input;
+  await db.insert(oauthStates).values({ ...rest, state, expiresAt: new Date(Date.now() + STATE_TTL_MS) });
   return state;
 }
 

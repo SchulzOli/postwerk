@@ -6,8 +6,10 @@
   "exports": {
     ".": "./src/index.ts",
     "./catalog": "./src/catalog.ts",
-    "./validate": "./src/validate.ts",
-    "./text": "./src/text.ts"
+    "./i18n": "./src/i18n.ts",
+    "./messages": "./src/messages.ts",
+    "./text": "./src/text.ts",
+    "./validate": "./src/validate.ts"
   },
   "scripts": {
     "typecheck": "tsc -p tsconfig.json"

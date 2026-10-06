@@ -29,6 +29,55 @@
       "when": 1791224622890,
       "tag": "0003_plugins",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1791300425822,
+      "tag": "0004_rate_limits_audit",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1791300861492,
+      "tag": "0005_workspaces_invites",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1791301321616,
+      "tag": "0006_email",
+      "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1791302045921,
+      "tag": "0007_media",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1791302706540,
+      "tag": "0008_post_variants",
+      "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1791304404190,
+      "tag": "0009_server_secrets",
+      "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1791305291882,
+      "tag": "0010_user_locale",
+      "breakpoints": true
     }
   ]
 }

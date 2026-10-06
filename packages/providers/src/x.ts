@@ -1,7 +1,7 @@
 import { catalog } from './catalog';
-import { bearer, downloadMedia, json, requestJson } from './http';
+import { bearer, fetchMedia, json, requestJson } from './http';
 import { authorizeUrl, expiresSoon, requireClient, tokenRequest } from './oauth';
-import { ProviderError, type MediaItem, type OAuthClient, type OAuthTokens, type PostContent, type Provider } from './types';
+import { ProviderError, type MediaItem, type OAuthClient, type OAuthTokens, type PostContent, type Provider, type PublishContext } from './types';
 
 const AUTHORIZE_URL = 'https://x.com/i/oauth2/authorize';
 const TOKEN_URL = 'https://api.x.com/2/oauth2/token';
@@ -28,8 +28,8 @@ async function xRequest<T>(url: string, init: Parameters<typeof requestJson>[1])
   }
 }
 
-async function uploadImage(token: string, item: MediaItem): Promise<string> {
-  const { blob, mimeType } = await downloadMedia(item.url, MAX_IMAGE_BYTES);
+async function uploadImage(token: string, item: MediaItem, context?: PublishContext): Promise<string> {
+  const { blob, mimeType } = await fetchMedia(item, context, MAX_IMAGE_BYTES);
   const body = new FormData();
   body.set('media', blob, 'image');
   body.set('media_category', 'tweet_image');
@@ -39,9 +39,9 @@ async function uploadImage(token: string, item: MediaItem): Promise<string> {
   return media.data.id;
 }
 
-async function publish(credentials: XCredentials, content: PostContent) {
+async function publish(credentials: XCredentials, content: PostContent, context?: PublishContext) {
   const mediaIds = [];
-  for (const item of content.media) mediaIds.push(await uploadImage(credentials.accessToken, item));
+  for (const item of content.media) mediaIds.push(await uploadImage(credentials.accessToken, item, context));
 
   const post = await xRequest<{ data?: { id?: string } }>(
     `${API}/tweets`,
@@ -108,7 +108,7 @@ export const x: Provider<XCredentials> = {
       ];
     },
   },
-  publish: (credentials, content) => publish(credentials, content),
+  publish: (credentials, content, context) => publish(credentials, content, context),
   // Access tokens last two hours; offline.access always grants a refresh token.
   needsRefresh: (credentials, now) => expiresSoon(credentials, now),
   refresh,

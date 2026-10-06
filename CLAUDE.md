@@ -23,3 +23,4 @@ Integration tests need Postgres (`npm run services:up`) and `TEST_DATABASE_URL` 
 - Every server action re-checks the session (`requireSession` / `requireAdmin`) and scopes queries by `workspaceId`.
 - Credentials are stored only via `encryptJson`; never log them.
 - UI copy is short and plain; errors tell the user what to do next.
+- Every UI text exists in English and German ("du"): add both to the area's catalog in `apps/web/messages/` (`useMessages` in client components, `getMessages` on the server). Core errors are `LocalizedError`s; core and provider texts live in their `messages.ts`.

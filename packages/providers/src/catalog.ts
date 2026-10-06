@@ -6,6 +6,8 @@ import type { Capabilities, ProviderId, ProviderInfo } from './types';
  * import it in the browser for live validation.
  */
 
+const MB = 1024 * 1024;
+
 const noMedia: Capabilities['media'] = { maxImages: 0, maxVideos: 0, required: false, mixed: false, altText: false };
 
 const privacyChoices = (choices: [string, string][]) => choices.map(([value, label]) => ({ value, label }));
@@ -18,7 +20,8 @@ export const catalog: Record<ProviderId, ProviderInfo> = {
     connect: 'mastodon',
     capabilities: {
       text: { maxLength: 500, counter: 'mastodon', required: false },
-      media: { maxImages: 4, maxVideos: 1, required: false, mixed: false, altText: true },
+      // Mastodon's defaults; a server can set other limits.
+      media: { maxImages: 4, maxVideos: 1, required: false, mixed: false, altText: true, maxImageBytes: 16 * MB, maxVideoBytes: 99 * MB },
       options: [],
     },
     setup: { operator: 'none', docsUrl: 'https://docs.joinmastodon.org/methods/statuses/#create' },
@@ -27,11 +30,11 @@ export const catalog: Record<ProviderId, ProviderInfo> = {
   bluesky: {
     id: 'bluesky',
     name: 'Bluesky',
-    description: 'Sign in with an app password so your main password stays private.',
-    connect: 'form',
+    description: 'Sign in with your Bluesky account, or use an app password.',
+    connect: 'atproto',
     capabilities: {
       text: { maxLength: 300, counter: 'graphemes', required: false },
-      media: { maxImages: 4, maxVideos: 0, required: false, mixed: false, altText: true },
+      media: { maxImages: 4, maxVideos: 0, required: false, mixed: false, altText: true, maxImageBytes: 1_000_000 },
       options: [],
     },
     setup: { operator: 'none', docsUrl: 'https://docs.bsky.app/docs/advanced-guides/posts' },
@@ -62,7 +65,7 @@ export const catalog: Record<ProviderId, ProviderInfo> = {
     connect: 'oauth2',
     capabilities: {
       text: { maxLength: 2_200, counter: 'utf16', required: false },
-      media: { maxImages: 10, maxVideos: 10, required: true, mixed: true, altText: false },
+      media: { maxImages: 10, maxVideos: 10, required: true, mixed: true, altText: false, maxImageBytes: 8 * MB },
       options: [],
     },
     setup: {
@@ -80,7 +83,7 @@ export const catalog: Record<ProviderId, ProviderInfo> = {
     connect: 'oauth2',
     capabilities: {
       text: { maxLength: 500, counter: 'graphemes', required: false },
-      media: { maxImages: 10, maxVideos: 10, required: false, mixed: true, altText: true },
+      media: { maxImages: 10, maxVideos: 10, required: false, mixed: true, altText: true, maxImageBytes: 8 * MB, maxVideoBytes: 1024 * MB },
       options: [],
     },
     setup: {
@@ -134,7 +137,7 @@ export const catalog: Record<ProviderId, ProviderInfo> = {
     connect: 'oauth2',
     capabilities: {
       text: { maxLength: 280, counter: 'x', required: false },
-      media: { maxImages: 4, maxVideos: 0, required: false, mixed: false, altText: false },
+      media: { maxImages: 4, maxVideos: 0, required: false, mixed: false, altText: false, maxImageBytes: 5 * MB },
       options: [],
     },
     setup: {
@@ -256,7 +259,7 @@ export const catalog: Record<ProviderId, ProviderInfo> = {
     connect: 'oauth2',
     capabilities: {
       text: { maxLength: 1_500, counter: 'utf16', required: true },
-      media: { maxImages: 1, maxVideos: 0, required: false, mixed: false, altText: false },
+      media: { maxImages: 1, maxVideos: 0, required: false, mixed: false, altText: false, maxImageBytes: 5 * MB },
       options: [],
     },
     setup: {
@@ -274,7 +277,8 @@ export const catalog: Record<ProviderId, ProviderInfo> = {
     connect: 'form',
     capabilities: {
       text: { maxLength: 4_096, counter: 'utf16', required: false, maxLengthWithMedia: 1_024 },
-      media: { maxImages: 10, maxVideos: 10, required: false, mixed: true, altText: false },
+      // Telegram's limits for files it fetches by URL.
+      media: { maxImages: 10, maxVideos: 10, required: false, mixed: true, altText: false, maxImageBytes: 5 * MB, maxVideoBytes: 20 * MB },
       options: [],
     },
     setup: { operator: 'none', docsUrl: 'https://core.telegram.org/bots/api#sendmessage' },

@@ -16,16 +16,19 @@ RUN npm run build -w @postwerk/worker && npm run build -w @postwerk/web
 
 # Publishing worker (also runs database migrations via `node dist/migrate.js`).
 FROM base AS worker
-ENV NODE_ENV=production
+ENV NODE_ENV=production MEDIA_DIR=/data/media
 COPY --from=build /app/apps/worker/dist ./dist
 COPY --from=build /app/packages/db/drizzle ./drizzle
+# Uploads (shared with the web app through a volume); owned by node so a fresh volume is writable.
+RUN mkdir -p /data/media && chown node:node /data/media
 USER node
 CMD ["node", "dist/index.js"]
 
 # Web app (Next.js standalone server).
 FROM base AS web
-ENV NODE_ENV=production NEXT_TELEMETRY_DISABLED=1 PORT=3000 HOSTNAME=0.0.0.0
+ENV NODE_ENV=production NEXT_TELEMETRY_DISABLED=1 PORT=3000 HOSTNAME=0.0.0.0 MEDIA_DIR=/data/media
 COPY --from=build /app/apps/web/.next/standalone ./
+RUN mkdir -p /data/media && chown node:node /data/media
 USER node
 EXPOSE 3000
 CMD ["node", "apps/web/server.js"]

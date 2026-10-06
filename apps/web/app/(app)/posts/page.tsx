@@ -1,61 +1,70 @@
 import Link from 'next/link';
 import { listPosts } from '@postwerk/core';
-import { getDb, type PostStatus } from '@postwerk/db';
+import { getDb } from '@postwerk/db';
 import { LocalTime } from '@/components/local-time';
+import { getMessages } from '@/lib/i18n-server';
 import { providerLabels } from '@/lib/platforms';
+import { canEdit, canPostAgain, canRetry } from '@/lib/post-status';
 import { requireSession } from '@/lib/session';
-import { removePost } from './actions';
+import { commonMessages } from '@/messages/common';
+import { postsMessages } from '@/messages/posts';
+import { removePost, retryPostAction } from './actions';
 
-export const metadata = { title: 'Posts · Postwerk' };
-
-const statusLabels: Record<PostStatus, string> = {
-  draft: 'Draft',
-  scheduled: 'Scheduled',
-  publishing: 'Publishing',
-  published: 'Published',
-  partial: 'Partly published',
-  failed: 'Failed',
-};
+export async function generateMetadata() {
+  const [t, common] = await Promise.all([getMessages(postsMessages), getMessages(commonMessages)]);
+  return { title: common.title(t.pageTitle) };
+}
 
 export default async function PostsPage() {
   const { workspace } = await requireSession();
-  const posts = await listPosts(getDb(), workspace.id);
+  const [posts, t, common] = await Promise.all([listPosts(getDb(), workspace.id), getMessages(postsMessages), getMessages(commonMessages)]);
 
   return (
     <div className="stack-lg">
       <div className="row">
-        <h1 className="grow">Posts</h1>
-        <Link href="/posts" className="button secondary">Refresh</Link>
-        <Link href="/posts/new" className="button">New post</Link>
+        <h1 className="grow">{t.pageTitle}</h1>
+        <Link href="/posts" className="button secondary">{t.refresh}</Link>
+        <Link href="/posts/new" className="button">{t.newPost}</Link>
       </div>
 
       {posts.length === 0 ? (
         <div className="card">
-          <p className="muted">Nothing here yet. Write your first post.</p>
+          <p className="muted">{t.empty}</p>
         </div>
       ) : (
         <ul className="stack">
           {posts.map((post) => (
             <li key={post.id} className="card stack">
               <div className="row">
-                <span className={`badge status-${post.status}`}>{statusLabels[post.status]}</span>
+                <span className={`badge status-${post.status}`}>{common.status[post.status]}</span>
                 <span className="muted grow">{post.scheduledAt && <LocalTime iso={post.scheduledAt.toISOString()} />}</span>
-                {(post.status === 'scheduled' || post.status === 'draft' || post.status === 'failed') && (
+                {canEdit(post.status) && (
+                  <Link href={`/posts/${post.id}/edit`} className="button secondary">{common.edit}</Link>
+                )}
+                {canRetry(post.status) && (
+                  <form action={retryPostAction.bind(null, post.id)}>
+                    <button type="submit" className="secondary">{t.retryFailed}</button>
+                  </form>
+                )}
+                {canPostAgain(post.status) && (
+                  <Link href={`/posts/new?from=${post.id}`} className="button secondary">{t.postAgain}</Link>
+                )}
+                {canEdit(post.status) && (
                   <form action={removePost}>
                     <input type="hidden" name="postId" value={post.id} />
-                    <button type="submit" className="secondary">Delete</button>
+                    <button type="submit" className="secondary">{common.delete}</button>
                   </form>
                 )}
               </div>
               <p className="post-text">{post.text}</p>
               {post.media.length > 0 && (
-                <ul className="chips">
+                <div className="post-media">
                   {post.media.map((item) => (
-                    <li key={item.url}>
-                      <a href={item.url} target="_blank" rel="noreferrer">{item.kind === 'video' ? 'Video' : 'Image'}</a>
-                    </li>
+                    <a key={item.url} href={item.url} target="_blank" rel="noreferrer" title={item.altText}>
+                      {item.kind === 'video' ? <video src={item.url} muted preload="metadata" /> : <img src={item.url} alt={item.altText ?? ''} loading="lazy" />}
+                    </a>
                   ))}
-                </ul>
+                </div>
               )}
               <ul className="targets">
                 {post.targets.map((target) => (
@@ -64,9 +73,9 @@ export default async function PostsPage() {
                     {target.account.handle}
                     {Object.keys(target.options).length > 0 && <span className="muted"> ({Object.values(target.options).join(' · ')})</span>} —{' '}
                     {target.status === 'published' && target.remoteUrl ? (
-                      <a href={target.remoteUrl} target="_blank" rel="noreferrer">published</a>
+                      <a href={target.remoteUrl} target="_blank" rel="noreferrer">{common.targetStatus.published}</a>
                     ) : (
-                      <span className={target.status === 'failed' ? 'error' : 'muted'}>{target.status}</span>
+                      <span className={target.status === 'failed' ? 'error' : 'muted'}>{common.targetStatus[target.status]}</span>
                     )}
                     {target.lastError && target.status !== 'published' && <small className="muted"> ({target.lastError})</small>}
                   </li>

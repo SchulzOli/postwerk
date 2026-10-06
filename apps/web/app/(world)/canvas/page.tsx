@@ -1,19 +1,34 @@
 import { asc, eq } from 'drizzle-orm';
-import { isProviderAvailable, listFlows, listPosts, loadCanvasPositions } from '@postwerk/core';
+import { isBlueskyOAuthAvailable, isProviderAvailable, listFlows, listPosts, listWorkspaceAudit, loadCanvasPositions, needsEmailVerification } from '@postwerk/core';
 import { builtinThemes, defaultCanvas } from '@postwerk/core/theme';
 import { getDb, socialAccounts } from '@postwerk/db';
-import { getProvider, providerInfos } from '@postwerk/providers';
+import { getProvider, localizeFields, localizeInfo, providerInfos } from '@postwerk/providers';
 import { World, type WorldData } from '@/components/world/world';
+import { toActivity } from '@/lib/activity-server';
+import { loadCalendarAroundNow } from '@/lib/calendar-server';
+import { appUrl } from '@/lib/env';
 import { getAppearance } from '@/lib/appearance';
+import { getLocale, getMessages } from '@/lib/i18n-server';
 import { requireSession } from '@/lib/session';
+import { loadTeam } from '@/lib/team';
+import { canvasMessages } from '@/messages/canvas';
+import { commonMessages } from '@/messages/common';
+import { networksMessages } from '@/messages/networks';
 
-export const metadata = { title: 'Canvas · Postwerk' };
+export async function generateMetadata() {
+  const common = await getMessages(commonMessages);
+  return { title: common.title(common.nav.canvas) };
+}
 
 export default async function CanvasPage({ searchParams }: { searchParams: Promise<Record<string, string | undefined>> }) {
-  const { user, workspace, role } = await requireSession();
-  const { connected, error } = await searchParams;
+  const session = await requireSession();
+  const { user, workspace, role } = session;
+  const { connected, error, notice } = await searchParams;
+  const locale = await getLocale();
+  const [t, networksText] = await Promise.all([getMessages(canvasMessages), getMessages(networksMessages)]);
   const db = getDb();
-  const [accounts, flows, posts, positions, appearance] = await Promise.all([
+  const canManage = role !== 'editor';
+  const [accounts, flows, posts, positions, appearance, activity, team, calendar] = await Promise.all([
     db.query.socialAccounts.findMany({
       where: eq(socialAccounts.workspaceId, workspace.id),
       orderBy: [asc(socialAccounts.provider), asc(socialAccounts.handle)],
@@ -22,21 +37,32 @@ export default async function CanvasPage({ searchParams }: { searchParams: Promi
     listPosts(db, workspace.id),
     loadCanvasPositions(db, workspace.id),
     getAppearance(),
+    canManage ? listWorkspaceAudit(db, workspace.id, { limit: 30 }) : null,
+    loadTeam(session),
+    loadCalendarAroundNow(workspace.id),
   ]);
   const installed = new Set(appearance.installed.map((plugin) => plugin.id));
 
   const data: WorldData = {
     user: { name: user.name, email: user.email },
-    workspace: { name: workspace.name },
-    canManage: role !== 'editor',
+    needsVerification: needsEmailVerification(user),
+    workspace,
+    workspaces: session.workspaces,
+    team,
+    canManage,
     networks: providerInfos
       .filter((info) => info.id !== 'sandbox' || isProviderAvailable('sandbox'))
       .map((info) => {
         const { connector } = getProvider(info.id);
         return {
-          info,
+          info: localizeInfo(info, locale),
           available: isProviderAvailable(info.id),
-          connector: connector.kind === 'form' ? { kind: 'form' as const, fields: connector.fields } : { kind: connector.kind },
+          connector:
+            connector.kind === 'form'
+              ? { kind: 'form' as const, fields: localizeFields(info.id, connector.fields, locale) }
+              : connector.kind === 'atproto'
+                ? { kind: 'atproto' as const, fields: localizeFields(info.id, connector.fields, locale), oauth: isBlueskyOAuthAvailable(appUrl) }
+                : { kind: connector.kind },
         };
       }),
     accounts: accounts.map((account) => ({
@@ -55,15 +81,27 @@ export default async function CanvasPage({ searchParams }: { searchParams: Promi
       status: post.status,
       scheduledAt: post.scheduledAt?.toISOString() ?? null,
       mediaCount: post.media.length,
+      media: post.media.slice(0, 4).map(({ url, kind, altText }) => ({ url, kind, altText })),
       targets: post.targets.map((target) => ({ accountId: target.socialAccountId, status: target.status, url: target.remoteUrl, error: target.lastError })),
     })),
+    calendar,
     positions,
     plugins: [
       ...builtinThemes.map((manifest) => ({ manifest, builtin: true, installed: installed.has(manifest.id) })),
       ...appearance.installed.filter((plugin) => !plugin.builtin).map((plugin) => ({ manifest: plugin.manifest, builtin: false, installed: true })),
     ],
+    activity: activity?.map(toActivity) ?? null,
     appearance: { mode: appearance.mode, themeId: appearance.theme?.id ?? null, canvas: appearance.theme?.canvas ?? defaultCanvas },
-    notice: connected ? { kind: 'success', text: `Connected ${connected}.` } : error ? { kind: 'error', text: error } : null,
+    notice: connected
+      ? { kind: 'success', text: networksText.connectedNotice(connected) }
+      : error
+        ? { kind: 'error', text: error }
+        : notice === 'verified'
+          ? { kind: 'success', text: t.verified }
+          : notice === 'verify-expired'
+            ? { kind: 'error', text: t.verifyExpired }
+            : null,
   };
-  return <World data={data} />;
+  // A different workspace is a different world: remount instead of merging.
+  return <World key={workspace.id} data={data} />;
 }

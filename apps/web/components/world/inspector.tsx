@@ -1,17 +1,26 @@
 'use client';
 
 import { useActionState, useMemo, useState, useTransition } from 'react';
+import { errorText } from '@postwerk/core/i18n';
 import { parseThemeManifest, type ThemeManifest } from '@postwerk/core/theme';
 import { catalog } from '@postwerk/providers/catalog';
 import { connectMastodon, connectWithForm, disconnectAccount, startOAuth } from '@/app/(app)/accounts/actions';
+import { BlueskyConnect } from '@/components/bluesky-connect';
 import { chooseThemeAction, installBuiltinPluginAction, installPluginAction, uninstallPluginAction } from '@/app/(world)/canvas/actions';
 import { ConnectForm } from '@/components/connect-form';
 import { ThemePreview } from '@/components/theme-preview';
+import { useLocale, useMessages } from '@/lib/i18n';
+import { intlLocale } from '@/lib/locale';
+import { canvasMessages } from '@/messages/canvas';
+import { commonMessages } from '@/messages/common';
+import { mediaSummary, networksMessages } from '@/messages/networks';
+import { themesMessages } from '@/messages/themes';
 import { useWorld } from './context';
-import { ids, regionInfo, type WorldNode } from './layout';
-import { mediaSummary } from './nodes';
+import { ids, type WorldNode } from './layout';
 
 function CopyLink({ id }: { id: string }) {
+  const t = useMessages(canvasMessages);
+  const common = useMessages(commonMessages);
   const world = useWorld();
   const [copied, setCopied] = useState(false);
   return (
@@ -24,7 +33,7 @@ function CopyLink({ id }: { id: string }) {
         setTimeout(() => setCopied(false), 1500);
       }}
     >
-      {copied ? 'Link copied' : 'Copy link'}
+      {copied ? t.linkCopied : common.copyLink}
     </button>
   );
 }
@@ -34,6 +43,8 @@ function Jump({ id, children }: { id: string; children: React.ReactNode }) {
 }
 
 function NetworkInspector({ node }: { node: Extract<WorldNode, { type: 'network' }> }) {
+  const t = useMessages(networksMessages);
+  const locale = useLocale();
   const world = useWorld();
   const { info, available, connector } = node.data.network;
   const { text, media, options } = info.capabilities;
@@ -42,28 +53,31 @@ function NetworkInspector({ node }: { node: Extract<WorldNode, { type: 'network'
     <>
       <p>{info.description}</p>
       <dl className="facts">
-        <dt>Text</dt>
+        <dt>{t.factText}</dt>
         <dd>
-          up to {text.maxLength.toLocaleString()} characters{text.maxLengthWithMedia ? ` (${text.maxLengthWithMedia.toLocaleString()} with media)` : ''}
+          {t.upToChars({
+            max: text.maxLength.toLocaleString(intlLocale(locale)),
+            withMedia: text.maxLengthWithMedia ? text.maxLengthWithMedia.toLocaleString(intlLocale(locale)) : undefined,
+          })}
         </dd>
-        <dt>Media</dt>
+        <dt>{t.factMedia}</dt>
         <dd>
-          {mediaSummary(info.id)}
-          {media.altText ? ' · alt text' : ''}
+          {mediaSummary(media, t)}
+          {media.altText ? t.altText : ''}
         </dd>
         {options.length > 0 && (
           <>
-            <dt>Per post</dt>
+            <dt>{t.factPerPost}</dt>
             <dd>{options.map((option) => option.label).join(', ')}</dd>
           </>
         )}
-        <dt>Setup</dt>
-        <dd>{info.setup.operator === 'none' ? 'None — works for everyone' : `Operator app (${info.setup.envPrefix}_CLIENT_ID / _SECRET)`}</dd>
+        <dt>{t.factSetup}</dt>
+        <dd>{info.setup.operator === 'none' ? t.setupNone : t.setupOperator(info.setup.envPrefix ?? '')}</dd>
       </dl>
 
       {accounts.length > 0 && (
         <section className="stack-sm">
-          <h3>Connected</h3>
+          <h3>{t.connected}</h3>
           {accounts.map((account) => (
             <Jump key={account.id} id={ids.account(account.id)}>
               {account.displayName ?? account.handle}
@@ -74,14 +88,19 @@ function NetworkInspector({ node }: { node: Extract<WorldNode, { type: 'network'
 
       {world.data.canManage && available && (
         <section className="stack">
-          <h3>Connect {accounts.length > 0 ? 'another' : 'an'} account</h3>
+          <h3>{t.connectAccount(accounts.length > 0)}</h3>
           {connector.kind === 'mastodon' && (
-            <ConnectForm action={connectMastodon} submitLabel="Continue to Mastodon" fields={[{ name: 'instance', label: 'Server', placeholder: 'mastodon.social' }]} />
+            <ConnectForm
+              action={connectMastodon}
+              submitLabel={t.continueTo('Mastodon')}
+              fields={[{ name: 'instance', label: t.mastodonServer, placeholder: 'mastodon.social' }]}
+            />
           )}
-          {connector.kind === 'form' && <ConnectForm action={connectWithForm.bind(null, info.id)} submitLabel={`Connect ${info.name}`} fields={connector.fields} />}
+          {connector.kind === 'form' && <ConnectForm action={connectWithForm.bind(null, info.id)} submitLabel={t.connectNamed(info.name)} fields={connector.fields} />}
+          {connector.kind === 'atproto' && <BlueskyConnect fields={connector.fields} oauth={connector.oauth} />}
           {connector.kind === 'oauth2' && (
             <form action={startOAuth.bind(null, info.id)}>
-              <button type="submit">Continue to {info.name}</button>
+              <button type="submit">{t.continueTo(info.name)}</button>
             </form>
           )}
         </section>
@@ -89,22 +108,24 @@ function NetworkInspector({ node }: { node: Extract<WorldNode, { type: 'network'
 
       {!available && (
         <section className="stack-sm setup-box">
-          <h3>One-time setup by the server admin</h3>
+          <h3>{t.setupTitle}</h3>
           <p className="muted">{info.setup.review}</p>
           <p>
-            Set <code>{info.setup.envPrefix}_CLIENT_ID</code> and <code>{info.setup.envPrefix}_CLIENT_SECRET</code>, with the callback URL{' '}
-            <code>/api/connect/{info.id}/callback</code>.
+            {t.envSet} <code>{info.setup.envPrefix}_CLIENT_ID</code> {t.envAnd} <code>{info.setup.envPrefix}_CLIENT_SECRET</code>
+            {t.envCallback} <code>/api/connect/{info.id}/callback</code>.
           </p>
         </section>
       )}
       <a href={info.setup.docsUrl} target="_blank" rel="noreferrer">
-        Developer docs →
+        {t.developerDocsLink}
       </a>
     </>
   );
 }
 
 function AccountInspector({ node }: { node: Extract<WorldNode, { type: 'account' }> }) {
+  const t = useMessages(canvasMessages);
+  const networks = useMessages(networksMessages);
   const world = useWorld();
   const { account } = node.data;
   const usedIn = world.data.flows.filter((flow) => flow.graph.steps.some((step) => step.type === 'target' && step.accountId === account.id));
@@ -112,25 +133,35 @@ function AccountInspector({ node }: { node: Extract<WorldNode, { type: 'account'
   return (
     <>
       <p>
-        {account.handle} on <Jump id={ids.network(account.provider)}>{catalog[account.provider].name}</Jump>
+        {account.handle}
+        {t.accountOn}
+        <Jump id={ids.network(account.provider)}>{catalog[account.provider].name}</Jump>
       </p>
       {account.status === 'needs_reauth' && (
         <p className="error">
-          Access expired or was revoked. <Jump id={ids.network(account.provider)}>Reconnect it</Jump> — posts resume afterwards.
+          {t.accessExpired.before}
+          <Jump id={ids.network(account.provider)}>{t.accessExpired.link}</Jump>
+          {t.accessExpired.after}
         </p>
       )}
       <section className="stack-sm">
-        <h3>Used in flows</h3>
-        {usedIn.length === 0 ? <span className="muted">Not used in any flow.</span> : usedIn.map((flow) => <Jump key={flow.id} id={ids.flow(flow.id)}>{flow.name}</Jump>)}
+        <h3>{t.usedInFlows}</h3>
+        {usedIn.length === 0 ? <span className="muted">{t.notUsed}</span> : usedIn.map((flow) => <Jump key={flow.id} id={ids.flow(flow.id)}>{flow.name}</Jump>)}
       </section>
       <section className="stack-sm">
-        <h3>Recent posts</h3>
-        {recent.length === 0 ? <span className="muted">None yet.</span> : <span>{recent.length} of the latest posts went here. <Jump id={ids.posts}>See posts</Jump></span>}
+        <h3>{t.recentPosts}</h3>
+        {recent.length === 0 ? (
+          <span className="muted">{t.noneYet}</span>
+        ) : (
+          <span>
+            {t.recentHere(recent.length)} <Jump id={ids.posts}>{t.seePosts}</Jump>
+          </span>
+        )}
       </section>
       {world.data.canManage && (
         <form action={disconnectAccount}>
           <input type="hidden" name="accountId" value={account.id} />
-          <button type="submit" className="secondary">Disconnect</button>
+          <button type="submit" className="secondary">{networks.disconnect}</button>
         </form>
       )}
     </>
@@ -138,24 +169,27 @@ function AccountInspector({ node }: { node: Extract<WorldNode, { type: 'account'
 }
 
 function FlowInspector({ node }: { node: Extract<WorldNode, { type: 'flow' }> }) {
+  const t = useMessages(canvasMessages);
   const world = useWorld();
   const plan = world.plans[node.data.flowId];
   const accounts = new Map(world.data.accounts.map((account) => [account.id, account]));
   return (
     <>
       <p className="muted">
-        Connect steps from <strong>New post</strong> to accounts. Every path is one destination; steps along the way change what that account receives.
+        {t.flowHint.before}
+        <strong>{t.steps.trigger}</strong>
+        {t.flowHint.after}
       </p>
       {plan && plan.errors.map((error) => <p key={error} className="error">{error}</p>)}
       {plan && plan.targets.length > 0 && (
         <section className="stack-sm">
-          <h3>Preview for “Example post”</h3>
+          <h3>{t.previewFor(t.sampleText)}</h3>
           {plan.targets.map((target) => {
             const account = accounts.get(target.accountId);
             return (
               <div key={target.accountId} className="preview">
-                <strong>{account ? `${catalog[account.provider].name} · ${account.handle}` : 'Missing account'}</strong>
-                {target.delayMinutes > 0 && <small className="muted"> after {target.delayMinutes} min</small>}
+                <strong>{account ? `${catalog[account.provider].name} · ${account.handle}` : t.missingAccount}</strong>
+                {target.delayMinutes > 0 && <small className="muted">{t.after(target.delayMinutes)}</small>}
                 <pre>{target.text}</pre>
               </div>
             );
@@ -166,43 +200,37 @@ function FlowInspector({ node }: { node: Extract<WorldNode, { type: 'flow' }> })
         type="button"
         className="secondary"
         onClick={() => {
-          if (confirm(`Delete the flow “${node.data.name}”? Posts already published keep their history.`)) world.deleteFlow(node.data.flowId);
+          if (confirm(t.deleteFlowConfirm(node.data.name))) world.deleteFlow(node.data.flowId);
         }}
       >
-        Delete flow
+        {t.deleteFlow}
       </button>
     </>
   );
 }
 
 function RegionInspector({ node }: { node: Extract<WorldNode, { type: 'region' }> }) {
+  const t = useMessages(canvasMessages);
+  const themes = useMessages(themesMessages);
   const world = useWorld();
   const region = node.data.region;
   return (
     <>
-      <p>{regionInfo[region].subtitle}.</p>
+      <p>{t.regions[region].subtitle}.</p>
       {region === 'networks' && (
-        <p className="muted">
-          {world.data.networks.filter((n) => n.available).length} of {world.data.networks.length} networks are ready on this server. Select one to see its limits and connect.
-        </p>
+        <p className="muted">{t.networksReady({ ready: world.data.networks.filter((n) => n.available).length, total: world.data.networks.length })}</p>
       )}
-      {region === 'flows' && <p className="muted">Use “+ New flow” in the toolbar, then add steps and drag connections between their dots.</p>}
+      {region === 'flows' && <p className="muted">{t.flowsHint}</p>}
       {region === 'plugins' && (
         <>
-          <p className="muted">
-            A theme sets colors, fonts, corner radii, the canvas grid and how connections are drawn — always for both light and dark mode. Switch between light, dark and your
-            system setting at the top right.
-          </p>
-          <p className="muted">Everyone picks their own theme. Workspace owners and admins install and uninstall them; built-in themes can be installed again any time.</p>
-          <a href={`#n=${ids.pluginInstall}`}>Open the theme editor →</a>
+          <p className="muted">{themes.regionHint}</p>
+          <p className="muted">{themes.regionWho}</p>
+          <a href={`#n=${ids.pluginInstall}`}>{themes.openEditorLink}</a>
         </>
       )}
     </>
   );
 }
-
-const patternLabels = { dots: 'Dotted grid', lines: 'Lined grid', cross: 'Cross grid', none: 'No grid' };
-const edgeLabels = { smoothstep: 'rounded connections', bezier: 'curved connections', step: 'right-angled connections', straight: 'straight connections' };
 
 function download(theme: ThemeManifest) {
   const url = URL.createObjectURL(new Blob([`${JSON.stringify(theme, null, 2)}\n`], { type: 'application/json' }));
@@ -211,6 +239,7 @@ function download(theme: ThemeManifest) {
 }
 
 function PluginInspector({ node }: { node: Extract<WorldNode, { type: 'plugin' }> }) {
+  const t = useMessages(themesMessages);
   const world = useWorld();
   const [pending, startTransition] = useTransition();
   const { manifest, builtin, installed } = node.data.plugin;
@@ -220,34 +249,34 @@ function PluginInspector({ node }: { node: Extract<WorldNode, { type: 'plugin' }
       <p>{manifest.description}</p>
       <ThemePreview theme={manifest} large />
       <dl className="facts">
-        <dt>Type</dt>
-        <dd>Theme</dd>
-        <dt>Version</dt>
+        <dt>{t.factType}</dt>
+        <dd>{t.typeTheme}</dd>
+        <dt>{t.factVersion}</dt>
         <dd>{manifest.version}</dd>
-        <dt>Author</dt>
+        <dt>{t.factAuthor}</dt>
         <dd>{manifest.author}</dd>
-        <dt>Source</dt>
-        <dd>{builtin ? 'Built-in, updates with Postwerk' : 'Custom'}</dd>
-        <dt>Canvas</dt>
+        <dt>{t.factSource}</dt>
+        <dd>{builtin ? t.sourceBuiltin : t.sourceCustom}</dd>
+        <dt>{t.factCanvas}</dt>
         <dd>
-          {patternLabels[manifest.canvas.pattern]}, {edgeLabels[manifest.canvas.edges]}
+          {t.pattern[manifest.canvas.pattern]}, {t.edges[manifest.canvas.edges]}
         </dd>
-        <dt>Status</dt>
-        <dd>{active ? 'You are using it' : installed ? 'Installed' : 'Not installed'}</dd>
+        <dt>{t.factStatus}</dt>
+        <dd>{active ? t.statusActive : installed ? t.statusInstalled : t.notInstalled}</dd>
       </dl>
       <div className="row">
         {installed && !active && (
           <button type="button" disabled={pending} onClick={() => startTransition(() => chooseThemeAction(manifest.id))}>
-            Use this theme
+            {t.useTheme}
           </button>
         )}
         {!installed && world.data.canManage && (
           <button type="button" disabled={pending} onClick={() => startTransition(() => installBuiltinPluginAction(manifest.id))}>
-            Install
+            {t.install}
           </button>
         )}
         <button type="button" className="secondary" onClick={() => download(manifest)}>
-          Download
+          {t.download}
         </button>
         {installed && world.data.canManage && (
           <button
@@ -255,22 +284,23 @@ function PluginInspector({ node }: { node: Extract<WorldNode, { type: 'plugin' }
             className="secondary"
             disabled={pending}
             onClick={() => {
-              const again = builtin ? ' You can install it again any time.' : '';
-              if (confirm(`Uninstall “${manifest.name}”? Everyone using it switches to the first installed theme.${again}`)) {
+              if (confirm(t.uninstallConfirm({ name: manifest.name, builtin }))) {
                 startTransition(() => uninstallPluginAction(manifest.id));
               }
             }}
           >
-            Uninstall
+            {t.uninstall}
           </button>
         )}
       </div>
-      {!builtin && <p className="muted">To change it, open the theme editor, start from “{manifest.name}” and install it again under the same id.</p>}
+      {!builtin && <p className="muted">{t.changeCustom(manifest.name)}</p>}
     </>
   );
 }
 
 function ThemeEditor() {
+  const t = useMessages(themesMessages);
+  const locale = useLocale();
   const world = useWorld();
   const [state, formAction, pending] = useActionState(installPluginAction, {});
   // The extra CSS is edited on its own, as plain CSS instead of one long JSON string.
@@ -282,14 +312,14 @@ function ThemeEditor() {
     try {
       value = JSON.parse(json);
     } catch (error) {
-      return { error: `This is not valid JSON: ${(error as Error).message}` };
+      return { error: t.notJson((error as Error).message) };
     }
     try {
       return { theme: parseThemeManifest(value && typeof value === 'object' && !Array.isArray(value) ? { ...value, css } : value) };
     } catch (error) {
-      return { error: (error as Error).message };
+      return { error: errorText(error, locale) };
     }
-  }, [json, css]);
+  }, [json, css, t, locale]);
   const themes = world.data.plugins.map((plugin) => plugin.manifest);
   const existing = parsed?.theme && world.data.plugins.find((plugin) => plugin.installed && plugin.manifest.id === parsed.theme.id);
 
@@ -313,20 +343,17 @@ function ThemeEditor() {
     if (!plugin) return;
     const theme = plugin.manifest;
     // Built-in ids are reserved; a custom theme keeps its own id so installing it again updates it.
-    load(JSON.stringify(plugin.builtin ? { ...theme, id: `${theme.id}-custom`, name: `My ${theme.name}`.slice(0, 40), author: world.data.user.name, version: '1.0.0' } : theme));
+    load(JSON.stringify(plugin.builtin ? { ...theme, id: `${theme.id}-custom`, name: t.myTheme(theme.name).slice(0, 40), author: world.data.user.name, version: '1.0.0' } : theme));
   }
 
   return (
     <>
-      <p className="muted">
-        A theme sets colors for light and dark mode, fonts, corner radii and the canvas grid, plus optional CSS. Pick a starting point, change what you like, then install it.
-        Installing the same id again updates it.
-      </p>
-      {!world.data.canManage && <p className="muted">Only workspace owners and admins can install themes. You can still try one here and download it.</p>}
+      <p className="muted">{t.editorHint}</p>
+      {!world.data.canManage && <p className="muted">{t.editorAdminsOnly}</p>}
       <label>
-        Start from
+        {t.startFrom}
         <select value="" onChange={(e) => startFrom(e.target.value)}>
-          <option value="">Choose a theme…</option>
+          <option value="">{t.chooseTheme}</option>
           {themes.map((theme) => (
             <option key={theme.id} value={theme.id}>
               {theme.name}
@@ -335,23 +362,23 @@ function ThemeEditor() {
         </select>
       </label>
       <label>
-        Or open a theme file
+        {t.openFile}
         <input type="file" accept=".json,application/json" onChange={async (e) => load((await e.target.files?.[0]?.text()) ?? '')} />
       </label>
       <form action={formAction} className="stack">
         <label>
-          Theme
+          {t.source}
           <textarea
             className="theme-source"
             rows={14}
             value={json}
             spellCheck={false}
-            placeholder='{ "kind": "theme", "id": "my-theme", "name": "My theme", "light": { … }, "dark": { … } }'
+            placeholder={t.sourcePlaceholder}
             onChange={(e) => load(e.target.value)}
           />
         </label>
         <label>
-          Extra CSS <small className="muted">optional · use var(--token) for anything that differs between light and dark</small>
+          {t.extraCss} <small className="muted">{t.extraCssHint}</small>
           <textarea className="theme-source" rows={6} value={css} spellCheck={false} placeholder=".region { border-style: solid; }" onChange={(e) => setCss(e.target.value)} />
         </label>
         <input type="hidden" name="manifest" value={parsed?.theme ? JSON.stringify(parsed.theme) : ''} />
@@ -370,12 +397,12 @@ function ThemeEditor() {
         <div className="row">
           {world.data.canManage && (
             <button type="submit" disabled={pending || !parsed?.theme}>
-              {pending ? 'Installing…' : existing ? 'Update and use' : 'Install and use'}
+              {pending ? t.installing : existing ? t.updateAndUse : t.installAndUse}
             </button>
           )}
           {parsed?.theme && (
             <button type="button" className="secondary" onClick={() => download(parsed.theme)}>
-              Download
+              {t.download}
             </button>
           )}
         </div>
@@ -385,7 +412,10 @@ function ThemeEditor() {
 }
 
 export function Inspector({ node, onClose }: { node: WorldNode | undefined; onClose(): void }) {
-  if (!node || node.type === 'step' || node.type === 'composer' || node.type === 'posts') return null;
+  const t = useMessages(canvasMessages);
+  const themes = useMessages(themesMessages);
+  const common = useMessages(commonMessages);
+  if (!node || node.type === 'step' || node.type === 'composer' || node.type === 'posts' || node.type === 'calendar' || node.type === 'activity' || node.type === 'members') return null;
   const title =
     node.type === 'network'
       ? node.data.network.info.name
@@ -396,14 +426,14 @@ export function Inspector({ node, onClose }: { node: WorldNode | undefined; onCl
           : node.type === 'plugin'
             ? node.data.plugin.manifest.name
             : node.type === 'pluginInstall'
-              ? 'Theme editor'
-              : node.data.title;
+              ? themes.editorTitle
+              : t.regions[node.data.region].title;
   return (
-    <aside className="inspector" aria-label={`${title} details`}>
+    <aside className="inspector" aria-label={t.details(title)}>
       <header className="row-tight">
         <h2 className="grow">{title}</h2>
         <CopyLink id={node.id} />
-        <button type="button" className="icon-button" aria-label="Close" onClick={onClose}>
+        <button type="button" className="icon-button" aria-label={common.close} onClick={onClose}>
           ×
         </button>
       </header>

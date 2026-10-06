@@ -1,6 +1,6 @@
 import { request, requestJson, type RequestOptions } from './http';
 import { authorizeUrl, requireClient, tokenRequest } from './oauth';
-import { ProviderError, type ConnectedAccount, type OAuthClient, type OAuthConnect, type OAuthTokens } from './types';
+import { ProviderError, type ConnectedAccount, type OAuthClient, type OAuthConnect, type OAuthTokens, type ProviderClient } from './types';
 
 /**
  * Google OAuth and API helpers shared by YouTube and Google Business Profile.
@@ -46,7 +46,7 @@ export function googleConnector<C extends OAuthTokens>(
 }
 
 /** Access tokens last one hour. A revoked refresh token yields `invalid_grant`, which tokenRequest turns into needsReauth. */
-export async function refreshGoogleTokens<C extends OAuthTokens>(credentials: C, client: OAuthClient | undefined, name: string): Promise<C> {
+export async function refreshGoogleTokens<C extends OAuthTokens>(credentials: C, client: ProviderClient | undefined, name: string): Promise<C> {
   if (!credentials.refreshToken) throw new ProviderError(`${name} access expired. Please reconnect the account.`, { needsReauth: true });
   const tokens = await tokenRequest(GOOGLE_TOKEN_URL, requireClient(client, name), {
     grant_type: 'refresh_token',

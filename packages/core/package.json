@@ -5,7 +5,9 @@
   "type": "module",
   "exports": {
     ".": "./src/index.ts",
+    "./calendar": "./src/calendar.ts",
     "./flow": "./src/flow.ts",
+    "./i18n": "./src/i18n.ts",
     "./theme": "./src/theme.ts"
   },
   "scripts": {
@@ -14,6 +16,10 @@
   "dependencies": {
     "@postwerk/db": "*",
     "@postwerk/providers": "*",
-    "drizzle-orm": "^0.45.3"
+    "drizzle-orm": "^0.45.3",
+    "nodemailer": "^10.0.15"
+  },
+  "devDependencies": {
+    "@types/nodemailer": "^8.0.2"
   }
 }

@@ -1,12 +1,19 @@
 import type { FlowGraph } from '@postwerk/core/flow';
 import type { ColorMode, ThemeCanvas, ThemeManifest } from '@postwerk/core/theme';
+import type { TeamData } from '@/components/team';
+import type { ActivityItem } from '@/lib/activity';
+import type { CalendarData } from '@/lib/calendar';
 import type { FormField, PostStatus, TargetStatus } from './shared-types';
 import type { ProviderId, ProviderInfo } from '@postwerk/providers/catalog';
 
 export interface NetworkData {
   info: ProviderInfo;
   available: boolean;
-  connector: { kind: 'form'; fields: FormField[] } | { kind: 'oauth2' | 'mastodon' };
+  connector:
+    | { kind: 'form'; fields: FormField[] }
+    | { kind: 'oauth2' | 'mastodon' }
+    /** Bluesky: sign in on the user's server when `oauth` (this server's address allows it), else app passwords. */
+    | { kind: 'atproto'; fields: FormField[]; oauth: boolean };
 }
 
 export interface AccountData {
@@ -33,6 +40,8 @@ export interface PostData {
   status: PostStatus;
   scheduledAt: string | null;
   mediaCount: number;
+  /** The first few attachments, for thumbnails. */
+  media: { url: string; kind: 'image' | 'video'; altText?: string }[];
   targets: { accountId: string; status: TargetStatus; url: string | null; error: string | null }[];
 }
 
@@ -45,15 +54,24 @@ export interface PluginData {
 
 export interface WorldData {
   user: { name: string; email: string };
-  workspace: { name: string };
+  /** Show the "confirm your email" reminder. */
+  needsVerification: boolean;
+  workspace: { id: string; name: string };
+  /** Every workspace the user belongs to, for the switcher. */
+  workspaces: { id: string; name: string }[];
+  team: TeamData;
   canManage: boolean;
   networks: NetworkData[];
   accounts: AccountData[];
   flows: FlowData[];
   posts: PostData[];
+  /** Posts around today for the calendar; it loads other weeks itself. */
+  calendar: CalendarData;
   positions: Record<string, { x: number; y: number }>;
   /** Built-ins first (installed or not, so their cards keep their place), then custom themes. */
   plugins: PluginData[];
   appearance: { mode: ColorMode; themeId: string | null; canvas: ThemeCanvas };
+  /** Latest workspace activity; null for members who may not see it (editors). */
+  activity: ActivityItem[] | null;
   notice: { kind: 'success' | 'error'; text: string } | null;
 }

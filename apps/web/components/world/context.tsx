@@ -2,6 +2,7 @@
 
 import { createContext, useContext } from 'react';
 import type { FlowPlan, FlowStep, FlowStepType } from '@postwerk/core/flow';
+import type { ComposerInitial } from '@/components/composer';
 import type { WorldData } from './types';
 
 export type SaveState = 'saved' | 'saving' | 'unsaved' | 'error';
@@ -19,6 +20,18 @@ export interface WorldApi {
   saveState: Record<string, SaveState>;
   /** Live preview of every flow for a sample post. */
   plans: Record<string, FlowPlan>;
+  /** What the Compose panel starts from: a post being edited or posted again; undefined for a new post. */
+  composing: ComposerInitial | undefined;
+  /** Opens a post in the Compose panel, to edit it or (asCopy) post it again. */
+  composeFrom(postId: string, asCopy?: boolean): Promise<void>;
+  /** Starts a new post in the Compose panel, scheduled for a time (from the calendar). */
+  composeAt(iso: string): void;
+  /** The time a new post starts with, set by composeAt. */
+  composeTime: string | undefined;
+  /** Back to an empty new post. */
+  resetComposer(): void;
+  /** Bumped after every save, so the composer starts fresh. */
+  composerKey: number;
 }
 
 export const WorldContext = createContext<WorldApi | null>(null);

@@ -1,5 +1,5 @@
 import { and, eq } from 'drizzle-orm';
-import { canvasPositions, flows, type Database } from '@postwerk/db';
+import { canvasPositions, flows, type Database, type Transaction } from '@postwerk/db';
 import { emptyFlow, parseFlowGraph, type FlowGraph } from './flow';
 
 export async function listFlows(db: Database, workspaceId: string) {
@@ -7,7 +7,7 @@ export async function listFlows(db: Database, workspaceId: string) {
   return rows.map((row) => ({ ...row, graph: parseFlowGraph(row.graph) }));
 }
 
-export async function getFlow(db: Database, workspaceId: string, flowId: string) {
+export async function getFlow(db: Database | Transaction, workspaceId: string, flowId: string) {
   const row = await db.query.flows.findFirst({ where: and(eq(flows.id, flowId), eq(flows.workspaceId, workspaceId)) });
   return row ? { ...row, graph: parseFlowGraph(row.graph) } : undefined;
 }
@@ -31,8 +31,10 @@ export async function saveFlow(db: Database, workspaceId: string, flowId: string
   return updated.length > 0;
 }
 
+/** Returns the deleted flow's name, or undefined if there was none. */
 export async function deleteFlow(db: Database, workspaceId: string, flowId: string) {
-  await db.delete(flows).where(and(eq(flows.id, flowId), eq(flows.workspaceId, workspaceId)));
+  const [deleted] = await db.delete(flows).where(and(eq(flows.id, flowId), eq(flows.workspaceId, workspaceId))).returning({ name: flows.name });
+  return deleted?.name;
 }
 
 export async function loadCanvasPositions(db: Database, workspaceId: string): Promise<Record<string, { x: number; y: number }>> {

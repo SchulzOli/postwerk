@@ -25,9 +25,15 @@ export const provider = pgEnum('provider', [
 ]);
 
 export interface PostMedia {
+  /** A public https URL, or /media/<key> for uploads. */
   url: string;
   kind: 'image' | 'video';
   altText?: string;
+  /** Set for uploads: the media row and storage key. */
+  mediaId?: string;
+  key?: string;
+  mimeType?: string;
+  size?: number;
 }
 export const accountStatus = pgEnum('account_status', ['active', 'needs_reauth']);
 export const postStatus = pgEnum('post_status', ['draft', 'scheduled', 'publishing', 'published', 'partial', 'failed']);
@@ -39,8 +45,31 @@ export const users = pgTable('users', {
   email: text('email').notNull().unique(),
   name: text('name').notNull(),
   passwordHash: text('password_hash').notNull(),
+  /** Set once the user clicked the link we emailed them. */
+  emailVerifiedAt: timestamp('email_verified_at', { withTimezone: true }),
+  /** Email the user when one of their posts fails. */
+  notifyFailures: boolean('notify_failures').notNull().default(true),
+  /** UI and email language ("en", "de"); null follows the browser. */
+  locale: text('locale'),
   createdAt: createdAt(),
 });
+
+export const emailTokenKind = pgEnum('email_token_kind', ['verify_email', 'reset_password']);
+
+/** Single-use links we email (verification, password reset); only the hash is stored. */
+export const emailTokens = pgTable(
+  'email_tokens',
+  {
+    tokenHash: text('token_hash').primaryKey(),
+    userId: uuid('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+    kind: emailTokenKind('kind').notNull(),
+    /** The address the link was sent to (verification confirms exactly this one). */
+    email: text('email').notNull(),
+    expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
+    createdAt: createdAt(),
+  },
+  (t) => [index('email_tokens_user_idx').on(t.userId)],
+);
 
 export const sessions = pgTable(
   'sessions',
@@ -48,6 +77,8 @@ export const sessions = pgTable(
     /** SHA-256 of the session token; the raw token only lives in the cookie. */
     id: text('id').primaryKey(),
     userId: uuid('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+    /** The workspace this session works in (switchable); null falls back to the user's first one. */
+    workspaceId: uuid('workspace_id').references(() => workspaces.id, { onDelete: 'set null' }),
     expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
     createdAt: createdAt(),
   },
@@ -73,6 +104,27 @@ export const workspaceMembers = pgTable(
   (t) => [primaryKey({ columns: [t.workspaceId, t.userId] }), index('workspace_members_user_idx').on(t.userId)],
 );
 
+/** Invitations to join a workspace; each link works once and expires. */
+export const invites = pgTable(
+  'invites',
+  {
+    id: id(),
+    workspaceId: uuid('workspace_id').notNull().references(() => workspaces.id, { onDelete: 'cascade' }),
+    /** Who it is meant for (shown, prefilled and emailed); anyone with the link can use it once. */
+    email: text('email'),
+    role: memberRole('role').notNull().default('editor'),
+    /** SHA-256 of the token for lookup, plus the token encrypted so admins can copy the link again. */
+    tokenHash: text('token_hash').notNull(),
+    tokenEnc: text('token_enc').notNull(),
+    invitedBy: uuid('invited_by').references(() => users.id, { onDelete: 'set null' }),
+    expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
+    acceptedAt: timestamp('accepted_at', { withTimezone: true }),
+    acceptedBy: uuid('accepted_by').references(() => users.id, { onDelete: 'set null' }),
+    createdAt: createdAt(),
+  },
+  (t) => [uniqueIndex('invites_token_idx').on(t.tokenHash), index('invites_workspace_idx').on(t.workspaceId)],
+);
+
 /** Plugins installed in a workspace (themes for now, see @postwerk/core/theme). */
 export const plugins = pgTable(
   'plugins',
@@ -89,6 +141,13 @@ export const plugins = pgTable(
   },
   (t) => [primaryKey({ columns: [t.workspaceId, t.pluginId] })],
 );
+
+/** Secrets the server creates for itself, encrypted (e.g. the signing key of its Bluesky OAuth client). */
+export const serverSecrets = pgTable('server_secrets', {
+  name: text('name').primaryKey(),
+  valueEnc: text('value_enc').notNull(),
+  createdAt: createdAt(),
+});
 
 /** OAuth clients we registered ourselves on Mastodon servers (one per server). */
 export const mastodonApps = pgTable(
@@ -147,6 +206,25 @@ export const flows = pgTable('flows', {
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
 });
 
+export const mediaKind = pgEnum('media_kind', ['image', 'video']);
+
+/** Uploaded files (local disk or S3, see @postwerk/core storage). Unused uploads are cleaned up after a day. */
+export const media = pgTable(
+  'media',
+  {
+    id: id(),
+    workspaceId: uuid('workspace_id').notNull().references(() => workspaces.id, { onDelete: 'cascade' }),
+    /** "<workspace id>/<uuid>.<ext>" in the storage. */
+    key: text('key').notNull(),
+    kind: mediaKind('kind').notNull(),
+    mimeType: text('mime_type').notNull(),
+    size: integer('size').notNull(),
+    uploadedBy: uuid('uploaded_by').references(() => users.id, { onDelete: 'set null' }),
+    createdAt: createdAt(),
+  },
+  (t) => [uniqueIndex('media_key_idx').on(t.key), index('media_workspace_idx').on(t.workspaceId, t.createdAt)],
+);
+
 /** Positions of canvas nodes the user moved (networks, accounts, panels), per workspace. */
 export const canvasPositions = pgTable(
   'canvas_positions',
@@ -167,6 +245,8 @@ export const posts = pgTable(
     authorId: uuid('author_id').references(() => users.id, { onDelete: 'set null' }),
     text: text('text').notNull(),
     media: jsonb('media').$type<PostMedia[]>().notNull().default([]),
+    /** Per-network versions of the text ("customize for LinkedIn"), keyed by provider id. */
+    variants: jsonb('variants').$type<Partial<Record<string, string>>>().notNull().default({}),
     flowId: uuid('flow_id').references(() => flows.id, { onDelete: 'set null' }),
     status: postStatus('status').notNull().default('draft'),
     scheduledAt: timestamp('scheduled_at', { withTimezone: true }),
@@ -187,6 +267,8 @@ export const postTargets = pgTable(
     options: jsonb('options').$type<Record<string, string>>().notNull().default({}),
     /** Text adapted by a flow for this account; null means the post's text. */
     text: text('text'),
+    /** Minutes after the post's time (a flow's "Wait" steps), kept so rescheduling keeps the spacing. */
+    delayMinutes: integer('delay_minutes').notNull().default(0),
     status: targetStatus('status').notNull().default('pending'),
     attempts: integer('attempts').notNull().default(0),
     nextAttemptAt: timestamp('next_attempt_at', { withTimezone: true }).notNull().defaultNow(),
@@ -202,11 +284,45 @@ export const postTargets = pgTable(
   ],
 );
 
+/** Fixed-window counters for rate limits (login attempts, sign-ups, reset emails…), shared by all app instances. */
+export const rateLimits = pgTable('rate_limits', {
+  key: text('key').primaryKey(),
+  count: integer('count').notNull(),
+  resetAt: timestamp('reset_at', { withTimezone: true }).notNull(),
+});
+
+/** Security and admin events. Workspace events are shown to owners and admins; sign-ins belong to the user only. */
+export const auditLog = pgTable(
+  'audit_log',
+  {
+    id: id(),
+    workspaceId: uuid('workspace_id').references(() => workspaces.id, { onDelete: 'cascade' }),
+    userId: uuid('user_id').references(() => users.id, { onDelete: 'set null' }),
+    /** e.g. "login.failed", "account.connected", "member.role_changed". */
+    action: text('action').notNull(),
+    /** What it was about, in words: an account handle, a member's email, a flow name. */
+    target: text('target'),
+    details: jsonb('details').$type<Record<string, string | number | boolean | null>>().notNull().default({}),
+    ip: text('ip'),
+    createdAt: createdAt(),
+  },
+  (t) => [index('audit_log_workspace_idx').on(t.workspaceId, t.createdAt), index('audit_log_user_idx').on(t.userId, t.createdAt)],
+);
+
 export const postsRelations = relations(posts, ({ many }) => ({ targets: many(postTargets) }));
+
+export const auditLogRelations = relations(auditLog, ({ one }) => ({
+  user: one(users, { fields: [auditLog.userId], references: [users.id] }),
+}));
 
 export const postTargetsRelations = relations(postTargets, ({ one }) => ({
   post: one(posts, { fields: [postTargets.postId], references: [posts.id] }),
   account: one(socialAccounts, { fields: [postTargets.socialAccountId], references: [socialAccounts.id] }),
+}));
+
+export const invitesRelations = relations(invites, ({ one }) => ({
+  workspace: one(workspaces, { fields: [invites.workspaceId], references: [workspaces.id] }),
+  inviter: one(users, { fields: [invites.invitedBy], references: [users.id] }),
 }));
 
 export const workspaceMembersRelations = relations(workspaceMembers, ({ one }) => ({
@@ -221,5 +337,9 @@ export type Post = typeof posts.$inferSelect;
 export type Flow = typeof flows.$inferSelect;
 export type PostTarget = typeof postTargets.$inferSelect;
 export type Plugin = typeof plugins.$inferSelect;
+export type AuditEntry = typeof auditLog.$inferSelect;
+export type Invite = typeof invites.$inferSelect;
+export type Media = typeof media.$inferSelect;
+export type MemberRole = (typeof memberRole.enumValues)[number];
 export type PostStatus = (typeof postStatus.enumValues)[number];
 export type TargetStatus = (typeof targetStatus.enumValues)[number];

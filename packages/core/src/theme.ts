@@ -8,6 +8,9 @@
  * Format reference: docs/THEMES.md.
  */
 
+import { LocalizedError } from './i18n';
+import { themeMessages, type UnsafeReason } from './messages';
+
 export type ColorMode = 'system' | 'light' | 'dark';
 export const colorModes: ColorMode[] = ['light', 'system', 'dark'];
 
@@ -66,7 +69,11 @@ export const requiredTokens = [
 
 export const defaultCanvas: ThemeCanvas = { pattern: 'dots', gap: 24, size: 1.2, edges: 'smoothstep' };
 
-export class ThemeError extends Error {}
+export class ThemeError extends LocalizedError {
+  constructor(pick: (m: (typeof themeMessages)['en']) => string) {
+    super((locale) => pick(themeMessages[locale]));
+  }
+}
 
 const ID = /^[a-z0-9](?:[a-z0-9-]{0,38}[a-z0-9])?$/;
 const TOKEN_NAME = /^[a-z][a-z0-9-]{0,47}$/;
@@ -75,16 +82,16 @@ const patterns: CanvasPattern[] = ['dots', 'lines', 'cross', 'none'];
 const edgeStyles: EdgeStyle[] = ['smoothstep', 'bezier', 'step', 'straight'];
 
 /** Anything that could fetch from another site, run script or break out of the <style> element. */
-const UNSAFE: [RegExp, string][] = [
-  [/</, 'must not contain “<”'],
-  [/\\/, 'must not contain backslash escapes — type the character itself'],
-  [/@import|@namespace/i, 'cannot import other files'],
-  [/url\(\s*(?!["']?data:)/i, 'can only use data: URLs, not links to other sites'],
-  [/image-set\(|(?:^|[^a-z0-9_-])src\(/i, 'can only reference files with url(data:…)'],
-  [/expression\(|javascript:|-moz-binding|behavior\s*:/i, 'must not contain script'],
+const UNSAFE: [RegExp, UnsafeReason][] = [
+  [/</, 'lessThan'],
+  [/\\/, 'backslash'],
+  [/@import|@namespace/i, 'import'],
+  [/url\(\s*(?!["']?data:)/i, 'remoteUrl'],
+  [/image-set\(|(?:^|[^a-z0-9_-])src\(/i, 'fileReference'],
+  [/expression\(|javascript:|-moz-binding|behavior\s*:/i, 'script'],
 ];
 
-function unsafeReason(css: string): string | undefined {
+function unsafeReason(css: string): UnsafeReason | undefined {
   return UNSAFE.find(([pattern]) => pattern.test(css))?.[1];
 }
 
@@ -101,27 +108,27 @@ function text(value: unknown, field: string, max: number, fallback?: string): st
   const result = typeof value === 'string' ? value.trim() : '';
   if (!result) {
     if (fallback !== undefined) return fallback;
-    throw new ThemeError(`Add a “${field}”.`);
+    throw new ThemeError((m) => m.add(field));
   }
-  if (result.length > max) throw new ThemeError(`“${field}” is too long (at most ${max} characters).`);
+  if (result.length > max) throw new ThemeError((m) => m.tooLong({ field, max }));
   return result;
 }
 
 function tokens(value: unknown, field: string): ThemeTokens {
   if (value === undefined) return {};
-  if (!value || typeof value !== 'object' || Array.isArray(value)) throw new ThemeError(`“${field}” must be an object of CSS variables.`);
+  if (!value || typeof value !== 'object' || Array.isArray(value)) throw new ThemeError((m) => m.tokensObject(field));
   const entries = Object.entries(value);
-  if (entries.length > MAX.tokens) throw new ThemeError(`“${field}” has too many tokens (at most ${MAX.tokens}).`);
+  if (entries.length > MAX.tokens) throw new ThemeError((m) => m.tooManyTokens({ field, max: MAX.tokens }));
   const result: ThemeTokens = {};
   for (const [rawName, rawValue] of entries) {
     const name = rawName.replace(/^--/, '');
-    if (!TOKEN_NAME.test(name)) throw new ThemeError(`“${field}.${rawName}” is not a valid token name. Use lowercase letters, digits and dashes.`);
-    if (typeof rawValue !== 'string' && typeof rawValue !== 'number') throw new ThemeError(`“${field}.${name}” must be a CSS value like "#ffffff".`);
+    if (!TOKEN_NAME.test(name)) throw new ThemeError((m) => m.tokenName(`${field}.${rawName}`));
+    if (typeof rawValue !== 'string' && typeof rawValue !== 'number') throw new ThemeError((m) => m.cssValue(`${field}.${name}`));
     const css = String(rawValue).trim();
-    if (!css || css.length > MAX.token) throw new ThemeError(`“${field}.${name}” must be a CSS value of at most ${MAX.token} characters.`);
-    if (/[;{}@]|\/\*/.test(css) || !balanced(css)) throw new ThemeError(`“${field}.${name}” must be a single CSS value (no “;”, braces or comments).`);
+    if (!css || css.length > MAX.token) throw new ThemeError((m) => m.cssValueLength({ name: `${field}.${name}`, max: MAX.token }));
+    if (/[;{}@]|\/\*/.test(css) || !balanced(css)) throw new ThemeError((m) => m.singleValue(`${field}.${name}`));
     const unsafe = unsafeReason(css);
-    if (unsafe) throw new ThemeError(`“${field}.${name}” ${unsafe}.`);
+    if (unsafe) throw new ThemeError((m) => m.unsafe({ name: `${field}.${name}`, reason: unsafe }));
     result[name] = css;
   }
   return result;
@@ -129,17 +136,17 @@ function tokens(value: unknown, field: string): ThemeTokens {
 
 function canvas(value: unknown): ThemeCanvas {
   if (value === undefined) return { ...defaultCanvas };
-  if (!value || typeof value !== 'object') throw new ThemeError('“canvas” must be an object.');
+  if (!value || typeof value !== 'object') throw new ThemeError((m) => m.canvasObject);
   const input = value as Record<string, unknown>;
   const pick = <T extends string>(key: string, allowed: T[], fallback: T): T => {
     if (input[key] === undefined) return fallback;
-    if (!allowed.includes(input[key] as T)) throw new ThemeError(`“canvas.${key}” must be one of: ${allowed.join(', ')}.`);
+    if (!allowed.includes(input[key] as T)) throw new ThemeError((m) => m.canvasChoice({ key, allowed: allowed.join(', ') }));
     return input[key] as T;
   };
   const number = (key: string, min: number, max: number, fallback: number): number => {
     if (input[key] === undefined) return fallback;
     const n = Number(input[key]);
-    if (!Number.isFinite(n) || n < min || n > max) throw new ThemeError(`“canvas.${key}” must be a number from ${min} to ${max}.`);
+    if (!Number.isFinite(n) || n < min || n > max) throw new ThemeError((m) => m.canvasNumber({ key, min, max }));
     return n;
   };
   return {
@@ -152,18 +159,18 @@ function canvas(value: unknown): ThemeCanvas {
 
 function stylesheet(value: unknown): string {
   if (value === undefined || value === '') return '';
-  if (typeof value !== 'string') throw new ThemeError('“css” must be a string.');
-  if (value.length > MAX.css) throw new ThemeError(`“css” is too long (at most ${MAX.css / 1000} KB).`);
+  if (typeof value !== 'string') throw new ThemeError((m) => m.cssString);
+  if (value.length > MAX.css) throw new ThemeError((m) => m.cssTooLong(MAX.css / 1000));
   // Comments are dropped before checking, so nothing can hide inside them.
   const css = value.replace(/\/\*[\s\S]*?\*\//g, '').trim();
   const unsafe = unsafeReason(css);
-  if (unsafe) throw new ThemeError(`“css” ${unsafe}.`);
+  if (unsafe) throw new ThemeError((m) => m.unsafe({ name: 'css', reason: unsafe }));
   let depth = 0;
   for (const char of css) {
     if (char === '{') depth++;
     else if (char === '}' && --depth < 0) break;
   }
-  if (depth !== 0) throw new ThemeError('“css” has unbalanced { and }.');
+  if (depth !== 0) throw new ThemeError((m) => m.cssUnbalanced);
   return css;
 }
 
@@ -174,19 +181,19 @@ function stylesheet(value: unknown): string {
 export function parseThemeManifest(input: unknown): ThemeManifest {
   let raw = input;
   if (typeof input === 'string') {
-    if (input.length > MAX.manifest) throw new ThemeError(`This theme is too big (at most ${MAX.manifest / 1000} KB).`);
+    if (input.length > MAX.manifest) throw new ThemeError((m) => m.tooBig(MAX.manifest / 1000));
     try {
       raw = JSON.parse(input);
     } catch (error) {
-      throw new ThemeError(`This is not valid JSON: ${(error as Error).message}`);
+      throw new ThemeError((m) => m.notJson((error as Error).message));
     }
   }
-  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) throw new ThemeError('A theme must be a JSON object.');
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) throw new ThemeError((m) => m.notObject);
   const manifest = raw as Record<string, unknown>;
-  if (manifest.kind !== 'theme') throw new ThemeError('Only theme plugins are supported. Set "kind": "theme".');
+  if (manifest.kind !== 'theme') throw new ThemeError((m) => m.onlyThemes);
 
   const id = text(manifest.id, 'id', 40);
-  if (!ID.test(id)) throw new ThemeError('“id” may only use lowercase letters, digits and dashes, like "my-theme".');
+  if (!ID.test(id)) throw new ThemeError((m) => m.idFormat);
   const base = tokens(manifest.base, 'base');
   const light = tokens(manifest.light, 'light');
   const dark = tokens(manifest.dark, 'dark');
@@ -198,11 +205,11 @@ export function parseThemeManifest(input: unknown): ThemeManifest {
   ] as const;
   for (const [mode, own] of modes) {
     const missing = requiredTokens.filter((name) => !(name in base) && !(name in own));
-    if (missing.length) throw new ThemeError(`“${mode}” is missing ${missing.map((name) => `“${name}”`).join(', ')}.`);
+    if (missing.length) throw new ThemeError((m) => m.missing({ mode, names: missing.map((name) => `“${name}”`).join(', ') }));
   }
   for (const [mode, own, other, otherName] of modes) {
     const unmatched = Object.keys(own).find((name) => !(name in other) && !(name in base));
-    if (unmatched) throw new ThemeError(`“${mode}.${unmatched}” has no ${otherName} value. Set it in “${otherName}” too, or move it to “base”.`);
+    if (unmatched) throw new ThemeError((m) => m.unmatched({ mode, name: unmatched, other: otherName }));
   }
 
   return {

@@ -1,5 +1,5 @@
 import { basicAuth, form, requestJson, withQuery } from './http';
-import { ProviderError, type OAuthClient, type OAuthTokens } from './types';
+import { ProviderError, type OAuthClient, type OAuthTokens, type ProviderClient } from './types';
 
 export function authorizeUrl(base: string, params: Record<string, string | undefined>): string {
   return withQuery(base, params);
@@ -50,8 +50,8 @@ export function expiresSoon(tokens: Pick<OAuthTokens, 'expiresAt'>, now: number,
   return tokens.expiresAt !== undefined && tokens.expiresAt - marginMs <= now;
 }
 
-export function requireClient(client: OAuthClient | undefined, provider: string): OAuthClient {
-  if (!client) throw new ProviderError(`${provider} is not configured on this server.`, { retryable: true });
+export function requireClient(client: ProviderClient | undefined, provider: string): OAuthClient {
+  if (!client || !('clientId' in client)) throw new ProviderError(`${provider} is not configured on this server.`, { retryable: true });
   return client;
 }
 
@@ -67,7 +67,7 @@ export async function codeChallenge(verifier: string): Promise<string> {
   return base64Url(new Uint8Array(digest));
 }
 
-function base64Url(bytes: Uint8Array): string {
+export function base64Url(bytes: Uint8Array): string {
   let binary = '';
   for (const byte of bytes) binary += String.fromCharCode(byte);
   return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');

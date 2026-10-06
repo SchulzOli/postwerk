@@ -1,3 +1,5 @@
+import { LocalizedError } from './i18n';
+
 export const PROVIDER_IDS = [
   'mastodon',
   'bluesky',
@@ -31,6 +33,8 @@ export interface MediaItem {
   kind: MediaKind;
   mimeType?: string;
   altText?: string;
+  /** File size in bytes, when known (uploads), so size limits can be checked before publishing. */
+  size?: number;
 }
 
 export interface PostContent {
@@ -82,6 +86,10 @@ export interface Capabilities {
     mixed: boolean;
     /** Alt text is sent to the network. */
     altText: boolean;
+    /** Largest image file the network accepts, in bytes. */
+    maxImageBytes?: number;
+    /** Largest video file the network accepts, in bytes. */
+    maxVideoBytes?: number;
   };
   options: OptionField[];
 }
@@ -108,7 +116,7 @@ export interface ProviderInfo {
   name: string;
   /** Short line shown on the connect card. */
   description: string;
-  connect: 'oauth2' | 'mastodon' | 'form';
+  connect: 'oauth2' | 'mastodon' | 'atproto' | 'form';
   capabilities: Capabilities;
   setup: ProviderSetup;
 }
@@ -177,11 +185,43 @@ export interface MastodonConnect {
   kind: 'mastodon';
 }
 
+/**
+ * AT Protocol (Bluesky): users sign in on their own server with OAuth; the
+ * form is the fallback (app password) for servers Postwerk cannot be an OAuth
+ * client on, or that do not support it.
+ */
+export interface AtprotoConnect<C> extends Omit<FormConnect<C>, 'kind'> {
+  kind: 'atproto';
+}
+
+/** The signing keys of Postwerk's AT Protocol client; sessions refresh with the key they started with. */
+export interface AtprotoKeyset {
+  keys: PrivateJwk[];
+}
+
+/** An ES256 (P-256) key as JWK; `d` is the private part. */
+export interface PrivateJwk {
+  kty: string;
+  crv: string;
+  x: string;
+  y: string;
+  d?: string;
+  kid?: string;
+}
+
+/** What a network's refresh needs from the server: an operator app, or Postwerk's own AT Protocol keys. */
+export type ProviderClient = OAuthClient | AtprotoKeyset;
+
 export interface PublishContext {
   /** Stable per-target key so a retried publish does not create a duplicate post. */
   idempotencyKey: string;
   /** Operator app credentials, for networks that need them at publish time. */
   client?: OAuthClient;
+  /**
+   * Reads an uploaded file straight from Postwerk's storage, so networks we
+   * upload bytes to do not depend on the public URL. Undefined for other media.
+   */
+  loadMedia?(item: MediaItem): Promise<{ blob: Blob; mimeType: string } | undefined>;
 }
 
 export interface PublishResult {
@@ -190,12 +230,12 @@ export interface PublishResult {
 }
 
 export interface Provider<C = any> extends ProviderInfo {
-  connector: OAuthConnect<C> | FormConnect<C> | MastodonConnect;
+  connector: OAuthConnect<C> | FormConnect<C> | MastodonConnect | AtprotoConnect<C>;
   /** Network-specific checks on top of the generic capability checks (see `validateContent`). */
   validate?(content: PostContent, limits?: AccountLimits): string[];
   publish(credentials: C, content: PostContent, context: PublishContext): Promise<PublishResult>;
   /** Present for networks with expiring tokens. Returns updated credentials. */
-  refresh?(credentials: C, client: OAuthClient | undefined): Promise<C>;
+  refresh?(credentials: C, client: ProviderClient | undefined): Promise<C>;
   /** Whether `refresh` should run before publishing. */
   needsRefresh?(credentials: C, now: number): boolean;
 }
@@ -208,14 +248,18 @@ export interface Provider<C = any> extends ProviderInfo {
  * Errors thrown by providers. The worker uses the flags to decide
  * whether to retry, give up, or mark the account as needing a reconnect.
  */
-export class ProviderError extends Error {
+export class ProviderError extends LocalizedError {
   readonly retryable: boolean;
   readonly needsReauth: boolean;
   /** HTTP status of the failed request, when there was one. */
   readonly status?: number;
 
-  constructor(message: string, options: { retryable?: boolean; needsReauth?: boolean; status?: number; cause?: unknown } = {}) {
-    super(message, { cause: options.cause });
+  /**
+   * `de`: the German text, for messages Postwerk writes itself that people
+   * see while connecting. Errors relayed from a network's API stay English.
+   */
+  constructor(message: string, options: { retryable?: boolean; needsReauth?: boolean; status?: number; cause?: unknown; de?: string } = {}) {
+    super((locale) => (locale === 'de' && options.de) || message, { cause: options.cause });
     this.name = 'ProviderError';
     this.retryable = options.retryable ?? false;
     this.needsReauth = options.needsReauth ?? false;

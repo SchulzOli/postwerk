@@ -9,7 +9,7 @@ All networks below are implemented and unit-tested against mocked APIs. **"Live-
 | Network | Connect | Operator setup (env prefix) | Media | Per-post fields | Token refresh | Live-verified |
 |---|---|---|---|---|---|---|
 | Mastodon | OAuth, app auto-registered per server | none | 4 images or 1 video, alt text | — | not needed | mock server |
-| Bluesky | handle + app password | none | 4 images, alt text | — | not needed | — |
+| Bluesky | AT Protocol OAuth on the user's server; app password as fallback | none | 4 images, alt text | — | OAuth: short tokens, single-use refresh tokens | mock servers |
 | Telegram | bot token + channel | none | up to 10 photos/videos (album) | — | not needed | — |
 | Discord | channel webhook URL | none | 10 image embeds, video links | — | not needed | — |
 | Facebook Pages | OAuth → one account per page | `FACEBOOK` | 10 images or 1 video | — | page tokens don't expire | — |
@@ -24,6 +24,16 @@ All networks below are implemented and unit-tested against mocked APIs. **"Live-
 | Pinterest | OAuth → one account per board | `PINTEREST` | **required**: 1 image, alt text | title, link | 30-day tokens | — |
 | Reddit | OAuth | `REDDIT` | — (text posts) | subreddit, title | 1 h tokens | — |
 | Sandbox | name | `ENABLE_SANDBOX=true` | anything | — | — | n/a |
+
+## Bluesky sign-in
+
+Bluesky needs no developer app. Postwerk describes itself in a client metadata document at its own address, and the user's server reads it:
+
+- **On https** (`APP_URL=https://…`), Postwerk is a confidential client: `${APP_URL}/oauth/bluesky/client-metadata.json` is its client id, and it signs token requests with an ES256 key that it creates on first use, stores encrypted (`server_secrets`), and publishes at `/oauth/bluesky/jwks.json`. Sessions last as long as the user's server allows confidential clients.
+- **On `http://localhost`** (development), it is a "loopback" client without a key; Bluesky sends people back to `127.0.0.1`, and the callback continues on `localhost`. Loopback sessions are shorter.
+- **Elsewhere on plain http** (e.g. a LAN address), OAuth is not possible and people connect with app passwords.
+
+Tokens are bound to a per-account DPoP key. If `ENCRYPTION_KEY` changes, the signing key is replaced and OAuth accounts must reconnect. Accounts connected with app passwords keep working; connecting the same account with OAuth replaces its app password.
 
 ## Setting up an operator app
 
@@ -54,8 +64,9 @@ The developer docs of most networks were not reachable while these modules were 
 - **Google**: `languageCode` in the Business Information read mask; YouTube `categoryId` fixed to 22 (People & Blogs). A YouTube upload whose response is lost may be retried and upload twice (no idempotency key).
 - **Pinterest**: trial apps may only write to `api-sandbox.pinterest.com`.
 - **Telegram / Discord**: error description wording; Discord avatar CDN path.
-- **Media URLs (security)**: until uploads land, the composer takes public media URLs, and the server downloads them for Mastodon, Bluesky, LinkedIn, X and YouTube. Obviously internal hosts are refused, but DNS is not resolved, so a hostname pointing at an internal address is not caught. Don't expose multi-tenant instances before Phase 1 uploads.
-- **Not yet supported**: Bluesky, LinkedIn and X videos; Pinterest videos; Reddit image/link posts; first comments; per-network text variants.
+- **Bluesky OAuth**: implemented from the AT Protocol OAuth spec and tested against fake servers that check PAR, PKCE, DPoP nonces and proofs, client assertions and refresh-token rotation, not yet against bsky.social. It asks for `atproto transition:generic` (the same access as an app password), not the newer fine-grained scopes.
+- **Media links (security)**: besides uploads, the composer accepts public media links, which the server downloads for Mastodon, Bluesky, LinkedIn, X and YouTube. Obviously internal hosts are refused, but DNS is not resolved, so a hostname pointing at an internal address is not caught. On multi-tenant instances, prefer uploads.
+- **Not yet supported**: Bluesky, LinkedIn and X videos; Pinterest videos; Reddit image/link posts; first comments.
 
 ## Adding a network
 

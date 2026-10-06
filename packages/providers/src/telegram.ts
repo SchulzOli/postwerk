@@ -29,15 +29,17 @@ export function isBotToken(value: string): boolean {
  */
 export function normalizeChat(input: string): string {
   const trimmed = input.trim();
-  if (!trimmed) throw new ProviderError('Please enter the channel or group: its @username or numeric id.');
+  if (!trimmed) throw new ProviderError('Please enter the channel or group: its @username or numeric id.', { de: 'Bitte gib den Kanal oder die Gruppe ein: den @Benutzernamen oder die numerische ID.' });
   if (/^-?\d+$/.test(trimmed)) return trimmed;
   const path = trimmed.replace(/^(?:https?:\/\/)?(?:www\.)?(?:t\.me|telegram\.me)\//i, '').replace(/[/?#].*$/, '');
   if (path.startsWith('+') || path.toLowerCase() === 'joinchat') {
-    throw new ProviderError('Invite links cannot be used. Enter the numeric chat id instead (it starts with -100…).');
+    throw new ProviderError('Invite links cannot be used. Enter the numeric chat id instead (it starts with -100…).', { de: 'Einladungslinks gehen nicht. Gib stattdessen die numerische Chat-ID ein (sie beginnt mit -100…).' });
   }
   const username = path.replace(/^@/, '');
   if (!USERNAME_PATTERN.test(username)) {
-    throw new ProviderError(`"${trimmed}" is not a valid chat. Use the public @username or the numeric id (it starts with -100…).`);
+    throw new ProviderError(`"${trimmed}" is not a valid chat. Use the public @username or the numeric id (it starts with -100…).`, {
+      de: `„${trimmed}“ ist kein gültiger Chat. Verwende den öffentlichen @Benutzernamen oder die numerische ID (sie beginnt mit -100…).`,
+    });
   }
   return `@${username}`;
 }
@@ -119,7 +121,9 @@ export function telegramError(status: number, description: string, phase: Phase)
   if (status === 401 || status === 404) {
     return reauth
       ? new ProviderError('Telegram no longer accepts the bot token (was it revoked in @BotFather?). Reconnect the account with the current token.', { needsReauth: true })
-      : new ProviderError('Telegram did not accept the bot token. Copy it again from @BotFather; it looks like 123456789:AA…');
+      : new ProviderError('Telegram did not accept the bot token. Copy it again from @BotFather; it looks like 123456789:AA…', {
+          de: 'Telegram hat das Bot-Token nicht akzeptiert. Kopiere es noch einmal von @BotFather; es sieht aus wie 123456789:AA…',
+        });
   }
   if (status === 429) return new ProviderError(`Telegram rate limit reached (${description}).`, { retryable: true });
   if (status >= 500) return new ProviderError(`Telegram is temporarily unavailable (${description}).`, { retryable: true });
@@ -127,7 +131,9 @@ export function telegramError(status: number, description: string, phase: Phase)
   if (lower.includes('chat not found')) {
     return reauth
       ? new ProviderError('Telegram cannot find the chat anymore. Add the bot to the channel or group again and reconnect it.', { needsReauth: true })
-      : new ProviderError('Telegram cannot find that chat. Check the @username or numeric id, and that the bot has been added to the channel or group.');
+      : new ProviderError('Telegram cannot find that chat. Check the @username or numeric id, and that the bot has been added to the channel or group.', {
+          de: 'Telegram findet diesen Chat nicht. Prüf den @Benutzernamen oder die numerische ID und ob der Bot dem Kanal oder der Gruppe hinzugefügt wurde.',
+        });
   }
   if (lower.includes('upgraded to a supergroup')) {
     return new ProviderError('This group was upgraded to a supergroup and has a new id. Reconnect it.', { needsReauth: reauth });
@@ -149,24 +155,30 @@ export function telegramError(status: number, description: string, phase: Phase)
 function checkMembership(member: TelegramChatMember, chat: TelegramChat): void {
   const name = chat.title ?? 'that chat';
   if (member.status === 'left' || member.status === 'kicked') {
-    throw new ProviderError(`The bot is not a member of ${name}. Add it as an administrator, then try again.`);
+    throw new ProviderError(`The bot is not a member of ${name}. Add it as an administrator, then try again.`, { de: `Der Bot ist kein Mitglied von ${name}. Füge ihn als Administrator hinzu und versuch es dann noch einmal.` });
   }
   if (chat.type === 'channel') {
     const isAdmin = member.status === 'creator' || (member.status === 'administrator' && member.can_post_messages !== false);
-    if (!isAdmin) throw new ProviderError(`The bot must be an administrator of ${name} with permission to post messages.`);
+    if (!isAdmin) throw new ProviderError(`The bot must be an administrator of ${name} with permission to post messages.`, { de: `Der Bot muss Administrator von ${name} sein und Nachrichten posten dürfen.` });
   } else if (member.status === 'restricted' && member.can_send_messages === false) {
-    throw new ProviderError(`The bot is not allowed to send messages in ${name}. Change its permissions or make it an administrator.`);
+    throw new ProviderError(`The bot is not allowed to send messages in ${name}. Change its permissions or make it an administrator.`, {
+      de: `Der Bot darf in ${name} keine Nachrichten senden. Ändere seine Rechte oder mach ihn zum Administrator.`,
+    });
   }
 }
 
 export async function connect(values: Record<string, string>): Promise<ConnectedAccount<TelegramCredentials>> {
   const botToken = (values.botToken ?? '').trim();
-  if (!isBotToken(botToken)) throw new ProviderError('That does not look like a bot token. Copy it from @BotFather; it looks like 123456789:AA…');
+  if (!isBotToken(botToken)) {
+    throw new ProviderError('That does not look like a bot token. Copy it from @BotFather; it looks like 123456789:AA…', {
+      de: 'Das sieht nicht nach einem Bot-Token aus. Kopiere es von @BotFather; es sieht aus wie 123456789:AA…',
+    });
+  }
   const chatInput = normalizeChat(values.chat ?? '');
 
   const bot = await call<TelegramUser>(botToken, 'getMe', {}, 'connect');
   const chat = await call<TelegramChat>(botToken, 'getChat', { chat_id: chatInput }, 'connect');
-  if (chat.type === 'private') throw new ProviderError('That is a private chat with a person. Enter a channel or group instead.');
+  if (chat.type === 'private') throw new ProviderError('That is a private chat with a person. Enter a channel or group instead.', { de: 'Das ist ein privater Chat mit einer Person. Gib stattdessen einen Kanal oder eine Gruppe ein.' });
   const member = await call<TelegramChatMember>(botToken, 'getChatMember', { chat_id: chat.id, user_id: bot.id }, 'connect');
   checkMembership(member, chat);
 

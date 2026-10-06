@@ -1,6 +1,6 @@
 import { catalog } from './catalog';
-import { bearer, downloadMedia, json, poll, requestJson } from './http';
-import { ProviderError, type AccountProfile, type MediaItem, type Provider } from './types';
+import { bearer, fetchMedia, json, poll, requestJson } from './http';
+import { ProviderError, type AccountProfile, type MediaItem, type Provider, type PublishContext } from './types';
 
 export const MASTODON_SCOPES = 'read:accounts write:statuses write:media';
 export const MASTODON_DEFAULT_MAX_LENGTH = catalog.mastodon.capabilities.text.maxLength;
@@ -18,15 +18,15 @@ export interface MastodonApp {
 /** Normalizes user input like "mastodon.social" or "https://mastodon.social/" to an origin. */
 export function normalizeInstanceUrl(input: string): string {
   const trimmed = input.trim();
-  if (!trimmed) throw new ProviderError('Please enter a Mastodon server.');
+  if (!trimmed) throw new ProviderError('Please enter a Mastodon server.', { de: 'Bitte gib einen Mastodon-Server ein.' });
   let url: URL;
   try {
     url = new URL(/^https?:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`);
   } catch {
-    throw new ProviderError(`"${input}" is not a valid server address.`);
+    throw new ProviderError(`"${input}" is not a valid server address.`, { de: `„${input}“ ist keine gültige Serveradresse.` });
   }
   if (url.protocol !== 'https:' && url.hostname !== 'localhost') {
-    throw new ProviderError('Mastodon servers must use https.');
+    throw new ProviderError('Mastodon servers must use https.', { de: 'Mastodon-Server müssen https verwenden.' });
   }
   return url.origin;
 }
@@ -99,8 +99,8 @@ interface MastodonMedia {
   url: string | null;
 }
 
-async function uploadMedia(credentials: MastodonCredentials, item: MediaItem): Promise<string> {
-  const { blob } = await downloadMedia(item.url);
+async function uploadMedia(credentials: MastodonCredentials, item: MediaItem, context: PublishContext): Promise<string> {
+  const { blob } = await fetchMedia(item, context);
   const body = new FormData();
   body.set('file', blob, item.kind === 'video' ? 'video' : 'image');
   if (item.altText) body.set('description', item.altText);
@@ -128,7 +128,7 @@ export const mastodon: Provider<MastodonCredentials> = {
   connector: { kind: 'mastodon' },
   async publish(credentials, content, context) {
     const mediaIds: string[] = [];
-    for (const item of content.media) mediaIds.push(await uploadMedia(credentials, item));
+    for (const item of content.media) mediaIds.push(await uploadMedia(credentials, item, context));
     const status = await requestJson<{ id: string; url: string | null }>(
       `${credentials.instanceUrl}/api/v1/statuses`,
       json(

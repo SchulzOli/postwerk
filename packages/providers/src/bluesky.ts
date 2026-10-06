@@ -1,7 +1,9 @@
-import { AtpAgent, RichText, XRPCError } from '@atproto/api';
+import { Agent, AtpAgent, RichText, XRPCError } from '@atproto/api';
+import { atprotoNetwork, finishLogin, refreshSession, sessionFetcher, type AtprotoSession, type PendingLogin } from './atproto';
 import { catalog } from './catalog';
-import { downloadMedia } from './http';
-import { ProviderError, type ConnectedAccount, type Provider } from './types';
+import { fetchMedia, requestJson, withQuery } from './http';
+import { expiresSoon } from './oauth';
+import { ProviderError, type AccountProfile, type ConnectedAccount, type Provider, type ProviderClient } from './types';
 
 export const BLUESKY_DEFAULT_SERVICE = 'https://bsky.social';
 export const BLUESKY_MAX_LENGTH = catalog.bluesky.capabilities.text.maxLength;
@@ -10,15 +12,24 @@ const MAX_IMAGE_BYTES = 1_000_000;
 const APP_PASSWORD_PATTERN = /^[a-z0-9]{4}-[a-z0-9]{4}-[a-z0-9]{4}-[a-z0-9]{4}$/i;
 
 /**
- * Bluesky needs no developer app at all: users create an app password in
- * their settings and we sign in with it. It can be revoked at any time
- * without touching the main password.
+ * Signed in with an app password: users create one in their settings, and it
+ * can be revoked at any time without touching the main password.
  */
-export interface BlueskyCredentials {
+export interface BlueskyAppPassword {
+  kind?: 'app-password';
   service: string;
   identifier: string;
   appPassword: string;
 }
+
+/** Signed in with OAuth on the user's own server. */
+export interface BlueskyOAuth extends AtprotoSession {
+  kind: 'oauth';
+}
+
+export type BlueskyCredentials = BlueskyAppPassword | BlueskyOAuth;
+
+const isOAuth = (credentials: BlueskyCredentials): credentials is BlueskyOAuth => credentials.kind === 'oauth';
 
 export function isAppPassword(value: string): boolean {
   return APP_PASSWORD_PATTERN.test(value.trim());
@@ -28,7 +39,7 @@ export function normalizeHandle(input: string): string {
   return input.trim().replace(/^@/, '');
 }
 
-async function signIn(credentials: BlueskyCredentials): Promise<AtpAgent> {
+async function signIn(credentials: BlueskyAppPassword): Promise<AtpAgent> {
   const agent = new AtpAgent({ service: credentials.service });
   try {
     await agent.login({ identifier: credentials.identifier, password: credentials.appPassword });
@@ -38,22 +49,39 @@ async function signIn(credentials: BlueskyCredentials): Promise<AtpAgent> {
   return agent;
 }
 
-export async function connect(credentials: BlueskyCredentials): Promise<ConnectedAccount<BlueskyCredentials>> {
-  if (!credentials.identifier) throw new ProviderError('Please enter your Bluesky handle.');
-  if (!isAppPassword(credentials.appPassword)) {
-    throw new ProviderError('Please use an app password (Settings → Privacy and security → App passwords), not your main password.');
-  }
-  const agent = await signIn(credentials);
-  const did = agent.session!.did;
-  const handle = agent.session!.handle;
-  const limits = { maxLength: BLUESKY_MAX_LENGTH };
+/** Public profile from the AppView (no sign-in needed); falls back to the bare handle. */
+async function profileOf(did: string, handle: string | undefined): Promise<AccountProfile> {
   try {
-    const { data } = await agent.getProfile({ actor: did });
-    return { profile: { externalId: did, handle: `@${handle}`, displayName: data.displayName || undefined, avatarUrl: data.avatar }, credentials, limits };
+    const profile = await requestJson<{ handle?: string; displayName?: string; avatar?: string }>(
+      withQuery(`${atprotoNetwork.appView}/xrpc/app.bsky.actor.getProfile`, { actor: did }),
+      { timeoutMs: 10_000 },
+    );
+    const verified = profile.handle && profile.handle !== 'handle.invalid' ? profile.handle : handle;
+    return { externalId: did, handle: `@${verified ?? did}`, displayName: profile.displayName || undefined, avatarUrl: profile.avatar };
   } catch {
-    return { profile: { externalId: did, handle: `@${handle}` }, credentials, limits };
+    return { externalId: did, handle: `@${handle ?? did}` };
   }
 }
+
+export async function connect(credentials: BlueskyAppPassword): Promise<ConnectedAccount<BlueskyAppPassword>> {
+  if (!credentials.identifier) throw new ProviderError('Please enter your Bluesky handle.', { de: 'Bitte gib dein Bluesky-Handle ein.' });
+  if (!isAppPassword(credentials.appPassword)) {
+    throw new ProviderError('Please use an app password (Settings → Privacy and security → App passwords), not your main password.', {
+      de: 'Bitte verwende ein App-Passwort (Einstellungen → Datenschutz und Sicherheit → App-Passwörter), nicht dein Hauptpasswort.',
+    });
+  }
+  const agent = await signIn(credentials);
+  const { did, handle } = agent.session!;
+  return { profile: await profileOf(did, handle), credentials, limits: { maxLength: BLUESKY_MAX_LENGTH } };
+}
+
+/** Finishes an OAuth sign-in (see `startLogin` in ./atproto) and describes the account. */
+export async function connectOAuth(keys: ProviderClient | undefined, pending: PendingLogin, params: { code: string; iss: string | null }): Promise<ConnectedAccount<BlueskyOAuth>> {
+  const session = await finishLogin(keysOf(keys), pending, params);
+  return { profile: await profileOf(session.did, session.handle), credentials: { kind: 'oauth', ...session }, limits: { maxLength: BLUESKY_MAX_LENGTH } };
+}
+
+const keysOf = (client: ProviderClient | undefined) => (client && 'keys' in client ? client.keys : []);
 
 export function postUrl(uri: string, handleOrDid: string): string | undefined {
   // at://did:plc:xyz/app.bsky.feed.post/<rkey>
@@ -64,7 +92,8 @@ export function postUrl(uri: string, handleOrDid: string): string | undefined {
 export const bluesky: Provider<BlueskyCredentials> = {
   ...catalog.bluesky,
   connector: {
-    kind: 'form',
+    kind: 'atproto',
+    // The app password form; signing in with OAuth starts on the user's server.
     fields: [
       { name: 'handle', label: 'Handle', placeholder: 'you.bsky.social' },
       {
@@ -84,12 +113,18 @@ export const bluesky: Provider<BlueskyCredentials> = {
       return [await connect(credentials)];
     },
   },
-  async publish(credentials, content) {
-    const agent = await signIn(credentials);
+  // OAuth access tokens live minutes; refresh shortly before they run out.
+  needsRefresh: (credentials, now) => isOAuth(credentials) && expiresSoon(credentials, now, 60_000),
+  async refresh(credentials, client) {
+    if (!isOAuth(credentials)) return credentials;
+    return { ...(await refreshSession(credentials, keysOf(client))), kind: 'oauth' };
+  },
+  async publish(credentials, content, context) {
+    const agent = isOAuth(credentials) ? new Agent(sessionFetcher(credentials)) : await signIn(credentials);
     try {
       const images = [];
       for (const item of content.media) {
-        const { blob, mimeType } = await downloadMedia(item.url, MAX_IMAGE_BYTES);
+        const { blob, mimeType } = await fetchMedia(item, context, MAX_IMAGE_BYTES);
         const { data } = await agent.uploadBlob(new Uint8Array(await blob.arrayBuffer()), { encoding: mimeType });
         images.push({ image: data.blob, alt: item.altText ?? '' });
       }
@@ -100,7 +135,8 @@ export const bluesky: Provider<BlueskyCredentials> = {
         facets: richText.facets,
         ...(images.length > 0 && { embed: { $type: 'app.bsky.embed.images', images } }),
       });
-      return { remoteId: result.uri, url: postUrl(result.uri, agent.session!.handle) };
+      // The DID never changes; handles can.
+      return { remoteId: result.uri, url: postUrl(result.uri, isOAuth(credentials) ? credentials.did : (agent as AtpAgent).session!.handle) };
     } catch (error) {
       throw toProviderError(error, 'Bluesky post failed');
     }

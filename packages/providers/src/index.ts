@@ -18,10 +18,13 @@ import { youtube } from './youtube';
 export * from './types';
 export * from './catalog';
 export { countText, graphemeLength, mastodonLength, xLength } from './text';
-export { validateContent, resolveOptions, textLimit } from './validate';
+export { formatBytes, validateContent, resolveOptions, textLimit } from './validate';
+export { localizeFields, localizeInfo, validationMessages } from './messages';
+export * from './i18n';
 export { codeChallenge, generateCodeVerifier } from './oauth';
 export * as Mastodon from './mastodon';
 export * as Bluesky from './bluesky';
+export * as Atproto from './atproto';
 
 const providers: Record<ProviderId, Provider> = {
   mastodon,

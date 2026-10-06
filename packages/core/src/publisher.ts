@@ -1,8 +1,10 @@
 import { and, eq, inArray, lt, ne, sql } from 'drizzle-orm';
-import { posts, postTargets, socialAccounts, type Database } from '@postwerk/db';
+import { posts, postTargets, socialAccounts, type Database, type PostStatus } from '@postwerk/db';
 import { getProvider, ProviderError } from '@postwerk/providers';
+import { blueskyKeyset } from './bluesky';
 import { oauthClientFor } from './clients';
 import { decryptJson, encryptJson } from './crypto';
+import { mediaForPublishing } from './media';
 import { aggregatePostStatus, backoffMs, MAX_ATTEMPTS } from './status';
 
 const STALE_LOCK_MS = 10 * 60_000;
@@ -41,12 +43,19 @@ export async function releaseStaleLocks(db: Database, now = new Date()): Promise
   return released.length;
 }
 
-export async function publishTarget(db: Database, targetId: string, now = () => new Date()): Promise<void> {
+/** A post whose last target just settled, with its final status. */
+export interface FinishedPost {
+  postId: string;
+  status: Extract<PostStatus, 'published' | 'partial' | 'failed'>;
+}
+
+/** Publishes one claimed target; returns the post if this was the last of its targets to settle. */
+export async function publishTarget(db: Database, targetId: string, now = () => new Date()): Promise<FinishedPost | undefined> {
   const target = await db.query.postTargets.findFirst({
     where: eq(postTargets.id, targetId),
     with: { post: true, account: true },
   });
-  if (!target) return;
+  if (!target) return undefined;
 
   try {
     if (target.account.status === 'needs_reauth') {
@@ -54,10 +63,11 @@ export async function publishTarget(db: Database, targetId: string, now = () => 
     }
     const provider = getProvider(target.account.provider);
     const credentials = await currentCredentials(db, target.account.id, now());
+    const { media, loadMedia } = await mediaForPublishing(target.post.media);
     const result = await provider.publish(
       credentials,
-      { text: target.text ?? target.post.text, media: target.post.media, options: target.options },
-      { idempotencyKey: target.id, client: oauthClientFor(target.account.provider) },
+      { text: target.text ?? target.post.text, media, options: target.options },
+      { idempotencyKey: target.id, client: oauthClientFor(target.account.provider), loadMedia },
     );
     await db
       .update(postTargets)
@@ -79,7 +89,8 @@ export async function publishTarget(db: Database, targetId: string, now = () => 
       })
       .where(eq(postTargets.id, target.id));
   }
-  await refreshPostStatus(db, target.postId);
+  const status = await refreshPostStatus(db, target.postId);
+  return status === 'published' || status === 'partial' || status === 'failed' ? { postId: target.postId, status } : undefined;
 }
 
 /**
@@ -95,7 +106,9 @@ async function currentCredentials(db: Database, accountId: string, now: Date): P
     const provider = getProvider(account.provider);
     if (!provider.refresh || !provider.needsRefresh?.(credentials, now.getTime())) return credentials;
 
-    const refreshed = await provider.refresh(credentials, oauthClientFor(account.provider));
+    // Bluesky sessions refresh with Postwerk's own signing key; other networks with the operator's app.
+    const client = account.provider === 'bluesky' ? await blueskyKeyset(db) : oauthClientFor(account.provider);
+    const refreshed = await provider.refresh(credentials, client);
     await tx.update(socialAccounts).set({ credentialsEnc: encryptJson(refreshed), updatedAt: now }).where(eq(socialAccounts.id, account.id));
     await updateSiblingGrants(tx, account, credentials, refreshed, now);
     return refreshed;
@@ -147,23 +160,40 @@ function readCredentials(payload: string): unknown {
   }
 }
 
-export async function refreshPostStatus(db: Database, postId: string): Promise<void> {
+/**
+ * Recomputes a post's status from its targets. Returns the new status when
+ * the post was still in flight, so exactly one caller sees it finish (the row
+ * lock makes a concurrent second update find it already settled).
+ */
+export async function refreshPostStatus(db: Database, postId: string): Promise<PostStatus | undefined> {
   const targets = await db.select({ status: postTargets.status }).from(postTargets).where(eq(postTargets.postId, postId));
-  await db
+  const [updated] = await db
     .update(posts)
     .set({ status: aggregatePostStatus(targets.map((t) => t.status)), updatedAt: new Date() })
-    .where(and(eq(posts.id, postId), inArray(posts.status, ['scheduled', 'publishing'])));
+    .where(and(eq(posts.id, postId), inArray(posts.status, ['scheduled', 'publishing'])))
+    .returning({ status: posts.status });
+  return updated?.status;
+}
+
+export interface PublishCycleOptions {
+  batchSize?: number;
+  now?: () => Date;
+  /** Called once per post when its last target settles (e.g. to email the author about failures). */
+  onPostFinished?: (post: FinishedPost) => Promise<void>;
 }
 
 /** One worker iteration: recover crashed jobs, then publish everything that is due. */
-export async function runPublishCycle(db: Database, options: { batchSize?: number; now?: () => Date } = {}): Promise<number> {
+export async function runPublishCycle(db: Database, options: PublishCycleOptions = {}): Promise<number> {
   const now = options.now ?? (() => new Date());
   await releaseStaleLocks(db, now());
   let processed = 0;
   for (;;) {
     const ids = await claimDueTargets(db, options.batchSize ?? 10, now());
     if (ids.length === 0) return processed;
-    await Promise.all(ids.map((id) => publishTarget(db, id, now)));
+    const finished = await Promise.all(ids.map((id) => publishTarget(db, id, now)));
+    for (const post of finished) {
+      if (post) await options.onPostFinished?.(post).catch((error: unknown) => console.error('onPostFinished failed', error));
+    }
     processed += ids.length;
   }
 }
