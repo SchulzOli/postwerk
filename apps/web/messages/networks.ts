@@ -50,6 +50,19 @@ export const networksMessages = defineMessages({
       connectWithAppPassword: 'Connect with app password',
       needsHttps: 'Signing in on Bluesky itself needs Postwerk on an https address (APP_URL).',
     },
+    // Bridge (aggregator API)
+    statusReadyVia: (bridge: string) => `Ready to connect · via ${bridge}`,
+    via: (bridge: string) => `via ${bridge}`,
+    setupBridge: (bridge: string) => `Through ${bridge}, no developer app needed`,
+    bridgeNote: (p: { network: string; bridge: string }) =>
+      `${p.network} connects through ${p.bridge}, a social media API from the EU. ${p.bridge} keeps the access to the account; Postwerk only stores which account it is.`,
+    orBridge: (bridge: string) => ({ before: 'Or set ', after: ` to connect it through ${bridge}, without a developer app.` }),
+    bridgeAbout: (bridge: string) =>
+      `Networks marked “via ${bridge}” connect through ${bridge}, a social media API from the EU. ${bridge} keeps the access to the accounts; Postwerk only stores which accounts they are.`,
+    reconnect: 'Reconnect',
+    bridgeExpired: 'Access to this account expired or was revoked. Reconnect it; posts resume afterwards.',
+    bridgeCancelled: (network: string) => `Connecting ${network} was cancelled.`,
+    bridgeFailed: (p: { network: string; reason: string }) => `Connecting ${p.network} failed: ${p.reason}`,
     // Results and errors
     notAvailable: 'This network is not available.',
     notForm: 'This network is not connected with a form.',
@@ -105,6 +118,18 @@ export const networksMessages = defineMessages({
       connectWithAppPassword: 'Mit App-Passwort verbinden',
       needsHttps: 'Die Anmeldung direkt bei Bluesky braucht Postwerk unter einer https-Adresse (APP_URL).',
     },
+    statusReadyVia: (bridge) => `Bereit zum Verbinden · über ${bridge}`,
+    via: (bridge) => `über ${bridge}`,
+    setupBridge: (bridge) => `Über ${bridge}, keine Entwickler-App nötig`,
+    bridgeNote: (p) =>
+      `${p.network} wird über ${p.bridge} verbunden, eine Social-Media-API aus der EU. ${p.bridge} verwaltet den Zugriff auf das Konto; Postwerk speichert nur, um welches Konto es geht.`,
+    orBridge: (bridge) => ({ before: 'Oder setze ', after: `, um es ohne Entwickler-App über ${bridge} zu verbinden.` }),
+    bridgeAbout: (bridge) =>
+      `Netzwerke mit „über ${bridge}“ werden über ${bridge} verbunden, eine Social-Media-API aus der EU. ${bridge} verwaltet den Zugriff auf die Konten; Postwerk speichert nur, um welche Konten es geht.`,
+    reconnect: 'Neu verbinden',
+    bridgeExpired: 'Der Zugriff auf dieses Konto ist abgelaufen oder wurde widerrufen. Verbinde es neu; danach gehen die Beiträge weiter.',
+    bridgeCancelled: (network) => `Das Verbinden von ${network} wurde abgebrochen.`,
+    bridgeFailed: (p) => `${p.network} konnte nicht verbunden werden: ${p.reason}`,
     notAvailable: 'Dieses Netzwerk ist nicht verfügbar.',
     notForm: 'Dieses Netzwerk wird nicht über ein Formular verbunden.',
     notSetUpYet: (network) => `${network} ist auf diesem Server noch nicht eingerichtet.`,

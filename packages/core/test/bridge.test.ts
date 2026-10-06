@@ -4,7 +4,7 @@ import { bridgeProfiles, createDb, posts, postTargets, socialAccounts, users, wo
 import { mockFetch } from '../../providers/test/helpers';
 import { runMigrations } from '../../db/src/migrate';
 import { consumeOAuthState, saveConnectedAccounts } from '../src/accounts';
-import { disconnectAccount, finishBridgeConnect, networkRoute, startBridgeConnect } from '../src/bridge';
+import { bridgeFor, disconnectAccount, finishBridgeConnect, networkRoute, startBridgeConnect } from '../src/bridge';
 import { createPost } from '../src/posts';
 import { runPublishCycle } from '../src/publisher';
 
@@ -27,6 +27,11 @@ describe('network routing', () => {
     expect(networkRoute('x', listed)).toBe('bridge');
     expect(networkRoute('instagram', listed)).toBe('unavailable');
     expect(networkRoute('mastodon', { ...listed, ZERNIO_NETWORKS: 'mastodon' })).toBe('native');
+  });
+
+  it('names the bridge that could cover a network, for the setup notes', () => {
+    expect(bridgeFor('tiktok')).toEqual({ name: 'Zernio', env: 'ZERNIO_API_KEY' });
+    expect(bridgeFor('telegram')).toBeNull();
   });
 });
 

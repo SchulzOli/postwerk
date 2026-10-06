@@ -4,7 +4,7 @@ import { useActionState, useMemo, useState, useTransition } from 'react';
 import { errorText } from '@postwerk/core/i18n';
 import { parseThemeManifest, type ThemeManifest } from '@postwerk/core/theme';
 import { catalog } from '@postwerk/providers/catalog';
-import { connectMastodon, connectWithForm, disconnectAccount, startOAuth } from '@/app/(app)/accounts/actions';
+import { connectMastodon, connectWithForm, disconnectAccount, startBridgeConnectAction, startOAuth } from '@/app/(app)/accounts/actions';
 import { BlueskyConnect } from '@/components/bluesky-connect';
 import { chooseThemeAction, installBuiltinPluginAction, installPluginAction, uninstallPluginAction } from '@/app/(world)/canvas/actions';
 import { ConnectForm } from '@/components/connect-form';
@@ -46,7 +46,7 @@ function NetworkInspector({ node }: { node: Extract<WorldNode, { type: 'network'
   const t = useMessages(networksMessages);
   const locale = useLocale();
   const world = useWorld();
-  const { info, available, connector } = node.data.network;
+  const { info, available, connector, bridge, bridgeable } = node.data.network;
   const { text, media, options } = info.capabilities;
   const accounts = world.data.accounts.filter((account) => account.provider === info.id);
   return (
@@ -72,7 +72,7 @@ function NetworkInspector({ node }: { node: Extract<WorldNode, { type: 'network'
           </>
         )}
         <dt>{t.factSetup}</dt>
-        <dd>{info.setup.operator === 'none' ? t.setupNone : t.setupOperator(info.setup.envPrefix ?? '')}</dd>
+        <dd>{bridge ? t.setupBridge(bridge) : info.setup.operator === 'none' ? t.setupNone : t.setupOperator(info.setup.envPrefix ?? '')}</dd>
       </dl>
 
       {accounts.length > 0 && (
@@ -89,19 +89,28 @@ function NetworkInspector({ node }: { node: Extract<WorldNode, { type: 'network'
       {world.data.canManage && available && (
         <section className="stack">
           <h3>{t.connectAccount(accounts.length > 0)}</h3>
-          {connector.kind === 'mastodon' && (
-            <ConnectForm
-              action={connectMastodon}
-              submitLabel={t.continueTo('Mastodon')}
-              fields={[{ name: 'instance', label: t.mastodonServer, placeholder: 'mastodon.social' }]}
-            />
-          )}
-          {connector.kind === 'form' && <ConnectForm action={connectWithForm.bind(null, info.id)} submitLabel={t.connectNamed(info.name)} fields={connector.fields} />}
-          {connector.kind === 'atproto' && <BlueskyConnect fields={connector.fields} oauth={connector.oauth} />}
-          {connector.kind === 'oauth2' && (
-            <form action={startOAuth.bind(null, info.id)}>
+          {bridge ? (
+            <form action={startBridgeConnectAction.bind(null, info.id, undefined)} className="stack-sm">
               <button type="submit">{t.continueTo(info.name)}</button>
+              <small className="muted">{t.bridgeNote({ network: info.name, bridge })}</small>
             </form>
+          ) : (
+            <>
+              {connector.kind === 'mastodon' && (
+                <ConnectForm
+                  action={connectMastodon}
+                  submitLabel={t.continueTo('Mastodon')}
+                  fields={[{ name: 'instance', label: t.mastodonServer, placeholder: 'mastodon.social' }]}
+                />
+              )}
+              {connector.kind === 'form' && <ConnectForm action={connectWithForm.bind(null, info.id)} submitLabel={t.connectNamed(info.name)} fields={connector.fields} />}
+              {connector.kind === 'atproto' && <BlueskyConnect fields={connector.fields} oauth={connector.oauth} />}
+              {connector.kind === 'oauth2' && (
+                <form action={startOAuth.bind(null, info.id)}>
+                  <button type="submit">{t.continueTo(info.name)}</button>
+                </form>
+              )}
+            </>
           )}
         </section>
       )}
@@ -114,6 +123,13 @@ function NetworkInspector({ node }: { node: Extract<WorldNode, { type: 'network'
             {t.envSet} <code>{info.setup.envPrefix}_CLIENT_ID</code> {t.envAnd} <code>{info.setup.envPrefix}_CLIENT_SECRET</code>
             {t.envCallback} <code>/api/connect/{info.id}/callback</code>.
           </p>
+          {bridgeable && (
+            <p>
+              {t.orBridge(bridgeable.name).before}
+              <code>{bridgeable.env}</code>
+              {t.orBridge(bridgeable.name).after}
+            </p>
+          )}
         </section>
       )}
       <a href={info.setup.docsUrl} target="_blank" rel="noreferrer">
@@ -136,14 +152,21 @@ function AccountInspector({ node }: { node: Extract<WorldNode, { type: 'account'
         {account.handle}
         {t.accountOn}
         <Jump id={ids.network(account.provider)}>{catalog[account.provider].name}</Jump>
+        {account.bridge && <span className="muted"> · {networks.via(account.bridge)}</span>}
       </p>
-      {account.status === 'needs_reauth' && (
-        <p className="error">
-          {t.accessExpired.before}
-          <Jump id={ids.network(account.provider)}>{t.accessExpired.link}</Jump>
-          {t.accessExpired.after}
-        </p>
-      )}
+      {account.status === 'needs_reauth' &&
+        (account.bridge ? (
+          <form action={startBridgeConnectAction.bind(null, account.provider, account.id)} className="stack-sm">
+            <p className="error">{networks.bridgeExpired}</p>
+            {world.data.canManage && <button type="submit">{networks.reconnect}</button>}
+          </form>
+        ) : (
+          <p className="error">
+            {t.accessExpired.before}
+            <Jump id={ids.network(account.provider)}>{t.accessExpired.link}</Jump>
+            {t.accessExpired.after}
+          </p>
+        ))}
       <section className="stack-sm">
         <h3>{t.usedInFlows}</h3>
         {usedIn.length === 0 ? <span className="muted">{t.notUsed}</span> : usedIn.map((flow) => <Jump key={flow.id} id={ids.flow(flow.id)}>{flow.name}</Jump>)}

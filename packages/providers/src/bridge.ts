@@ -9,6 +9,8 @@ import type { PostContent, ProviderId, PublishContext, PublishResult } from './t
 export const BRIDGE_IDS = ['zernio'] as const;
 export type BridgeId = (typeof BRIDGE_IDS)[number];
 
+export const isBridgeId = (value: unknown): value is BridgeId => BRIDGE_IDS.includes(value as BridgeId);
+
 /** Server settings of a bridge (from the environment). */
 export interface BridgeConfig {
   apiKey: string;

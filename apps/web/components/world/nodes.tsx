@@ -41,9 +41,9 @@ export function RegionNode({ data }: Props<'region'>) {
 export function NetworkNode({ data, selected }: Props<'network'>) {
   const t = useMessages(networksMessages);
   const locale = useLocale();
-  const { info, available } = data.network;
+  const { info, available, bridge } = data.network;
   const status = data.accountCount > 0 ? 'connected' : available ? 'ready' : 'setup';
-  const label = { connected: t.statusConnected(data.accountCount), ready: t.statusReady, setup: t.statusSetup }[status];
+  const label = { connected: t.statusConnected(data.accountCount), ready: bridge ? t.statusReadyVia(bridge) : t.statusReady, setup: t.statusSetup }[status];
   return (
     <div className={`world-card network-node ${selected ? 'is-selected' : ''}`}>
       <div className="row-tight">
@@ -61,6 +61,7 @@ export function NetworkNode({ data, selected }: Props<'network'>) {
 
 export function AccountNode({ data, selected }: Props<'account'>) {
   const common = useMessages(commonMessages);
+  const networks = useMessages(networksMessages);
   const { account } = data;
   return (
     <div className={`world-card account-node ${selected ? 'is-selected' : ''}`}>
@@ -71,6 +72,7 @@ export function AccountNode({ data, selected }: Props<'account'>) {
           <strong className="clip">{account.displayName ?? account.handle}</strong>
           <small className="muted clip">
             {catalog[account.provider].name} · {account.handle}
+            {account.bridge && ` · ${networks.via(account.bridge)}`}
           </small>
         </div>
       </div>

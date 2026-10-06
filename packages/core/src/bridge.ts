@@ -57,6 +57,12 @@ export function networkRoute(id: ProviderId, env: Env = process.env): NetworkRou
   return 'unavailable';
 }
 
+/** The bridge that could connect a network once the admin sets it up (for setup notes): its name and the variable to set. */
+export function bridgeFor(id: ProviderId): { name: string; env: string } | null {
+  const bridge = getBridge('zernio');
+  return bridge.platforms[id] ? { name: bridge.name, env: 'ZERNIO_API_KEY' } : null;
+}
+
 function requireSetup(env?: Env) {
   const setup = bridgeSetup(env);
   if (!setup) {

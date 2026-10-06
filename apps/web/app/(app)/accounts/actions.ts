@@ -2,7 +2,17 @@
 
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
-import { createOAuthState, deleteAccount, getOrRegisterMastodonApp, isProviderAvailable, oauthClientFor, saveConnectedAccounts, startBlueskyLogin } from '@postwerk/core';
+import {
+  createOAuthState,
+  disconnectAccount as disconnect,
+  getOrRegisterMastodonApp,
+  isProviderAvailable,
+  networkRoute,
+  oauthClientFor,
+  saveConnectedAccounts,
+  startBlueskyLogin,
+  startBridgeConnect,
+} from '@postwerk/core';
 import { getDb } from '@postwerk/db';
 import { codeChallenge, generateCodeVerifier, getProvider, isProviderId, Mastodon, ProviderError } from '@postwerk/providers';
 import { record } from '@/lib/audit';
@@ -105,9 +115,33 @@ export async function startOAuth(providerId: string) {
   );
 }
 
+/**
+ * Connects a network through the bridge (Zernio): sends the browser to its
+ * sign-in. `reconnect` is a bridged account whose access ran out.
+ */
+export async function startBridgeConnectAction(network: string, reconnect?: string) {
+  const { user, workspace } = await requireAdmin();
+  if (!isProviderId(network)) redirect('/accounts');
+  let target: string;
+  try {
+    if (!reconnect && networkRoute(network) !== 'bridge') throw new ProviderError((await getMessages(networksMessages)).notAvailable);
+    target = await startBridgeConnect(getDb(), { workspace, userId: user.id, network, appUrl, reconnect });
+  } catch (error) {
+    redirect(`/canvas?${new URLSearchParams({ error: await message(error) })}#n=network:${network}`);
+  }
+  redirect(target);
+}
+
 export async function disconnectAccount(form: FormData) {
   const { user, workspace } = await requireAdmin();
-  const deleted = await deleteAccount(getDb(), workspace.id, String(form.get('accountId')));
+  const back = form.get('returnTo') === '/accounts' ? '/accounts' : '/canvas';
+  let deleted;
+  try {
+    // Bridged accounts are removed on the bridge too, so it stops billing for them.
+    deleted = await disconnect(getDb(), workspace.id, String(form.get('accountId')));
+  } catch (error) {
+    redirect(`${back}?${new URLSearchParams({ error: await message(error) })}`);
+  }
   if (deleted) {
     await record({ action: 'account.disconnected', userId: user.id, workspaceId: workspace.id, target: deleted.handle, details: { provider: deleted.provider } });
   }
