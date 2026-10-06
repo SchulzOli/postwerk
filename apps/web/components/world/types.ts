@@ -59,6 +59,16 @@ export interface PluginData {
   installed: boolean;
 }
 
+/** What the workspace uses of the bridge (admins only). */
+export interface BridgeUsageData {
+  name: string;
+  accounts: number;
+  profiles: number;
+  /** Newest first; the first is the current month ("2026-10"). */
+  months: { month: string; peakAccounts: number; peakProfiles: number }[];
+  price: { amount: number; currency: string } | null;
+}
+
 export interface WorldData {
   user: { name: string; email: string };
   /** Show the "confirm your email" reminder. */
@@ -80,5 +90,6 @@ export interface WorldData {
   appearance: { mode: ColorMode; themeId: string | null; canvas: ThemeCanvas };
   /** Latest workspace activity; null for members who may not see it (editors). */
   activity: ActivityItem[] | null;
+  bridgeUsage: BridgeUsageData | null;
   notice: { kind: 'success' | 'error'; text: string } | null;
 }

@@ -1,5 +1,5 @@
 import { asc, eq } from 'drizzle-orm';
-import { bridgeFor, bridgeSetup, isBlueskyOAuthAvailable, isProviderAvailable, listFlows, listPosts, listWorkspaceAudit, loadCanvasPositions, needsEmailVerification, networkRoute } from '@postwerk/core';
+import { bridgeFor, bridgeSetup, bridgeUsageSummary, isBlueskyOAuthAvailable, isProviderAvailable, listFlows, listPosts, listWorkspaceAudit, loadCanvasPositions, needsEmailVerification, networkRoute } from '@postwerk/core';
 import { builtinThemes, defaultCanvas } from '@postwerk/core/theme';
 import { getDb, socialAccounts } from '@postwerk/db';
 import { bridges, getProvider, isBridgeId, localizeFields, localizeInfo, providerInfos } from '@postwerk/providers';
@@ -28,7 +28,7 @@ export default async function CanvasPage({ searchParams }: { searchParams: Promi
   const [t, networksText] = await Promise.all([getMessages(canvasMessages), getMessages(networksMessages)]);
   const db = getDb();
   const canManage = role !== 'editor';
-  const [accounts, flows, posts, positions, appearance, activity, team, calendar] = await Promise.all([
+  const [accounts, flows, posts, positions, appearance, activity, team, calendar, usage] = await Promise.all([
     db.query.socialAccounts.findMany({
       where: eq(socialAccounts.workspaceId, workspace.id),
       orderBy: [asc(socialAccounts.provider), asc(socialAccounts.handle)],
@@ -40,6 +40,7 @@ export default async function CanvasPage({ searchParams }: { searchParams: Promi
     canManage ? listWorkspaceAudit(db, workspace.id, { limit: 30 }) : null,
     loadTeam(session),
     loadCalendarAroundNow(workspace.id),
+    canManage ? bridgeUsageSummary(db, workspace.id) : null,
   ]);
   const installed = new Set(appearance.installed.map((plugin) => plugin.id));
 
@@ -95,6 +96,7 @@ export default async function CanvasPage({ searchParams }: { searchParams: Promi
       ...appearance.installed.filter((plugin) => !plugin.builtin).map((plugin) => ({ manifest: plugin.manifest, builtin: false, installed: true })),
     ],
     activity: activity?.map(toActivity) ?? null,
+    bridgeUsage: usage && { name: usage.name, accounts: usage.accounts, profiles: usage.profiles, months: usage.months, price: usage.price },
     appearance: { mode: appearance.mode, themeId: appearance.theme?.id ?? null, canvas: appearance.theme?.canvas ?? defaultCanvas },
     notice: connected
       ? { kind: 'success', text: networksText.connectedNotice(connected) }

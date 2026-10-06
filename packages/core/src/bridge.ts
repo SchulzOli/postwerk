@@ -16,6 +16,7 @@ import {
   type PublishResult,
 } from '@postwerk/providers';
 import { createOAuthState, deleteAccount } from './accounts';
+import { recordBridgeUsage } from './bridge-usage';
 import { isProviderAvailable } from './clients';
 import { decryptJson } from './crypto';
 
@@ -177,7 +178,9 @@ export async function disconnectAccount(db: Database, workspaceId: string, accou
   const bridged = await bridgedAccount(db, workspaceId, accountId).catch(() => undefined);
   const setup = bridgeSetup(env);
   if (bridged && setup && setup.bridge.id === bridged.credentials.via) await setup.bridge.disconnect(setup.config, bridged.credentials.accountId);
-  return deleteAccount(db, workspaceId, accountId);
+  const deleted = await deleteAccount(db, workspaceId, accountId);
+  if (bridged) await recordBridgeUsage(db, workspaceId);
+  return deleted;
 }
 
 /** Publishes a bridged account's post through its bridge. */

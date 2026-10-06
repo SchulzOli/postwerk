@@ -1,10 +1,11 @@
 import { eq, sql } from 'drizzle-orm';
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import { bridgeProfiles, createDb, posts, postTargets, socialAccounts, users, workspaces, type Database } from '@postwerk/db';
+import { bridgeProfiles, bridgeUsage, createDb, posts, postTargets, socialAccounts, users, workspaces, type Database } from '@postwerk/db';
 import { mockFetch } from '../../providers/test/helpers';
 import { runMigrations } from '../../db/src/migrate';
 import { consumeOAuthState, saveConnectedAccounts } from '../src/accounts';
 import { bridgeFor, disconnectAccount, finishBridgeConnect, networkRoute, startBridgeConnect } from '../src/bridge';
+import { bridgePrice, bridgeUsageSummary, recordAllBridgeUsage } from '../src/bridge-usage';
 import { createPost } from '../src/posts';
 import { runPublishCycle } from '../src/publisher';
 
@@ -32,6 +33,13 @@ describe('network routing', () => {
   it('names the bridge that could cover a network, for the setup notes', () => {
     expect(bridgeFor('tiktok')).toEqual({ name: 'Zernio', env: 'ZERNIO_API_KEY' });
     expect(bridgeFor('telegram')).toBeNull();
+  });
+
+  it('reads the price per account', () => {
+    expect(bridgePrice({ ZERNIO_ACCOUNT_PRICE: '6' })).toEqual({ amount: 6, currency: 'USD' });
+    expect(bridgePrice({ ZERNIO_ACCOUNT_PRICE: '5,50 eur' })).toEqual({ amount: 5.5, currency: 'EUR' });
+    expect(bridgePrice({ ZERNIO_ACCOUNT_PRICE: 'cheap' })).toBeNull();
+    expect(bridgePrice({})).toBeNull();
   });
 });
 
@@ -141,5 +149,36 @@ describe.skipIf(!url)('connecting and publishing through the bridge (Postgres)',
     expect(calls.at(-1)).toMatchObject({ method: 'DELETE', url: `${API}/accounts/acc_ig` });
     expect(await db.select().from(socialAccounts)).toEqual([]);
     vi.unstubAllEnvs();
+  });
+
+  it('keeps the most bridged accounts per month for the bill', async () => {
+    const bridged = (id: string) => ({ profile: { externalId: `zernio:${id}`, handle: `@${id}` }, credentials: { via: 'zernio', accountId: id, profileId: 'prof_1' } });
+    await db.insert(bridgeProfiles).values({ workspaceId: workspace.id, bridge: 'zernio', profileId: 'prof_1' });
+    const [first] = await saveConnectedAccounts(db, workspace.id, 'instagram', [bridged('a')], 'zernio');
+    await saveConnectedAccounts(db, workspace.id, 'x', [bridged('b')], 'zernio');
+    mockFetch([[`DELETE ${API}/accounts/a`, () => new Response(null, { status: 204 })]]);
+    await disconnectAccount(db, workspace.id, first!.id, env);
+
+    const month = new Date().toISOString().slice(0, 7);
+    expect(await db.select().from(bridgeUsage)).toMatchObject([{ workspaceId: workspace.id, bridge: 'zernio', month, accounts: 1, peakAccounts: 2, profiles: 1, peakProfiles: 1 }]);
+
+    // A new month starts from what is connected then.
+    const later = new Date(Date.now() + 40 * 24 * 3600_000);
+    await recordAllBridgeUsage(db, later);
+    const summary = await bridgeUsageSummary(db, workspace.id, { ...env, ZERNIO_ACCOUNT_PRICE: '6 EUR' }, later);
+    expect(summary).toEqual({
+      bridge: 'zernio',
+      name: 'Zernio',
+      accounts: 1,
+      profiles: 1,
+      months: [
+        { month: later.toISOString().slice(0, 7), peakAccounts: 1, peakProfiles: 1 },
+        { month, peakAccounts: 2, peakProfiles: 1 },
+      ],
+      price: { amount: 6, currency: 'EUR' },
+    });
+    // Nothing to show without the bridge and without past use.
+    await db.execute(sql`TRUNCATE social_accounts, bridge_profiles, bridge_usage CASCADE`);
+    expect(await bridgeUsageSummary(db, workspace.id, {})).toBeNull();
   });
 });

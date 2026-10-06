@@ -208,6 +208,26 @@ export const bridgeProfiles = pgTable(
   (t) => [uniqueIndex('bridge_profiles_bridge_profile_idx').on(t.bridge, t.profileId), index('bridge_profiles_workspace_idx').on(t.workspaceId, t.bridge)],
 );
 
+/**
+ * What a workspace uses of a bridge per month (UTC), for the aggregator's bill:
+ * it charges per connected account or per profile. `peak*` is the most at once.
+ */
+export const bridgeUsage = pgTable(
+  'bridge_usage',
+  {
+    workspaceId: uuid('workspace_id').notNull().references(() => workspaces.id, { onDelete: 'cascade' }),
+    bridge: text('bridge').notNull(),
+    /** "2026-10" */
+    month: text('month').notNull(),
+    accounts: integer('accounts').notNull(),
+    peakAccounts: integer('peak_accounts').notNull(),
+    profiles: integer('profiles').notNull(),
+    peakProfiles: integer('peak_profiles').notNull(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [primaryKey({ columns: [t.workspaceId, t.bridge, t.month] })],
+);
+
 /** Saved publishing flows (graph of steps, see @postwerk/core/flow). */
 export const flows = pgTable('flows', {
   id: id(),
@@ -349,6 +369,7 @@ export type User = typeof users.$inferSelect;
 export type Workspace = typeof workspaces.$inferSelect;
 export type SocialAccount = typeof socialAccounts.$inferSelect;
 export type BridgeProfile = typeof bridgeProfiles.$inferSelect;
+export type BridgeUsage = typeof bridgeUsage.$inferSelect;
 export type Post = typeof posts.$inferSelect;
 export type Flow = typeof flows.$inferSelect;
 export type PostTarget = typeof postTargets.$inferSelect;

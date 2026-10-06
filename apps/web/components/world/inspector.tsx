@@ -13,10 +13,11 @@ import { useLocale, useMessages } from '@/lib/i18n';
 import { intlLocale } from '@/lib/locale';
 import { canvasMessages } from '@/messages/canvas';
 import { commonMessages } from '@/messages/common';
-import { mediaSummary, networksMessages } from '@/messages/networks';
+import { mediaSummary, networksMessages, usageCost, usageMonthLabel } from '@/messages/networks';
 import { themesMessages } from '@/messages/themes';
 import { useWorld } from './context';
 import { ids, type WorldNode } from './layout';
+import type { BridgeUsageData } from './types';
 
 function CopyLink({ id }: { id: string }) {
   const t = useMessages(canvasMessages);
@@ -434,13 +435,56 @@ function ThemeEditor() {
   );
 }
 
+function BridgeUsageInspector({ usage }: { usage: BridgeUsageData }) {
+  const t = useMessages(networksMessages);
+  const locale = intlLocale(useLocale());
+  return (
+    <>
+      <p>{t.usageNow(usage)}</p>
+      <table className="usage-table">
+        <thead>
+          <tr>
+            <th scope="col">{t.usageMonth}</th>
+            <th scope="col">{t.usageAccounts}</th>
+            <th scope="col">{t.usageProfiles}</th>
+            {usage.price && <th scope="col">{t.usageEstimate}</th>}
+          </tr>
+        </thead>
+        <tbody>
+          {usage.months.map((month) => (
+            <tr key={month.month}>
+              <td>{usageMonthLabel(month.month, locale)}</td>
+              <td>{month.peakAccounts}</td>
+              <td>{month.peakProfiles}</td>
+              {usage.price && <td>{usageCost(month.peakAccounts, usage.price, locale)}</td>}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+      <p className="muted">{t.usageAbout(usage.name)}</p>
+      {!usage.price && (
+        <p className="muted">
+          {t.usageSetPrice.before}
+          <code>ZERNIO_ACCOUNT_PRICE</code>
+          {t.usageSetPrice.after}
+        </p>
+      )}
+    </>
+  );
+}
+
 export function Inspector({ node, onClose }: { node: WorldNode | undefined; onClose(): void }) {
   const t = useMessages(canvasMessages);
   const themes = useMessages(themesMessages);
   const common = useMessages(commonMessages);
+  const usage = useWorld().data.bridgeUsage;
+  const networks = useMessages(networksMessages);
   if (!node || node.type === 'step' || node.type === 'composer' || node.type === 'posts' || node.type === 'calendar' || node.type === 'activity' || node.type === 'members') return null;
+  if (node.type === 'bridgeUsage' && !usage) return null;
   const title =
-    node.type === 'network'
+    node.type === 'bridgeUsage'
+      ? networks.usageTitle(usage!.name)
+      : node.type === 'network'
       ? node.data.network.info.name
       : node.type === 'account'
         ? (node.data.account.displayName ?? node.data.account.handle)
@@ -467,6 +511,7 @@ export function Inspector({ node, onClose }: { node: WorldNode | undefined; onCl
         {node.type === 'region' && <RegionInspector node={node} />}
         {node.type === 'plugin' && <PluginInspector node={node} />}
         {node.type === 'pluginInstall' && <ThemeEditor />}
+        {node.type === 'bridgeUsage' && usage && <BridgeUsageInspector usage={usage} />}
       </div>
     </aside>
   );

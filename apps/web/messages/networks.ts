@@ -63,6 +63,19 @@ export const networksMessages = defineMessages({
     bridgeExpired: 'Access to this account expired or was revoked. Reconnect it; posts resume afterwards.',
     bridgeCancelled: (network: string) => `Connecting ${network} was cancelled.`,
     bridgeFailed: (p: { network: string; reason: string }) => `Connecting ${p.network} failed: ${p.reason}`,
+    // Bridge usage (what the aggregator bills)
+    usageTitle: (bridge: string) => `${bridge} usage`,
+    usageNow: (p: { accounts: number; profiles: number }) =>
+      `${p.accounts} ${p.accounts === 1 ? 'account' : 'accounts'} · ${p.profiles} ${p.profiles === 1 ? 'profile' : 'profiles'}`,
+    usageThisMonth: (accounts: number) => `This month: up to ${accounts} at once`,
+    usageCost: (cost: string) => `about ${cost}`,
+    usageAbout: (bridge: string) =>
+      `${bridge} bills this server for each connected account. Postwerk notes the most accounts this workspace had connected at once each month, so estimates rather run high.`,
+    usageSetPrice: { before: 'Set ', after: ' to the monthly price per account to see estimates.' },
+    usageMonth: 'Month',
+    usageAccounts: 'Accounts',
+    usageProfiles: 'Profiles',
+    usageEstimate: 'Estimate',
     // Results and errors
     notAvailable: 'This network is not available.',
     notForm: 'This network is not connected with a form.',
@@ -130,6 +143,17 @@ export const networksMessages = defineMessages({
     bridgeExpired: 'Der Zugriff auf dieses Konto ist abgelaufen oder wurde widerrufen. Verbinde es neu; danach gehen die Beiträge weiter.',
     bridgeCancelled: (network) => `Das Verbinden von ${network} wurde abgebrochen.`,
     bridgeFailed: (p) => `${p.network} konnte nicht verbunden werden: ${p.reason}`,
+    usageTitle: (bridge) => `${bridge}-Nutzung`,
+    usageNow: (p) => `${p.accounts} ${p.accounts === 1 ? 'Konto' : 'Konten'} · ${p.profiles} ${p.profiles === 1 ? 'Profil' : 'Profile'}`,
+    usageThisMonth: (accounts) => `Diesen Monat: bis zu ${accounts} gleichzeitig`,
+    usageCost: (cost) => `etwa ${cost}`,
+    usageAbout: (bridge) =>
+      `${bridge} berechnet diesem Server jedes verbundene Konto. Postwerk notiert pro Monat, wie viele Konten dieser Arbeitsbereich höchstens gleichzeitig verbunden hatte; Schätzungen liegen also eher zu hoch.`,
+    usageSetPrice: { before: 'Setze ', after: ' auf den Monatspreis pro Konto, um Schätzungen zu sehen.' },
+    usageMonth: 'Monat',
+    usageAccounts: 'Konten',
+    usageProfiles: 'Profile',
+    usageEstimate: 'Schätzung',
     notAvailable: 'Dieses Netzwerk ist nicht verfügbar.',
     notForm: 'Dieses Netzwerk wird nicht über ein Formular verbunden.',
     notSetUpYet: (network) => `${network} ist auf diesem Server noch nicht eingerichtet.`,
@@ -151,4 +175,14 @@ export function mediaSummary(
   if (media.maxImages > 0) parts.push(t.images(media.maxImages));
   if (media.maxVideos > 0) parts.push(t.videos(media.maxVideos));
   return `${parts.join(media.mixed ? t.mixedJoin : t.eitherJoin)}${media.required ? t.mediaRequired : ''}`;
+}
+
+/** "October 2026" for a usage month ("2026-10"). */
+export function usageMonthLabel(month: string, locale: string): string {
+  return new Intl.DateTimeFormat(locale, { month: 'long', year: 'numeric', timeZone: 'UTC' }).format(new Date(`${month}-01T00:00:00Z`));
+}
+
+/** What `accounts` cost a month at the admin's price, e.g. "€12.00". */
+export function usageCost(accounts: number, price: { amount: number; currency: string }, locale: string): string {
+  return new Intl.NumberFormat(locale, { style: 'currency', currency: price.currency }).format(accounts * price.amount);
 }

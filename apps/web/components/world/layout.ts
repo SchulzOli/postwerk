@@ -16,7 +16,8 @@ export type WorldNode =
   | Node<{ plugin: PluginData }, 'plugin'>
   | Node<Record<string, never>, 'pluginInstall'>
   | Node<Record<string, never>, 'activity'>
-  | Node<Record<string, never>, 'members'>;
+  | Node<Record<string, never>, 'members'>
+  | Node<Record<string, never>, 'bridgeUsage'>;
 
 /** Stable node ids double as deep-link targets (#n=<id>). */
 export const ids = {
@@ -32,6 +33,7 @@ export const ids = {
   pluginInstall: 'panel:add-theme',
   activity: 'panel:activity',
   members: 'panel:members',
+  bridgeUsage: 'panel:bridge-usage',
 };
 
 /** Regions in toolbar order; their titles and subtitles are in `canvasMessages.regions`. */
@@ -40,6 +42,7 @@ export const regionKeys: RegionKey[] = ['networks', 'accounts', 'flows', 'compos
 const NETWORK = { width: 240, height: 112, gap: 20, columns: 4 };
 const ACCOUNT = { width: 250, height: 76, gap: 16, columns: 2 };
 const PLUGIN = { width: 300, height: 252, gap: 20, columns: 3 };
+const USAGE = { height: 104, gap: 28 };
 const PAD = { x: 32, top: 88, bottom: 32 };
 export const FLOW = { width: 1180, minHeight: 300, gap: 40 };
 /** The panel is about 1030px high at most (month view with a post open). */
@@ -117,6 +120,9 @@ export function buildWorld(data: WorldData, saved: Record<string, { x: number; y
 
   const networksSize = gridSize(data.networks.length, NETWORK);
   const accountsSize = gridSize(Math.max(2, data.accounts.length), ACCOUNT);
+  // The bridge's usage card sits below the accounts.
+  const usageY = accountsSize.height - PAD.bottom + USAGE.gap;
+  if (data.bridgeUsage) accountsSize.height += USAGE.gap + USAGE.height;
   const topHeight = Math.max(networksSize.height, accountsSize.height, 760);
   const flowsHeight =
     PAD.top + data.flows.reduce((sum, flow) => sum + flowFrameHeight(flow.graph.steps) + FLOW.gap, 0) + 260;
@@ -175,6 +181,18 @@ export function buildWorld(data: WorldData, saved: Record<string, { x: number; y
       style: { width: ACCOUNT.width },
     });
   });
+
+  if (data.bridgeUsage) {
+    nodes.push({
+      id: ids.bridgeUsage,
+      type: 'bridgeUsage',
+      parentId: ids.region('accounts'),
+      position: place(ids.bridgeUsage, { x: PAD.x, y: usageY }),
+      data: {},
+      deletable: false,
+      style: { width: ACCOUNT.columns * ACCOUNT.width + (ACCOUNT.columns - 1) * ACCOUNT.gap },
+    });
+  }
 
   nodes.push(
     { id: ids.composer, type: 'composer', parentId: ids.region('compose'), position: place(ids.composer, { x: PAD.x, y: PAD.top }), data: {}, deletable: false, dragHandle: '.panel-drag', style: { width: 536 } },

@@ -321,6 +321,10 @@ button.small { padding: 0.25rem 0.6rem; font-size: 0.82rem; }
 .facts { display: grid; grid-template-columns: auto 1fr; gap: 0.3rem 0.8rem; margin: 0; font-size: 0.9rem; }
 .facts dt { color: var(--muted); }
 .facts dd { margin: 0; }
+.usage-table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+.usage-table th { text-align: left; color: var(--muted); font-weight: 500; }
+.usage-table th, .usage-table td { padding: 0.3rem 0.5rem 0.3rem 0; border-bottom: 1px solid var(--border); }
+.usage-table td:not(:first-child), .usage-table th:not(:first-child) { text-align: right; font-variant-numeric: tabular-nums; }
 .setup-box { border: 1px dashed var(--border); border-radius: var(--radius-card); padding: 0.75rem; }
 .preview { border-left: 3px solid var(--tint-account); padding-left: 0.6rem; }
 

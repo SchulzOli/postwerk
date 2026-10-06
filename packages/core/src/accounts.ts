@@ -1,6 +1,7 @@
 import { and, eq, inArray, sql } from 'drizzle-orm';
 import { mastodonApps, oauthStates, posts, postTargets, socialAccounts, type Database } from '@postwerk/db';
 import { Mastodon, type AccountProfile, type BridgeId, type ConnectedAccount, type ProviderId } from '@postwerk/providers';
+import { recordBridgeUsage } from './bridge-usage';
 import { decrypt, encrypt, encryptJson } from './crypto';
 import { generateToken } from './password';
 
@@ -85,6 +86,7 @@ export async function saveConnectedAccounts(db: Database, workspaceId: string, p
       await saveAccount(db, { workspaceId, provider, profile: account.profile, credentials: account.credentials, maxLength: account.limits?.maxLength, bridge }),
     );
   }
+  if (bridge) await recordBridgeUsage(db, workspaceId);
   return saved;
 }
 

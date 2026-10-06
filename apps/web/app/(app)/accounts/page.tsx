@@ -1,5 +1,5 @@
 import { asc, eq } from 'drizzle-orm';
-import { bridgeFor, bridgeSetup, isBlueskyOAuthAvailable, isProviderAvailable, networkRoute } from '@postwerk/core';
+import { bridgeFor, bridgeSetup, bridgeUsageSummary, isBlueskyOAuthAvailable, isProviderAvailable, networkRoute } from '@postwerk/core';
 import { getDb, socialAccounts } from '@postwerk/db';
 import { bridges, getProvider, isBridgeId, localizeFields, localizeInfo, providerInfos } from '@postwerk/providers';
 import { BlueskyConnect } from '@/components/bluesky-connect';
@@ -9,7 +9,7 @@ import { getLocale, getMessages } from '@/lib/i18n-server';
 import { providerLabels } from '@/lib/platforms';
 import { requireSession } from '@/lib/session';
 import { commonMessages } from '@/messages/common';
-import { networksMessages } from '@/messages/networks';
+import { networksMessages, usageCost } from '@/messages/networks';
 import { connectMastodon, connectWithForm, disconnectAccount, startBridgeConnectAction, startOAuth } from './actions';
 
 export async function generateMetadata() {
@@ -27,6 +27,8 @@ export default async function AccountsPage({ searchParams }: { searchParams: Pro
     orderBy: [asc(socialAccounts.provider), asc(socialAccounts.handle)],
   });
   const canManage = role !== 'editor';
+  const usage = canManage ? await bridgeUsageSummary(getDb(), workspace.id) : null;
+  const month = usage?.months[0];
   const networks = providerInfos.filter((info) => info.id !== 'sandbox' || isProviderAvailable('sandbox')).map((info) => localizeInfo(info, locale));
   const available = networks.filter((info) => networkRoute(info.id) !== 'unavailable');
   const needsSetup = networks.filter((info) => networkRoute(info.id) === 'unavailable');
@@ -73,6 +75,12 @@ export default async function AccountsPage({ searchParams }: { searchParams: Pro
               );
             })}
           </ul>
+        )}
+        {usage && month && (
+          <p className="muted">
+            {t.usageTitle(usage.name)}: {t.usageNow(usage)} · {t.usageThisMonth(month.peakAccounts)}
+            {usage.price && ` · ${t.usageCost(usageCost(month.peakAccounts, usage.price, locale))}`}
+          </p>
         )}
       </section>
 
