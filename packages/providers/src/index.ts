@@ -19,6 +19,8 @@ export * from './types';
 export * from './catalog';
 export { countText, graphemeLength, mastodonLength, xLength } from './text';
 export { formatBytes, validateContent, resolveOptions, textLimit } from './validate';
+export { localizeFields, localizeInfo, validationMessages } from './messages';
+export * from './i18n';
 export { codeChallenge, generateCodeVerifier } from './oauth';
 export * as Mastodon from './mastodon';
 export * as Bluesky from './bluesky';

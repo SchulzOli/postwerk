@@ -1,6 +1,7 @@
 import { and, eq } from 'drizzle-orm';
 import { posts, users, workspaceMembers, type Database } from '@postwerk/db';
 import { getProviderInfo } from '@postwerk/providers';
+import { isLocale } from './i18n';
 import { trySendMail } from './mail';
 import { postFailedMail } from './mail-templates';
 import type { FinishedPost } from './publisher';
@@ -17,9 +18,9 @@ export async function notifyPostProblem(db: Database, post: FinishedPost, appUrl
   if (!row) return 0;
 
   const recipients = row.authorId
-    ? await db.select({ email: users.email, name: users.name, notify: users.notifyFailures }).from(users).where(eq(users.id, row.authorId))
+    ? await db.select({ email: users.email, name: users.name, notify: users.notifyFailures, locale: users.locale }).from(users).where(eq(users.id, row.authorId))
     : await db
-        .select({ email: users.email, name: users.name, notify: users.notifyFailures })
+        .select({ email: users.email, name: users.name, notify: users.notifyFailures, locale: users.locale })
         .from(workspaceMembers)
         .innerJoin(users, eq(users.id, workspaceMembers.userId))
         .where(and(eq(workspaceMembers.workspaceId, row.workspaceId), eq(workspaceMembers.role, 'owner')));
@@ -36,7 +37,7 @@ export async function notifyPostProblem(db: Database, post: FinishedPost, appUrl
       failures,
       url: `${appUrl}/canvas#n=panel:posts`,
       settingsUrl: `${appUrl}/account`,
-    });
+    }, isLocale(recipient.locale) ? recipient.locale : 'en');
     if (await trySendMail(mail)) sent++;
   }
   return sent;

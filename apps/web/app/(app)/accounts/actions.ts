@@ -7,14 +7,18 @@ import { getDb } from '@postwerk/db';
 import { codeChallenge, generateCodeVerifier, getProvider, isProviderId, Mastodon, ProviderError } from '@postwerk/providers';
 import { record } from '@/lib/audit';
 import { appUrl, redirectUriFor } from '@/lib/env';
+import { getMessages, localizedError } from '@/lib/i18n-server';
 import { requireAdmin } from '@/lib/session';
+import { commonMessages } from '@/messages/common';
+import { networksMessages } from '@/messages/networks';
 
 export type ConnectState = { error?: string; success?: string; values?: Record<string, string> };
 
-function message(error: unknown): string {
-  if (error instanceof ProviderError) return error.message;
+/** Connection problems are meant for the user (in their language where Postwerk wrote them); anything else is our fault. */
+async function message(error: unknown): Promise<string> {
+  if (error instanceof ProviderError) return localizedError(error);
   console.error(error);
-  return 'Something went wrong. Please try again.';
+  return (await getMessages(commonMessages)).somethingWrong;
 }
 
 export async function connectMastodon(_: ConnectState, form: FormData): Promise<ConnectState> {
@@ -28,7 +32,7 @@ export async function connectMastodon(_: ConnectState, form: FormData): Promise<
     const state = await createOAuthState(db, { workspaceId: workspace.id, userId: user.id, provider: 'mastodon', data: { instanceUrl } });
     target = Mastodon.authorizeUrl(instanceUrl, app, redirectUri, state);
   } catch (error) {
-    return { error: message(error), values: { instance: String(form.get('instance') ?? '') } };
+    return { error: await message(error), values: { instance: String(form.get('instance') ?? '') } };
   }
   redirect(target);
 }
@@ -41,7 +45,7 @@ export async function connectBluesky(_: ConnectState, form: FormData): Promise<C
   try {
     target = await startBlueskyLogin(getDb(), { workspaceId: workspace.id, userId: user.id, handle, appUrl });
   } catch (error) {
-    return { error: message(error), values: { handle } };
+    return { error: await message(error), values: { handle } };
   }
   redirect(target);
 }
@@ -49,9 +53,10 @@ export async function connectBluesky(_: ConnectState, form: FormData): Promise<C
 /** Networks connected with a form (Bluesky app password, Telegram bot, Discord webhook, Sandbox). */
 export async function connectWithForm(providerId: string, _: ConnectState, form: FormData): Promise<ConnectState> {
   const { user, workspace } = await requireAdmin();
-  if (!isProviderId(providerId) || !isProviderAvailable(providerId)) return { error: 'This network is not available.' };
+  const t = await getMessages(networksMessages);
+  if (!isProviderId(providerId) || !isProviderAvailable(providerId)) return { error: t.notAvailable };
   const provider = getProvider(providerId);
-  if (provider.connector.kind !== 'form' && provider.connector.kind !== 'atproto') return { error: 'This network is not connected with a form.' };
+  if (provider.connector.kind !== 'form' && provider.connector.kind !== 'atproto') return { error: t.notForm };
 
   const values: Record<string, string> = {};
   const echo: Record<string, string> = {};
@@ -67,9 +72,9 @@ export async function connectWithForm(providerId: string, _: ConnectState, form:
     }
     revalidatePath('/accounts');
     revalidatePath('/canvas');
-    return { success: `Connected ${accounts.map((a) => a.profile.handle).join(', ')}.` };
+    return { success: t.connectedNotice(accounts.map((a) => a.profile.handle).join(', ')) };
   } catch (error) {
-    return { error: message(error), values: echo };
+    return { error: await message(error), values: echo };
   }
 }
 
@@ -80,7 +85,8 @@ export async function startOAuth(providerId: string) {
   const provider = getProvider(providerId);
   const client = oauthClientFor(providerId);
   if (provider.connector.kind !== 'oauth2' || !client) {
-    redirect(`/canvas?${new URLSearchParams({ error: `${provider.name} is not set up on this server yet.` })}#n=network:${providerId}`);
+    const t = await getMessages(networksMessages);
+    redirect(`/canvas?${new URLSearchParams({ error: t.notSetUpYet(provider.name) })}#n=network:${providerId}`);
   }
 
   const codeVerifier = provider.connector.pkce ? generateCodeVerifier() : undefined;

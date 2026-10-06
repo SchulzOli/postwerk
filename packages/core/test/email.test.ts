@@ -17,7 +17,7 @@ const APP = 'https://postwerk.test';
 describe('mail templates', () => {
   it('escape user content in the HTML version', () => {
     expect(escapeHtml(`<b>"Tom & Jerry's"</b>`)).toBe('&lt;b&gt;&quot;Tom &amp; Jerry&#39;s&quot;&lt;/b&gt;');
-    const mail = inviteMail('a@example.com', { inviter: '<script>', workspace: 'A & B', role: 'an editor', url: 'https://x.test/invite/t' });
+    const mail = inviteMail('a@example.com', { inviter: '<script>', workspace: 'A & B', role: 'editor', url: 'https://x.test/invite/t' });
     expect(mail.html).not.toContain('<script>');
     expect(mail.html).toContain('A &amp; B');
     expect(mail.text).toContain('Join A & B: https://x.test/invite/t');

@@ -19,7 +19,11 @@ import {
 import { catalog } from '@postwerk/providers/catalog';
 import { loadCalendarAction, reschedulePostAction } from '@/app/(app)/posts/actions';
 import type { CalendarData, CalendarPost } from '@/lib/calendar';
-import { canEdit, canMove, canPostAgain, statusLabels } from '@/lib/post-status';
+import { useLocale, useMessages } from '@/lib/i18n';
+import { intlLocale } from '@/lib/locale';
+import { canEdit, canMove, canPostAgain } from '@/lib/post-status';
+import { calendarMessages } from '@/messages/calendar';
+import { commonMessages } from '@/messages/common';
 
 /** Week view: pixels per hour, and how long a post looks (for side-by-side overlaps). */
 const HOUR_HEIGHT = 44;
@@ -40,8 +44,8 @@ interface Props {
 
 type Message = { kind: 'error' | 'success'; text: string };
 
-const timeFormat = () => new Intl.DateTimeFormat(undefined, { hour: 'numeric', minute: '2-digit' });
-const whenFormat = () => new Intl.DateTimeFormat(undefined, { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
+const timeFormat = (locale: string) => new Intl.DateTimeFormat(locale, { hour: 'numeric', minute: '2-digit' });
+const whenFormat = (locale: string) => new Intl.DateTimeFormat(locale, { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
 
 /** "2026-10-06T14:30" for a datetime-local input. */
 const toLocalInput = (date: Date) => new Date(date.getTime() - date.getTimezoneOffset() * 60_000).toISOString().slice(0, 16);
@@ -56,6 +60,9 @@ function readView(): CalendarView {
 
 export function Calendar({ seed, onEdit, onCreate }: Props) {
   const router = useRouter();
+  const locale = useLocale();
+  const t = useMessages(calendarMessages);
+  const common = useMessages(commonMessages);
   const edit = onEdit ?? ((postId: string, asCopy: boolean) => router.push(asCopy ? `/posts/new?from=${postId}` : `/posts/${postId}/edit`));
   const create = onCreate ?? ((iso: string) => router.push(`/posts/new?at=${encodeURIComponent(iso)}`));
 
@@ -103,7 +110,7 @@ export function Calendar({ seed, onEdit, onCreate }: Props) {
         setPosts(result.posts);
         setTruncated(result.truncated);
       })
-      .catch(() => !cancelled && setMessage({ kind: 'error', text: 'The calendar could not load. Check your connection and try again.' }))
+      .catch(() => !cancelled && setMessage({ kind: 'error', text: t.loadFailed }))
       .finally(() => !cancelled && setLoading(false));
     return () => {
       cancelled = true;
@@ -125,12 +132,13 @@ export function Calendar({ seed, onEdit, onCreate }: Props) {
     return map;
   }, [posts]);
 
-  if (!anchor || !now || !range) return <div className="calendar cal-placeholder muted">Loading the calendar…</div>;
+  if (!anchor || !now || !range) return <div className="calendar cal-placeholder muted">{t.loadingCalendar}</div>;
 
   const today = dayKey(now);
   const startOfToday = startOfDay(now);
   const selected = posts.find((post) => post.id === selectedId);
-  const time = timeFormat();
+  const intl = intlLocale(locale);
+  const time = timeFormat(intl);
 
   function chooseView(next: CalendarView) {
     setView(next);
@@ -144,16 +152,16 @@ export function Calendar({ seed, onEdit, onCreate }: Props) {
   async function move(post: CalendarPost, at: Date) {
     const previous = post.scheduledAt;
     if (at.getTime() === new Date(previous).getTime()) return;
-    if (at.getTime() < Date.now()) return setMessage({ kind: 'error', text: 'Pick a time in the future.' });
+    if (at.getTime() < Date.now()) return setMessage({ kind: 'error', text: t.pickFuture });
     const iso = at.toISOString();
     setPosts((current) => current.map((p) => (p.id === post.id ? { ...p, scheduledAt: iso } : p)));
     setMessage(undefined);
-    const result = await reschedulePostAction(post.id, iso).catch(() => ({ error: 'The post could not be moved. Check your connection and try again.' }));
+    const result = await reschedulePostAction(post.id, iso).catch(() => ({ error: t.moveFailed }));
     if (result.error) {
       setPosts((current) => current.map((p) => (p.id === post.id && p.scheduledAt === iso ? { ...p, scheduledAt: previous } : p)));
       setMessage({ kind: 'error', text: result.error });
     } else {
-      setMessage({ kind: 'success', text: `Moved to ${whenFormat().format(at)}.` });
+      setMessage({ kind: 'success', text: t.movedTo(whenFormat(intl).format(at)) });
     }
   }
 
@@ -225,7 +233,7 @@ export function Calendar({ seed, onEdit, onCreate }: Props) {
         draggable={movable}
         className={`cal-post cal-${post.status} ${movable ? 'is-movable' : ''} ${post.id === selectedId ? 'is-selected' : ''}`}
         style={style}
-        title={`${statusLabels[post.status]} · ${[...new Set(networks)].join(', ')}${movable ? '\nDrag to move it.' : ''}`}
+        title={`${common.status[post.status]} · ${[...new Set(networks)].join(', ')}${movable ? `\n${t.dragToMove}` : ''}`}
         onClick={(event) => {
           event.stopPropagation();
           setSelectedId(post.id === selectedId ? undefined : post.id);
@@ -243,53 +251,53 @@ export function Calendar({ seed, onEdit, onCreate }: Props) {
         onDragEnd={endDrag}
       >
         <time dateTime={post.scheduledAt}>{time.format(new Date(post.scheduledAt))}</time>
-        <span className="cal-post-text">{post.text.trim() || '(media only)'}</span>
+        <span className="cal-post-text">{post.text.trim() || common.mediaOnly}</span>
       </div>
     );
   };
 
   const title =
     view === 'week'
-      ? new Intl.DateTimeFormat(undefined, { month: 'short', day: 'numeric', year: 'numeric' }).formatRange(days[0]!, days[6]!)
-      : new Intl.DateTimeFormat(undefined, { month: 'long', year: 'numeric' }).format(anchor);
-  const weekday = new Intl.DateTimeFormat(undefined, { weekday: 'short' });
-  const hour = new Intl.DateTimeFormat(undefined, { hour: 'numeric' });
-  const dayLabel = new Intl.DateTimeFormat(undefined, { weekday: 'long', month: 'long', day: 'numeric' });
+      ? new Intl.DateTimeFormat(intl, { month: 'short', day: 'numeric', year: 'numeric' }).formatRange(days[0]!, days[6]!)
+      : new Intl.DateTimeFormat(intl, { month: 'long', year: 'numeric' }).format(anchor);
+  const weekday = new Intl.DateTimeFormat(intl, { weekday: 'short' });
+  const hour = new Intl.DateTimeFormat(intl, { hour: 'numeric' });
+  const dayLabel = new Intl.DateTimeFormat(intl, { weekday: 'long', month: 'long', day: 'numeric' });
 
   return (
     <div className="calendar">
       <div className="cal-toolbar">
         <div className="row-tight">
-          <button type="button" className="secondary small" aria-label={view === 'week' ? 'Previous week' : 'Previous month'} onClick={() => setAnchor(shiftAnchor(view, anchor, -1))}>
+          <button type="button" className="secondary small" aria-label={t.previous(view === 'week')} onClick={() => setAnchor(shiftAnchor(view, anchor, -1))}>
             ‹
           </button>
           <button type="button" className="secondary small" onClick={() => setAnchor(new Date())}>
-            Today
+            {t.today}
           </button>
-          <button type="button" className="secondary small" aria-label={view === 'week' ? 'Next week' : 'Next month'} onClick={() => setAnchor(shiftAnchor(view, anchor, 1))}>
+          <button type="button" className="secondary small" aria-label={t.next(view === 'week')} onClick={() => setAnchor(shiftAnchor(view, anchor, 1))}>
             ›
           </button>
         </div>
         <h3 className="cal-title" aria-live="polite">
           {title}
-          {loading && <small className="muted"> · loading…</small>}
+          {loading && <small className="muted">{t.loading}</small>}
         </h3>
-        <div className="segmented" role="radiogroup" aria-label="Calendar view">
+        <div className="segmented" role="radiogroup" aria-label={t.view}>
           {(['week', 'month'] as const).map((option) => (
             <button key={option} type="button" role="radio" aria-checked={view === option} onClick={() => chooseView(option)}>
-              {option === 'week' ? 'Week' : 'Month'}
+              {option === 'week' ? t.week : t.month}
             </button>
           ))}
         </div>
         <button type="button" className="small" onClick={() => createOn(anchor < startOfToday ? now : anchor)}>
-          + New post
+          {t.newPost}
         </button>
       </div>
 
       {message && (
         <p className={`cal-message ${message.kind}`} role={message.kind === 'error' ? 'alert' : 'status'}>
           {message.text}
-          <button type="button" className="icon-button" aria-label="Dismiss" onClick={() => setMessage(undefined)}>
+          <button type="button" className="icon-button" aria-label={common.dismiss} onClick={() => setMessage(undefined)}>
             ×
           </button>
         </p>
@@ -375,7 +383,7 @@ export function Calendar({ seed, onEdit, onCreate }: Props) {
                   <div className="cal-cell-head">
                     <span className="cal-date">{day.getDate()}</span>
                     {!past && (
-                      <button type="button" className="icon-button cal-add" aria-label={`New post on ${dayLabel.format(day)}`} onClick={() => createOn(day)}>
+                      <button type="button" className="icon-button cal-add" aria-label={t.newPostOn(dayLabel.format(day))} onClick={() => createOn(day)}>
                         +
                       </button>
                     )}
@@ -390,7 +398,7 @@ export function Calendar({ seed, onEdit, onCreate }: Props) {
                         setAnchor(day);
                       }}
                     >
-                      + {list.length - MONTH_POSTS} more
+                      {t.more(list.length - MONTH_POSTS)}
                     </button>
                   )}
                 </div>
@@ -401,11 +409,7 @@ export function Calendar({ seed, onEdit, onCreate }: Props) {
       )}
 
       <p className="muted cal-hint">
-        {truncated
-          ? 'There are too many posts in this range to show them all; switch to the week view to see each one.'
-          : view === 'week'
-            ? 'Drag a scheduled post to move it. Double-click a free spot to plan a new one.'
-            : 'Drag a scheduled post to another day; it keeps its time. Double-click a day to plan a new post.'}
+        {truncated ? t.hintTruncated : view === 'week' ? t.hintWeek : t.hintMonth}
       </p>
 
       {selected && (
@@ -423,26 +427,29 @@ export function Calendar({ seed, onEdit, onCreate }: Props) {
 }
 
 function PostDetails({ post, movable, onClose, onEdit, onMove }: { post: CalendarPost; movable: boolean; onClose(): void; onEdit(id: string, asCopy: boolean): void; onMove(at: Date): void }) {
+  const locale = useLocale();
+  const t = useMessages(calendarMessages);
+  const common = useMessages(commonMessages);
   const [moveTo, setMoveTo] = useState(() => toLocalInput(new Date(post.scheduledAt)));
   function submit(event: FormEvent) {
     event.preventDefault();
     if (moveTo) onMove(new Date(moveTo));
   }
   return (
-    <section className="cal-detail" aria-label="Selected post">
+    <section className="cal-detail" aria-label={t.selectedPost}>
       <div className="row-tight">
-        <span className={`badge status-${post.status}`}>{statusLabels[post.status]}</span>
+        <span className={`badge status-${post.status}`}>{common.status[post.status]}</span>
         <strong className="grow">
-          <time dateTime={post.scheduledAt}>{whenFormat().format(new Date(post.scheduledAt))}</time>
+          <time dateTime={post.scheduledAt}>{whenFormat(intlLocale(locale)).format(new Date(post.scheduledAt))}</time>
         </strong>
-        <button type="button" className="icon-button" aria-label="Close" onClick={onClose}>
+        <button type="button" className="icon-button" aria-label={common.close} onClick={onClose}>
           ×
         </button>
       </div>
       <div className="cal-detail-body">
         {post.thumb &&
           (post.thumb.kind === 'video' ? <video src={post.thumb.url} muted preload="metadata" className="cal-thumb" /> : <img src={post.thumb.url} alt="" className="cal-thumb" />)}
-        <p className="clip-2 grow">{post.text.trim() || '(media only)'}</p>
+        <p className="clip-2 grow">{post.text.trim() || common.mediaOnly}</p>
       </div>
       <div className="chips">
         {post.targets.map((target) => (
@@ -454,22 +461,22 @@ function PostDetails({ post, movable, onClose, onEdit, onMove }: { post: Calenda
       <div className="row-tight cal-detail-actions">
         {canEdit(post.status) && (
           <button type="button" className="secondary small" onClick={() => onEdit(post.id, false)}>
-            Edit
+            {common.edit}
           </button>
         )}
         {canPostAgain(post.status) && (
           <button type="button" className="secondary small" onClick={() => onEdit(post.id, true)}>
-            Post again
+            {t.postAgain}
           </button>
         )}
         {movable && (
           <form className="row-tight" onSubmit={submit}>
             <label className="row-tight">
-              <span className="muted">Move to</span>
+              <span className="muted">{t.moveTo}</span>
               <input type="datetime-local" value={moveTo} onChange={(event) => setMoveTo(event.target.value)} required />
             </label>
             <button type="submit" className="small">
-              Move
+              {t.move}
             </button>
           </form>
         )}

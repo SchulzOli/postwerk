@@ -6,12 +6,14 @@ import { createPost, deletePost, reschedulePost, retryPost, updatePost } from '@
 import { getDb } from '@postwerk/db';
 import { isProviderId, type ProviderId } from '@postwerk/providers';
 import { record } from '@/lib/audit';
+import { getLocale, getMessages } from '@/lib/i18n-server';
 import type { ComposerInitial } from '@/components/composer';
 import type { CalendarData } from '@/lib/calendar';
 import { loadCalendar, MAX_CALENDAR_SPAN } from '@/lib/calendar-server';
 import { loadComposerInitial } from '@/lib/compose';
 import { readComposerMedia } from '@/lib/media-server';
 import { requireSession } from '@/lib/session';
+import { postsMessages } from '@/messages/posts';
 
 /** `saved` changes on every successful save from the canvas, which then resets the composer. */
 export type ComposeState = { errors?: string[]; saved?: number };
@@ -43,17 +45,18 @@ function readVariants(form: FormData): Partial<Record<ProviderId, string>> {
 /** Creates a post, or saves changes to one when the form carries a postId. */
 export async function submitPost(_: ComposeState, form: FormData): Promise<ComposeState> {
   const { user, workspace } = await requireSession();
+  const [locale, t] = await Promise.all([getLocale(), getMessages(postsMessages)]);
   const postId = String(form.get('postId') ?? '') || undefined;
   const text = String(form.get('text') ?? '');
   const accountIds = form.getAll('accountIds').map(String);
-  const { media, errors: mediaErrors } = await readComposerMedia(String(form.get('media') ?? ''), workspace.id);
+  const { media, errors: mediaErrors } = await readComposerMedia(String(form.get('media') ?? ''), workspace.id, locale);
   if (mediaErrors.length > 0) return { errors: mediaErrors };
 
   let scheduledAt: Date | null = null;
   if (String(form.get('when') ?? 'now') === 'later') {
     scheduledAt = new Date(String(form.get('scheduledAt') ?? ''));
-    if (Number.isNaN(scheduledAt.getTime())) return { errors: ['Please pick a date and time.'] };
-    if (scheduledAt.getTime() < Date.now() - 60_000) return { errors: ['The scheduled time is in the past.'] };
+    if (Number.isNaN(scheduledAt.getTime())) return { errors: [t.pickDateTime] };
+    if (scheduledAt.getTime() < Date.now() - 60_000) return { errors: [t.scheduledInPast] };
   }
 
   const flowId = String(form.get('flowId') ?? '') || undefined;
@@ -65,6 +68,7 @@ export async function submitPost(_: ComposeState, form: FormData): Promise<Compo
     variants: readVariants(form),
     ...(flowId ? { flowId } : { accountIds }),
     scheduledAt,
+    locale,
   };
   const db = getDb();
   const result = postId ? await updatePost(db, postId, input) : await createPost(db, { ...input, authorId: user.id });
@@ -85,7 +89,7 @@ export async function submitPost(_: ComposeState, form: FormData): Promise<Compo
 /** The composer's starting values for editing a post (or, with `asCopy`, posting it again). */
 export async function loadPostAction(postId: string, asCopy = false): Promise<ComposerInitial | { error: string }> {
   const { workspace } = await requireSession();
-  return (await loadComposerInitial(workspace.id, postId, asCopy)) ?? { error: 'This post cannot be edited anymore.' };
+  return (await loadComposerInitial(workspace.id, postId, asCopy)) ?? { error: (await getMessages(postsMessages)).cannotEditAnymore };
 }
 
 export async function retryPostAction(postId: string): Promise<void> {
@@ -106,16 +110,17 @@ export async function loadCalendarAction(fromIso: string, toIso: string): Promis
   const from = new Date(fromIso);
   const to = new Date(toIso);
   const span = to.getTime() - from.getTime();
-  if (!(span > 0 && span <= MAX_CALENDAR_SPAN)) return { error: 'The calendar could not load. Reload the page and try again.' };
+  if (!(span > 0 && span <= MAX_CALENDAR_SPAN)) return { error: (await getMessages(postsMessages)).calendarLoadFailed };
   return loadCalendar(workspace.id, from, to);
 }
 
 export async function reschedulePostAction(postId: string, iso: string): Promise<{ error?: string }> {
   const { user, workspace } = await requireSession();
+  const [locale, t] = await Promise.all([getLocale(), getMessages(postsMessages)]);
   const at = new Date(iso);
-  if (at.getTime() < Date.now() - 60_000) return { error: 'Pick a time in the future.' };
+  if (at.getTime() < Date.now() - 60_000) return { error: t.pickFuture };
   const db = getDb();
-  const result = await reschedulePost(db, workspace.id, postId, at);
+  const result = await reschedulePost(db, workspace.id, postId, at, locale);
   if (!result.ok) return { error: result.errors[0] };
   const post = await db.query.posts.findFirst({ where: (p, { eq }) => eq(p.id, postId) });
   await record({ action: 'post.updated', userId: user.id, workspaceId: workspace.id, target: excerpt(post?.text ?? ''), details: { rescheduled: true } });

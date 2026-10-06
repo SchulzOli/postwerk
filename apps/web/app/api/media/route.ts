@@ -1,7 +1,9 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { hitRateLimit, MediaError, rateLimitKey, retryIn, storeUpload } from '@postwerk/core';
 import { getDb } from '@postwerk/db';
+import { getLocale, localizedError } from '@/lib/i18n-server';
 import { getSession } from '@/lib/session';
+import { uploadMessages } from '@/messages/upload';
 
 const UPLOADS_PER_HOUR = { limit: 300, windowMs: 60 * 60_000 };
 
@@ -12,13 +14,15 @@ const UPLOADS_PER_HOUR = { limit: 300, windowMs: 60 * 60_000 };
  */
 export async function POST(request: NextRequest) {
   const session = await getSession();
-  if (!session) return NextResponse.json({ error: 'Please log in again.' }, { status: 401 });
+  const locale = await getLocale();
+  const t = uploadMessages[locale];
+  if (!session) return NextResponse.json({ error: t.logInAgain }, { status: 401 });
   const size = Number(request.headers.get('content-length'));
-  if (!request.body || !Number.isFinite(size)) return NextResponse.json({ error: 'The upload is missing its file.' }, { status: 411 });
+  if (!request.body || !Number.isFinite(size)) return NextResponse.json({ error: t.missingFile }, { status: 411 });
 
   const db = getDb();
   const limit = await hitRateLimit(db, rateLimitKey('upload:user', session.user.id), UPLOADS_PER_HOUR);
-  if (!limit.allowed) return NextResponse.json({ error: `Too many uploads. Please try again ${retryIn(limit.retryAfterMs)}.` }, { status: 429 });
+  if (!limit.allowed) return NextResponse.json({ error: t.tooMany(retryIn(limit.retryAfterMs, locale)) }, { status: 429 });
 
   try {
     const row = await storeUpload(db, {
@@ -30,8 +34,8 @@ export async function POST(request: NextRequest) {
     });
     return NextResponse.json({ id: row.id, url: `/media/${row.key}`, kind: row.kind, mimeType: row.mimeType, size: row.size }, { status: 201 });
   } catch (error) {
-    if (error instanceof MediaError) return NextResponse.json({ error: error.message }, { status: 400 });
+    if (error instanceof MediaError) return NextResponse.json({ error: await localizedError(error) }, { status: 400 });
     console.error('upload failed', error);
-    return NextResponse.json({ error: 'The upload failed. Please try again.' }, { status: 500 });
+    return NextResponse.json({ error: t.failed }, { status: 500 });
   }
 }

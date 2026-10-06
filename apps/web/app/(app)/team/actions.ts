@@ -21,7 +21,9 @@ import {
 import { getDb, type MemberRole } from '@postwerk/db';
 import { record } from '@/lib/audit';
 import { appUrl } from '@/lib/env';
+import { getLocale, getMessages, localizedError } from '@/lib/i18n-server';
 import { requireSession } from '@/lib/session';
+import { teamMessages } from '@/messages/team';
 
 export type TeamState = { error?: string; success?: string; link?: string };
 
@@ -33,7 +35,7 @@ async function attempt<T>(run: () => Promise<T>): Promise<{ ok: true; value: T }
   try {
     return { ok: true, value: await run() };
   } catch (error) {
-    if (error instanceof PermissionError) return { ok: false, error: error.message };
+    if (error instanceof PermissionError) return { ok: false, error: await localizedError(error) };
     throw error;
   }
 }
@@ -65,13 +67,15 @@ export async function renameWorkspaceAction(_: TeamState, form: FormData): Promi
   if (!result.ok) return { error: result.error };
   await record({ action: 'workspace.renamed', userId: session.user.id, workspaceId: session.workspace.id, target: result.value });
   refresh();
-  return { success: 'Saved.' };
+  return { success: (await getMessages(teamMessages)).saved };
 }
 
 export async function inviteAction(_: TeamState, form: FormData): Promise<TeamState> {
   const session = await requireSession();
+  const locale = await getLocale();
+  const t = teamMessages[locale];
   const role = String(form.get('role') ?? 'editor');
-  if (!isRole(role)) return { error: 'Choose a role.' };
+  if (!isRole(role)) return { error: t.chooseRole };
   const email = String(form.get('email') ?? '').trim();
   const result = await attempt(() => createInvite(getDb(), { workspaceId: session.workspace.id, actor: actorOf(session), email, role }));
   if (!result.ok) return { error: result.error };
@@ -80,14 +84,15 @@ export async function inviteAction(_: TeamState, form: FormData): Promise<TeamSt
   const link = `${appUrl}/invite/${result.value.token}`;
   if (email && isMailConfigured()) {
     try {
-      await sendMail(inviteMail(email, { inviter: session.user.name, workspace: session.workspace.name, role: role === 'editor' ? 'an editor' : `an ${role}`, url: link }));
-      return { success: `We emailed the invite to ${email}. You can also share the link yourself:`, link };
+      // In the inviter's language: we do not know the invitee's yet.
+      await sendMail(inviteMail(email, { inviter: session.user.name, workspace: session.workspace.name, role, url: link }, locale));
+      return { success: t.invitedByEmail(email), link };
     } catch (error) {
       console.error('invite email failed', error);
-      return { success: `The email to ${email} could not be sent. Share this link with them instead:`, link };
+      return { success: t.emailFailed(email), link };
     }
   }
-  return { success: email ? `Invite for ${email} created. Send them this link:` : 'Invite link created. Anyone with it can join once:', link };
+  return { success: email ? t.inviteCreated(email) : t.linkCreated, link };
 }
 
 export async function revokeInviteAction(inviteId: string): Promise<{ error?: string }> {
@@ -107,7 +112,7 @@ async function memberName(workspaceId: string, userId: string) {
 
 export async function changeRoleAction(userId: string, role: string): Promise<{ error?: string }> {
   const session = await requireSession();
-  if (!isRole(role)) return { error: 'Choose a role.' };
+  if (!isRole(role)) return { error: (await getMessages(teamMessages)).chooseRole };
   const name = await memberName(session.workspace.id, userId);
   const result = await attempt(() => changeMemberRole(getDb(), session.workspace.id, actorOf(session), userId, role));
   if (!result.ok) return { error: result.error };

@@ -4,6 +4,9 @@
  * Pure (no database, no Node APIs) so the composer can preview plans in the browser.
  */
 
+import type { Locale } from './i18n';
+import { flowMessages } from './messages';
+
 export interface XY {
   x: number;
   y: number;
@@ -43,14 +46,6 @@ export interface FlowPlan {
 /** Measures text for an account: its length in the network's counting and the limit. */
 export type Measure = (accountId: string, text: string) => { length: number; max: number };
 
-export const stepLabels: Record<FlowStepType, string> = {
-  trigger: 'New post',
-  addText: 'Add text',
-  shorten: 'Shorten to fit',
-  delay: 'Wait',
-  target: 'Publish to account',
-};
-
 export function emptyFlow(): FlowGraph {
   // Below the flow frame's header (name, tools, preview line).
   return { steps: [{ id: 'trigger', type: 'trigger', position: { x: 40, y: 110 } }], edges: [] };
@@ -80,10 +75,11 @@ export function shortenToFit(text: string, fits: (candidate: string) => boolean)
  * Walks every path from the trigger to the accounts and returns what each
  * account will receive. Paths that do not end at an account are ignored.
  */
-export function planFlow(graph: FlowGraph, text: string, measure?: Measure): FlowPlan {
+export function planFlow(graph: FlowGraph, text: string, measure?: Measure, locale: Locale = 'en'): FlowPlan {
+  const m = flowMessages[locale];
   const errors: string[] = [];
   const triggers = graph.steps.filter((step) => step.type === 'trigger');
-  if (triggers.length !== 1) return { targets: [], errors: ['A flow needs exactly one "New post" step.'] };
+  if (triggers.length !== 1) return { targets: [], errors: [m.oneTrigger] };
 
   const steps = new Map(graph.steps.map((step) => [step.id, step]));
   const outgoing = new Map<string, string[]>();
@@ -95,7 +91,7 @@ export function planFlow(graph: FlowGraph, text: string, measure?: Measure): Flo
   const targets = new Map<string, PlannedTarget>();
   const visit = (id: string, current: string, delayMinutes: number, shorten: boolean, path: Set<string>) => {
     if (path.has(id)) {
-      errors.push('The flow contains a loop.');
+      errors.push(m.loop);
       return;
     }
     const step = steps.get(id)!;
@@ -115,13 +111,13 @@ export function planFlow(graph: FlowGraph, text: string, measure?: Measure): Flo
         break;
       case 'target': {
         if (!step.accountId) {
-          errors.push('A "Publish to account" step has no account selected.');
+          errors.push(m.noAccount);
           return;
         }
         let finalText = current;
         if (shorten && measure) finalText = shortenToFit(current, (candidate) => measure(step.accountId, candidate).length <= measure(step.accountId, candidate).max);
         if (targets.has(step.accountId)) {
-          errors.push('An account is reached by more than one path; each account can only be used once per flow.');
+          errors.push(m.accountTwice);
           return;
         }
         targets.set(step.accountId, { accountId: step.accountId, text: finalText, delayMinutes });
@@ -132,7 +128,7 @@ export function planFlow(graph: FlowGraph, text: string, measure?: Measure): Flo
   };
   visit(triggers[0]!.id, text, 0, false, new Set());
 
-  if (targets.size === 0 && errors.length === 0) errors.push('The flow does not reach any account yet.');
+  if (targets.size === 0 && errors.length === 0) errors.push(m.noTargets);
   return { targets: [...targets.values()], errors: [...new Set(errors)] };
 }
 
@@ -189,7 +185,7 @@ export function baseText(text: string, variants: TextVariants, provider: string 
  * straight to the chosen accounts. Shared by the composer and the server.
  */
 export function planPost(
-  input: { text: string; variants: TextVariants; providerOf: (accountId: string) => string | undefined; graph?: FlowGraph; accountIds?: string[] },
+  input: { text: string; variants: TextVariants; providerOf: (accountId: string) => string | undefined; graph?: FlowGraph; accountIds?: string[]; locale?: Locale },
   measure?: Measure,
 ): FlowPlan {
   const baseFor = (accountId: string) => baseText(input.text, input.variants, input.providerOf(accountId));
@@ -200,7 +196,7 @@ export function planPost(
   const plans = new Map<string, FlowPlan>();
   const planFor = (base: string) => {
     let plan = plans.get(base);
-    if (!plan) plans.set(base, (plan = planFlow(input.graph!, base, measure)));
+    if (!plan) plans.set(base, (plan = planFlow(input.graph!, base, measure, input.locale)));
     return plan;
   };
   const main = planFor(input.text);

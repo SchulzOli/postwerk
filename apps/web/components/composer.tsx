@@ -3,9 +3,13 @@
 import { useActionState, useEffect, useMemo, useState } from 'react';
 import { baseText, planPost, type FlowGraph } from '@postwerk/core/flow';
 import { catalog, type ProviderId } from '@postwerk/providers/catalog';
+import { localizeInfo } from '@postwerk/providers/messages';
 import { countText } from '@postwerk/providers/text';
 import { textLimit, validateContent } from '@postwerk/providers/validate';
 import type { ComposeState } from '@/app/(app)/posts/actions';
+import { useLocale, useMessages } from '@/lib/i18n';
+import { commonMessages } from '@/messages/common';
+import { composerMessages } from '@/messages/composer';
 import { isReady, MediaPicker, mediaField, type ComposerMedia } from './media-picker';
 
 export interface ComposerAccount {
@@ -54,6 +58,9 @@ function toLocalInput(iso: string): string {
 
 export function Composer({ accounts, flows = [], action, returnTo = '/posts', initial, scheduledAt: startAt, onSaved, onCancel }: Props) {
   const [state, formAction, pending] = useActionState(action, {});
+  const locale = useLocale();
+  const t = useMessages(composerMessages);
+  const common = useMessages(commonMessages);
   const editing = Boolean(initial?.postId);
   const [text, setText] = useState(initial?.text ?? '');
   const [attachments, setAttachments] = useState<ComposerMedia[]>(initial?.media ?? []);
@@ -84,19 +91,19 @@ export function Composer({ accounts, flows = [], action, returnTo = '/posts', in
   // The same planning the server does: each network's own text, then the flow.
   const plan = useMemo(
     () =>
-      planPost({ text, variants, providerOf: (id) => byId.get(id)?.provider, graph: flow?.graph, accountIds: [...selected] }, (accountId, candidate) => {
+      planPost({ text, variants, providerOf: (id) => byId.get(id)?.provider, graph: flow?.graph, accountIds: [...selected], locale }, (accountId, candidate) => {
         const account = byId.get(accountId);
         if (!account) return { length: 0, max: Infinity };
         const info = catalog[account.provider];
         return { length: countText(candidate, info.capabilities.text.counter), max: textLimit(info, { media }, { maxLength: account.maxLength ?? undefined }) };
       }),
-    [text, variants, flow, selected, media, byId],
+    [text, variants, flow, selected, media, byId, locale],
   );
   const chosen = plan.targets.flatMap((t) => byId.get(t.accountId) ?? []);
   const textFor = (account: ComposerAccount) => plan.targets.find((t) => t.accountId === account.id)?.text ?? baseText(text, variants, account.provider);
   const empty = !text.trim() && media.length === 0;
   const allIssuesFor = (account: ComposerAccount) =>
-    validateContent(catalog[account.provider], { text: textFor(account), media, options: options[account.provider] ?? {} }, { maxLength: account.maxLength ?? undefined });
+    validateContent(catalog[account.provider], { text: textFor(account), media, options: options[account.provider] ?? {} }, { maxLength: account.maxLength ?? undefined }, locale);
   // Before anything is written, "add some text" under every account is just noise; the button stays disabled.
   const issuesFor = (account: ComposerAccount) => (empty ? [] : allIssuesFor(account));
   const missing = flow ? plan.targets.filter((t) => !byId.has(t.accountId)).length : 0;
@@ -139,25 +146,25 @@ export function Composer({ accounts, flows = [], action, returnTo = '/posts', in
     <form action={formAction} className="card stack">
       {initial?.postId && <input type="hidden" name="postId" value={initial.postId} />}
       <label>
-        Post
-        <textarea name="text" rows={6} value={text} onChange={(e) => setText(e.target.value)} placeholder="What do you want to share?" />
+        {t.post}
+        <textarea name="text" rows={6} value={text} onChange={(e) => setText(e.target.value)} placeholder={t.placeholder} />
       </label>
 
       <fieldset className="stack-sm">
         <legend>
-          Media <span className="muted">(optional)</span>
+          {t.media} <span className="muted">{t.optional}</span>
         </legend>
         <MediaPicker items={attachments} setItems={setAttachments} />
-        {failedUploads && <small className="error">Remove the files that could not be uploaded to continue.</small>}
+        {failedUploads && <small className="error">{t.removeFailedUploads}</small>}
         <input type="hidden" name="media" value={mediaField(attachments)} />
       </fieldset>
 
       <input type="hidden" name="returnTo" value={returnTo} />
       {flows.length > 0 && (
         <label>
-          Flow
+          {t.flow}
           <select name="flowId" value={flowId} onChange={(e) => setFlowId(e.target.value)}>
-            <option value="">No flow — choose accounts below</option>
+            <option value="">{t.noFlow}</option>
             {flows.map((f) => (
               <option key={f.id} value={f.id}>{f.name}</option>
             ))}
@@ -167,11 +174,11 @@ export function Composer({ accounts, flows = [], action, returnTo = '/posts', in
 
       {flow && (
         <fieldset className="stack">
-          <legend>The flow publishes to</legend>
+          <legend>{t.flowPublishesTo}</legend>
           {plan.errors.map((error) => (
             <small key={error} className="error">{error}</small>
           ))}
-          {missing > 0 && <small className="error">The flow uses an account that was disconnected.</small>}
+          {missing > 0 && <small className="error">{t.flowAccountGone}</small>}
           {chosen.map((account) => {
             const target = plan.targets.find((t) => t.accountId === account.id)!;
             return (
@@ -179,7 +186,7 @@ export function Composer({ accounts, flows = [], action, returnTo = '/posts', in
                 <div className="row-tight">
                   <span className="grow">
                     {account.handle} <span className="muted">· {catalog[account.provider].name}</span>
-                    {target.delayMinutes > 0 && <span className="muted"> · after {target.delayMinutes} min</span>}
+                    {target.delayMinutes > 0 && <span className="muted">{t.afterMinutes(target.delayMinutes)}</span>}
                   </span>
                   {counter(account)}
                 </div>
@@ -194,7 +201,7 @@ export function Composer({ accounts, flows = [], action, returnTo = '/posts', in
       )}
 
       <fieldset className="stack" hidden={Boolean(flow)}>
-        <legend>Publish to</legend>
+        <legend>{t.publishTo}</legend>
         {accounts.map((account) => {
           const issues = !flow && selected.has(account.id) ? issuesFor(account) : [];
           return (
@@ -224,14 +231,14 @@ export function Composer({ accounts, flows = [], action, returnTo = '/posts', in
 
       {chosenProviders.length > 0 && (
         <fieldset className="stack-sm variants">
-          <legend>Customize per network</legend>
+          <legend>{t.customize}</legend>
           {chosenProviders.map((provider) => {
             const info = catalog[provider];
             const value = variants[provider];
             if (value === undefined) {
               return (
                 <button key={provider} type="button" className="link small-link" onClick={() => setVariant(provider, text)}>
-                  Write a different text for {info.name}
+                  {t.writeDifferent(info.name)}
                 </button>
               );
             }
@@ -239,14 +246,14 @@ export function Composer({ accounts, flows = [], action, returnTo = '/posts', in
               <div key={provider} className="stack-sm variant">
                 <label>
                   <span className="row-tight">
-                    <span className="grow">Text for {info.name}</span>
+                    <span className="grow">{t.textFor(info.name)}</span>
                     <button type="button" className="link small-link" onClick={() => setVariant(provider, undefined)}>
-                      Use the main text
+                      {t.useMainText}
                     </button>
                   </span>
                   <textarea name={`variant:${provider}`} rows={4} value={value} onChange={(e) => setVariant(provider, e.target.value)} />
                 </label>
-                {flow && <small className="muted">The flow’s steps are applied to this text too.</small>}
+                {flow && <small className="muted">{t.flowStepsApply}</small>}
               </div>
             );
           })}
@@ -256,18 +263,18 @@ export function Composer({ accounts, flows = [], action, returnTo = '/posts', in
       {optionProviders.map((provider) => (
         <fieldset key={provider} className="stack option-group">
           <legend>{catalog[provider].name}</legend>
-          {catalog[provider].capabilities.options.map((field) => {
+          {localizeInfo(catalog[provider], locale).capabilities.options.map((field) => {
             const name = `option:${provider}:${field.key}`;
             const value = options[provider]?.[field.key] ?? field.defaultValue ?? '';
             return (
               <label key={field.key}>
                 <span>
                   {field.label}
-                  {!field.required && <span className="muted"> (optional)</span>}
+                  {!field.required && <span className="muted"> {t.optional}</span>}
                 </span>
                 {field.choices ? (
                   <select name={name} value={value} onChange={(e) => setOption(provider, field.key, e.target.value)}>
-                    {!field.defaultValue && <option value="">Choose…</option>}
+                    {!field.defaultValue && <option value="">{t.choose}</option>}
                     {field.choices.map((choice) => (
                       <option key={choice.value} value={choice.value}>{choice.label}</option>
                     ))}
@@ -283,15 +290,15 @@ export function Composer({ accounts, flows = [], action, returnTo = '/posts', in
       ))}
 
       <fieldset className="stack">
-        <legend>When</legend>
+        <legend>{t.when}</legend>
         <label className="row check">
-          <input type="radio" name="when" value="now" checked={when === 'now'} onChange={() => setWhen('now')} /> Publish now
+          <input type="radio" name="when" value="now" checked={when === 'now'} onChange={() => setWhen('now')} /> {t.publishNow}
         </label>
         <label className="row check">
-          <input type="radio" name="when" value="later" checked={when === 'later'} onChange={() => setWhen('later')} /> Schedule
+          <input type="radio" name="when" value="later" checked={when === 'later'} onChange={() => setWhen('later')} /> {t.schedule}
         </label>
         {when === 'later' && (
-          <input type="datetime-local" aria-label="Date and time" value={localTime} onChange={(e) => setLocalTime(e.target.value)} required />
+          <input type="datetime-local" aria-label={t.dateTime} value={localTime} onChange={(e) => setLocalTime(e.target.value)} required />
         )}
         <input type="hidden" name="scheduledAt" value={scheduledAt} />
       </fieldset>
@@ -305,11 +312,11 @@ export function Composer({ accounts, flows = [], action, returnTo = '/posts', in
       )}
       <div className="row composer-actions">
         <button type="submit" className="grow" disabled={pending || chosen.length === 0 || blocked}>
-          {pending ? 'Saving…' : uploading ? 'Uploading…' : when === 'now' ? 'Publish now' : editing ? 'Save changes' : 'Schedule'}
+          {pending ? common.saving : uploading ? t.uploading : when === 'now' ? t.publishNow : editing ? t.saveChanges : t.schedule}
         </button>
         {onCancel && (
           <button type="button" className="secondary" onClick={onCancel}>
-            {editing ? 'Stop editing' : 'Cancel'}
+            {editing ? t.stopEditing : common.cancel}
           </button>
         )}
       </div>

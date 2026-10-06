@@ -1,5 +1,7 @@
 import { eq, lt, sql } from 'drizzle-orm';
 import { rateLimits, type Database } from '@postwerk/db';
+import type { Locale } from './i18n';
+import { timeMessages } from './messages';
 
 export interface RateLimit {
   /** Requests allowed per window. */
@@ -73,7 +75,6 @@ export async function pruneRateLimits(db: Database, now = new Date()): Promise<n
 }
 
 /** "in 12 minutes", for "try again …" messages. */
-export function retryIn(ms: number): string {
-  const minutes = Math.max(1, Math.ceil(ms / 60_000));
-  return minutes === 1 ? 'in a minute' : `in ${minutes} minutes`;
+export function retryIn(ms: number, locale: Locale = 'en'): string {
+  return timeMessages[locale].retryIn(Math.max(1, Math.ceil(ms / 60_000)));
 }

@@ -7,6 +7,7 @@
     ".": "./src/index.ts",
     "./calendar": "./src/calendar.ts",
     "./flow": "./src/flow.ts",
+    "./i18n": "./src/i18n.ts",
     "./theme": "./src/theme.ts"
   },
   "scripts": {

@@ -88,7 +88,11 @@ export async function blueskyJwks(db: Database) {
 /** Starts connecting a Bluesky account; returns the sign-in page on the user's server. */
 export async function startBlueskyLogin(db: Database, input: { workspaceId: string; userId: string; handle: string; appUrl: string }): Promise<string> {
   const ids = blueskyClientIds(input.appUrl);
-  if (!ids) throw new ProviderError('Signing in with Bluesky needs Postwerk on an https address. Use an app password instead.');
+  if (!ids) {
+    throw new ProviderError('Signing in with Bluesky needs Postwerk on an https address. Use an app password instead.', {
+      de: 'Die Anmeldung mit Bluesky braucht Postwerk unter einer https-Adresse. Verwende stattdessen ein App-Passwort.',
+    });
+  }
   const client = { clientId: ids.clientId, redirectUri: ids.redirectUri, keys: ids.confidential ? (await blueskyKeyset(db)).keys : [] };
   const state = generateToken();
   const { url, pending } = await Atproto.startLogin(client, input.handle, state);
@@ -103,7 +107,7 @@ export async function finishBlueskyLogin(db: Database, data: Record<string, stri
   try {
     pending = decryptJson(data.pending ?? '');
   } catch {
-    throw new ProviderError('This sign-in link has expired. Please try again.');
+    throw new ProviderError('This sign-in link has expired. Please try again.', { de: 'Dieser Anmelde-Link ist abgelaufen. Bitte versuch es noch einmal.' });
   }
   return Bluesky.connectOAuth(pending.kid ? await blueskyKeyset(db) : undefined, pending, params);
 }

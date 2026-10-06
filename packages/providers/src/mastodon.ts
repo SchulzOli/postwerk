@@ -18,15 +18,15 @@ export interface MastodonApp {
 /** Normalizes user input like "mastodon.social" or "https://mastodon.social/" to an origin. */
 export function normalizeInstanceUrl(input: string): string {
   const trimmed = input.trim();
-  if (!trimmed) throw new ProviderError('Please enter a Mastodon server.');
+  if (!trimmed) throw new ProviderError('Please enter a Mastodon server.', { de: 'Bitte gib einen Mastodon-Server ein.' });
   let url: URL;
   try {
     url = new URL(/^https?:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`);
   } catch {
-    throw new ProviderError(`"${input}" is not a valid server address.`);
+    throw new ProviderError(`"${input}" is not a valid server address.`, { de: `„${input}“ ist keine gültige Serveradresse.` });
   }
   if (url.protocol !== 'https:' && url.hostname !== 'localhost') {
-    throw new ProviderError('Mastodon servers must use https.');
+    throw new ProviderError('Mastodon servers must use https.', { de: 'Mastodon-Server müssen https verwenden.' });
   }
   return url.origin;
 }

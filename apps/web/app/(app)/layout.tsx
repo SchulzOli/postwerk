@@ -5,27 +5,29 @@ import { ModeSwitch } from '@/components/mode-switch';
 import { VerifyBanner } from '@/components/verify-banner';
 import { WorkspaceMenu } from '@/components/workspace-menu';
 import { getAppearance } from '@/lib/appearance';
+import { getMessages } from '@/lib/i18n-server';
 import { requireSession } from '@/lib/session';
+import { commonMessages } from '@/messages/common';
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const { user, workspace, workspaces, role } = await requireSession();
-  const { mode } = await getAppearance();
+  const [{ mode }, t] = await Promise.all([getAppearance(), getMessages(commonMessages)]);
   return (
     <>
       <header className="topbar">
         <Link href="/canvas" className="brand">Postwerk</Link>
         <nav>
-          <Link href="/canvas">Canvas</Link>
-          <Link href="/posts">Posts</Link>
-          <Link href="/calendar">Calendar</Link>
-          <Link href="/accounts">Accounts</Link>
-          <Link href="/team">Team</Link>
-          {role !== 'editor' && <Link href="/activity">Activity</Link>}
+          <Link href="/canvas">{t.nav.canvas}</Link>
+          <Link href="/posts">{t.nav.posts}</Link>
+          <Link href="/calendar">{t.nav.calendar}</Link>
+          <Link href="/accounts">{t.nav.accounts}</Link>
+          <Link href="/team">{t.nav.team}</Link>
+          {role !== 'editor' && <Link href="/activity">{t.nav.activity}</Link>}
         </nav>
         <div className="who">
           <WorkspaceMenu current={workspace} workspaces={workspaces} teamHref="/team" />
           <ModeSwitch mode={mode} />
-          <AccountMenu user={{ name: user.name, email: user.email }} links={[{ href: '/canvas', label: 'Canvas' }]} />
+          <AccountMenu user={{ name: user.name, email: user.email }} links={[{ href: '/canvas', label: t.nav.canvas }]} />
         </div>
       </header>
       {needsEmailVerification(user) && <VerifyBanner email={user.email} className="page-banner" />}

@@ -1,3 +1,5 @@
+import { LocalizedError } from './i18n';
+
 export const PROVIDER_IDS = [
   'mastodon',
   'bluesky',
@@ -246,14 +248,18 @@ export interface Provider<C = any> extends ProviderInfo {
  * Errors thrown by providers. The worker uses the flags to decide
  * whether to retry, give up, or mark the account as needing a reconnect.
  */
-export class ProviderError extends Error {
+export class ProviderError extends LocalizedError {
   readonly retryable: boolean;
   readonly needsReauth: boolean;
   /** HTTP status of the failed request, when there was one. */
   readonly status?: number;
 
-  constructor(message: string, options: { retryable?: boolean; needsReauth?: boolean; status?: number; cause?: unknown } = {}) {
-    super(message, { cause: options.cause });
+  /**
+   * `de`: the German text, for messages Postwerk writes itself that people
+   * see while connecting. Errors relayed from a network's API stay English.
+   */
+  constructor(message: string, options: { retryable?: boolean; needsReauth?: boolean; status?: number; cause?: unknown; de?: string } = {}) {
+    super((locale) => (locale === 'de' && options.de) || message, { cause: options.cause });
     this.name = 'ProviderError';
     this.retryable = options.retryable ?? false;
     this.needsReauth = options.needsReauth ?? false;

@@ -1,34 +1,31 @@
 import { isMailConfigured, listUserSecurityAudit } from '@postwerk/core';
+import { isLocale } from '@postwerk/core/i18n';
 import { getDb } from '@postwerk/db';
 import { AccountForms } from '@/components/account-forms';
 import { LocalTime } from '@/components/local-time';
+import { getMessages } from '@/lib/i18n-server';
 import { requireSession } from '@/lib/session';
+import { accountMessages } from '@/messages/account';
+import { commonMessages } from '@/messages/common';
 
-export const metadata = { title: 'Account · Postwerk' };
-
-const securityLabels: Record<string, string> = {
-  'login.succeeded': 'Signed in',
-  'login.failed': 'Failed sign-in',
-  'login.blocked': 'Blocked after too many failed sign-ins',
-  'password.changed': 'Password changed',
-  'password.reset_requested': 'Password reset link requested',
-  'password.reset': 'Password reset',
-  'email.verified': 'Email address confirmed',
-  'user.signed_up': 'Account created',
-};
+export async function generateMetadata() {
+  const [t, common] = await Promise.all([getMessages(accountMessages), getMessages(commonMessages)]);
+  return { title: common.title(t.pageTitle) };
+}
 
 export default async function AccountPage() {
   const { user } = await requireSession();
-  const events = await listUserSecurityAudit(getDb(), user.id, 15);
+  const [events, t] = await Promise.all([listUserSecurityAudit(getDb(), user.id, 15), getMessages(accountMessages)]);
+  const securityLabels: Record<string, string> = t.security;
   return (
     <div className="stack-lg">
-      <h1>Account</h1>
+      <h1>{t.pageTitle}</h1>
       <AccountForms
-        user={{ name: user.name, email: user.email, verified: Boolean(user.emailVerifiedAt), notifyFailures: user.notifyFailures }}
+        user={{ name: user.name, email: user.email, verified: Boolean(user.emailVerifiedAt), notifyFailures: user.notifyFailures, locale: isLocale(user.locale) ? user.locale : null }}
         mailConfigured={isMailConfigured()}
       />
       <section className="card stack">
-        <h2>Recent sign-ins</h2>
+        <h2>{t.recentSignIns}</h2>
         <ul className="list">
           {events.map((event) => (
             <li key={event.id} className="row">

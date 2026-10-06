@@ -4,8 +4,11 @@ Self-hosted social media scheduling. Connect your accounts with one click, write
 
 - **One big canvas.** Networks, accounts, flows, the composer and your posts live in a single zoomable 2D world. Drag things where you like, and link to any node or view (`/canvas#n=network:instagram`, `/canvas#@x,y,zoom`).
 - **Flows.** Build reusable publishing pipelines on the canvas: *New post → add hashtags → shorten to fit → wait 30 min → publish to these accounts*. Each account receives its own adapted version.
+- **Plan on a calendar.** Week and month views on the canvas; drag a post to move it, double-click to plan one. Edit or retry posts until they go out, and give each network its own version of the text.
+- **Work as a team.** Several workspaces, invite links, roles (owner, admin, editor), an activity log, and an email when a post fails.
+- **German and English.** The UI, validation and emails follow the browser's language or the account setting.
 - **Make it yours.** The look is a plugin. Three themes come installed — *Aurora*, *Paper* and *Blueprint*, each with a light and a dark mode — and everyone picks their own. Uninstall the ones you don't want, or build your own in the theme editor on the canvas ([docs/THEMES.md](docs/THEMES.md)).
-- **15 networks behind one interface.** Mastodon, Bluesky, Telegram and Discord work out of the box. Facebook, Instagram, Threads, LinkedIn (profiles and pages), X, TikTok, YouTube, Google Business Profile, Pinterest and Reddit work as soon as the server admin registers one developer app per network — users then just click "Connect".
+- **15 networks behind one interface.** Mastodon, Bluesky (sign in on your own server, no app password needed), Telegram and Discord work out of the box. Facebook, Instagram, Threads, LinkedIn (profiles and pages), X, TikTok, YouTube, Google Business Profile, Pinterest and Reddit work as soon as the server admin registers one developer app per network — users then just click "Connect".
 - **Validates as you type.** Each network's limits, media rules and required fields (subreddit, video title, TikTok privacy…) are checked live in the composer.
 - **Reliable publishing.** Every network is published and retried independently, with backoff, token refresh, crash recovery and clear "reconnect needed" states.
 - **Your data stays yours.** Tokens are encrypted at rest; runs anywhere Docker runs.
@@ -22,7 +25,7 @@ Self-hosted social media scheduling. Connect your accounts with one click, write
 
 ## Status
 
-Phase 0 (foundation) is done, every network integration is implemented, and the canvas with flows is the main interface (the classic list pages remain under “List view”). Its look comes from theme plugins. Networks that need an operator app still have to be set up and live-verified — see [docs/PLATFORMS.md](docs/PLATFORMS.md). Next up: media uploads, editing and the calendar ([docs/PLAN.md](docs/PLAN.md)).
+Phases 0 (foundation) and 1 (uploads, editing, calendar, teams, email, Bluesky sign-in, German and English) are done, every network integration is implemented, and the canvas with flows is the main interface (the classic list pages remain under “List view”). Its look comes from theme plugins. Networks that need an operator app still have to be set up and live-verified — see [docs/PLATFORMS.md](docs/PLATFORMS.md). Next up: the bridge to aggregator APIs, so every network works without app reviews ([docs/PLAN.md](docs/PLAN.md)).
 
 ## Quick start (development)
 
@@ -66,12 +69,17 @@ This starts Postgres, runs migrations, and launches the web app (port 3000) and 
 
 ```
 apps/web             Next.js app: canvas (components/world), list pages, server actions, OAuth callbacks
+apps/web/messages    UI texts in English and German, one catalog per area
 apps/worker          Publishing worker (polls Postgres for due posts)
 packages/core        Posts, accounts, flows (planner is browser-safe), theme plugins, publishing loop, encryption
 packages/db          Drizzle schema + SQL migrations
 packages/providers   Network integrations behind one Provider interface
 docs/                Plan, platform guide, theme format, screenshots
 ```
+
+## Languages
+
+The UI is in English and German. Texts live in typed catalogs — `apps/web/messages/*.ts` for the app, `packages/core/src/messages.ts` for errors and emails, `packages/providers/src/messages.ts` for validation and network texts. Each catalog has an `en` and a `de` object, and TypeScript refuses a German catalog that misses a message or takes other values. To add a language, add it to `locales` in `packages/providers/src/i18n.ts` and follow the type errors.
 
 ## Scripts
 

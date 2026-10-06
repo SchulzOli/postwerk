@@ -10,6 +10,9 @@ import {
   renameWorkspaceAction,
   revokeInviteAction,
 } from '@/app/(app)/team/actions';
+import { useMessages } from '@/lib/i18n';
+import { commonMessages } from '@/messages/common';
+import { teamMessages } from '@/messages/team';
 import { RelativeTime } from './relative-time';
 
 export interface TeamData {
@@ -20,14 +23,11 @@ export interface TeamData {
   invites: { id: string; email: string | null; role: MemberRole; expiresAt: string; link: string }[] | null;
 }
 
-const roleOptions: { value: MemberRole; label: string; hint: string }[] = [
-  { value: 'editor', label: 'Editor', hint: 'writes and schedules posts, builds flows' },
-  { value: 'admin', label: 'Admin', hint: 'also connects accounts, installs themes, manages people' },
-  { value: 'owner', label: 'Owner', hint: 'everything, including other owners' },
-];
+const roleValues: MemberRole[] = ['editor', 'admin', 'owner'];
 
 function CopyButton({ text }: { text: string }) {
   const [copied, setCopied] = useState(false);
+  const common = useMessages(commonMessages);
   return (
     <button
       type="button"
@@ -38,13 +38,16 @@ function CopyButton({ text }: { text: string }) {
         setTimeout(() => setCopied(false), 1500);
       }}
     >
-      {copied ? 'Copied' : 'Copy link'}
+      {copied ? common.copied : common.copyLink}
     </button>
   );
 }
 
 export function TeamPanel({ data }: { data: TeamData }) {
   const { me } = data;
+  const t = useMessages(teamMessages);
+  const { roles } = useMessages(commonMessages);
+  const roleOptions = roleValues.map((value) => ({ value, label: roles[value], hint: t.roleHints[value] }));
   const manage = me.role !== 'editor';
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string>();
@@ -58,14 +61,14 @@ export function TeamPanel({ data }: { data: TeamData }) {
     <div className="stack team">
       {manage && (
         <form action={renameAction} className="row-tight">
-          <input name="name" aria-label="Workspace name" defaultValue={data.workspace.name} maxLength={80} required />
-          <button type="submit" className="secondary small" disabled={renaming}>Rename</button>
+          <input name="name" aria-label={t.workspaceName} defaultValue={data.workspace.name} maxLength={80} required />
+          <button type="submit" className="secondary small" disabled={renaming}>{t.rename}</button>
           {renameState.error && <small className="error">{renameState.error}</small>}
         </form>
       )}
 
       <section className="stack-sm">
-        <h3>Members</h3>
+        <h3>{t.members}</h3>
         <ul className="member-list">
           {data.members.map((member) => {
             const self = member.userId === me.userId;
@@ -75,12 +78,12 @@ export function TeamPanel({ data }: { data: TeamData }) {
                 <span className="avatar-initial" aria-hidden>{member.name.slice(0, 1).toUpperCase()}</span>
                 <span className="grow clip">
                   <strong>{member.name}</strong>
-                  {self && <span className="muted"> (you)</span>}
+                  {self && <span className="muted">{t.you}</span>}
                   <small className="muted clip">{member.email}</small>
                 </span>
                 {canEdit ? (
                   <select
-                    aria-label={`Role of ${member.name}`}
+                    aria-label={t.roleOf(member.name)}
                     value={member.role}
                     disabled={pending}
                     onChange={(e) => run(() => changeRoleAction(member.userId, e.target.value))}
@@ -96,10 +99,10 @@ export function TeamPanel({ data }: { data: TeamData }) {
                   <button
                     type="button"
                     className="icon-button"
-                    aria-label={`Remove ${member.name}`}
-                    title="Remove from workspace"
+                    aria-label={t.remove(member.name)}
+                    title={t.removeTitle}
                     disabled={pending}
-                    onClick={() => confirm(`Remove ${member.name} from ${data.workspace.name}?`) && run(() => removeMemberAction(member.userId))}
+                    onClick={() => confirm(t.confirmRemove({ name: member.name, workspace: data.workspace.name })) && run(() => removeMemberAction(member.userId))}
                   >
                     ×
                   </button>
@@ -112,18 +115,18 @@ export function TeamPanel({ data }: { data: TeamData }) {
 
       {data.invites && data.invites.length > 0 && (
         <section className="stack-sm">
-          <h3>Waiting to join</h3>
+          <h3>{t.waiting}</h3>
           <ul className="member-list">
             {data.invites.map((pendingInvite) => (
               <li key={pendingInvite.id} className="row-tight">
                 <span className="grow clip">
-                  {pendingInvite.email ?? 'Invite link'} <span className="muted">· {roleOptions.find((option) => option.value === pendingInvite.role)?.label}</span>
+                  {pendingInvite.email ?? t.inviteLink} <span className="muted">· {roleOptions.find((option) => option.value === pendingInvite.role)?.label}</span>
                   <small className="muted clip">
-                    expires <RelativeTime iso={pendingInvite.expiresAt} />
+                    {t.expiresBefore}<RelativeTime iso={pendingInvite.expiresAt} />{t.expiresAfter}
                   </small>
                 </span>
                 <CopyButton text={pendingInvite.link} />
-                <button type="button" className="icon-button" aria-label="Revoke invite" title="Revoke" disabled={pending} onClick={() => run(() => revokeInviteAction(pendingInvite.id))}>
+                <button type="button" className="icon-button" aria-label={t.revokeInvite} title={t.revoke} disabled={pending} onClick={() => run(() => revokeInviteAction(pendingInvite.id))}>
                   ×
                 </button>
               </li>
@@ -134,24 +137,24 @@ export function TeamPanel({ data }: { data: TeamData }) {
 
       {manage && (
         <form action={invite} className="stack-sm invite-form">
-          <h3>Invite someone</h3>
+          <h3>{t.inviteSomeone}</h3>
           <div className="row-tight">
-            <input name="email" type="email" placeholder="Email (optional)" aria-label="Email" />
-            <select name="role" aria-label="Role" defaultValue="editor">
+            <input name="email" type="email" placeholder={t.emailOptional} aria-label={t.email} />
+            <select name="role" aria-label={t.role} defaultValue="editor">
               {assignable.map((option) => (
                 <option key={option.value} value={option.value}>{option.label}</option>
               ))}
             </select>
           </div>
           <small className="muted">{assignable.map((option) => `${option.label}: ${option.hint}`).join(' · ')}</small>
-          <button type="submit" disabled={inviting}>{inviting ? 'Creating…' : 'Create invite link'}</button>
+          <button type="submit" disabled={inviting}>{inviting ? t.creating : t.createInvite}</button>
           {inviteState.error && <p className="error" role="alert">{inviteState.error}</p>}
           {inviteState.success && (
             <div className="stack-sm">
               <p className="success" role="status">{inviteState.success}</p>
               {inviteState.link && (
                 <div className="row-tight">
-                  <input readOnly value={inviteState.link} aria-label="Invite link" onFocus={(e) => e.target.select()} />
+                  <input readOnly value={inviteState.link} aria-label={t.inviteLink} onFocus={(e) => e.target.select()} />
                   <CopyButton text={inviteState.link} />
                 </div>
               )}
@@ -165,9 +168,9 @@ export function TeamPanel({ data }: { data: TeamData }) {
         type="button"
         className="link leave"
         disabled={pending}
-        onClick={() => confirm(`Leave ${data.workspace.name}? You need a new invite to come back.`) && run(leaveWorkspaceAction)}
+        onClick={() => confirm(t.confirmLeave(data.workspace.name)) && run(leaveWorkspaceAction)}
       >
-        Leave this workspace
+        {t.leave}
       </button>
     </div>
   );

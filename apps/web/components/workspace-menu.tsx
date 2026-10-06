@@ -2,6 +2,8 @@
 
 import { useActionState, useEffect, useRef, useTransition } from 'react';
 import { createWorkspaceAction, switchWorkspaceAction } from '@/app/(app)/team/actions';
+import { useMessages } from '@/lib/i18n';
+import { teamMessages } from '@/messages/team';
 
 interface Props {
   current: { id: string; name: string };
@@ -14,6 +16,7 @@ interface Props {
 export function WorkspaceMenu({ current, workspaces, teamHref }: Props) {
   const [pending, startTransition] = useTransition();
   const [state, create, creating] = useActionState(createWorkspaceAction, {});
+  const t = useMessages(teamMessages).menu;
   const others = workspaces.filter((workspace) => workspace.id !== current.id);
   const menu = useRef<HTMLDetailsElement>(null);
   useEffect(() => {
@@ -30,13 +33,13 @@ export function WorkspaceMenu({ current, workspaces, teamHref }: Props) {
   }, []);
   return (
     <details className="menu workspace-menu" ref={menu}>
-      <summary title="Switch workspace">
+      <summary title={t.switchWorkspace}>
         <span className="clip">{current.name}</span> <span aria-hidden>▾</span>
       </summary>
       <div className="menu-body">
         {others.length > 0 && (
           <div className="stack-sm">
-            <small className="muted">Switch to</small>
+            <small className="muted">{t.switchTo}</small>
             {others.map((workspace) => (
               <button key={workspace.id} type="button" className="menu-item" disabled={pending} onClick={() => startTransition(() => switchWorkspaceAction(workspace.id))}>
                 {workspace.name}
@@ -44,12 +47,12 @@ export function WorkspaceMenu({ current, workspaces, teamHref }: Props) {
             ))}
           </div>
         )}
-        <a className="menu-item" href={teamHref}>Team and invites</a>
+        <a className="menu-item" href={teamHref}>{t.teamAndInvites}</a>
         <form action={create} className="stack-sm">
-          <small className="muted">New workspace</small>
+          <small className="muted">{t.newWorkspace}</small>
           <div className="row-tight">
-            <input name="name" placeholder="Name" aria-label="New workspace name" maxLength={80} required />
-            <button type="submit" className="small" disabled={creating}>Create</button>
+            <input name="name" placeholder={t.name} aria-label={t.newWorkspaceName} maxLength={80} required />
+            <button type="submit" className="small" disabled={creating}>{t.create}</button>
           </div>
           {state.error && <small className="error">{state.error}</small>}
         </form>

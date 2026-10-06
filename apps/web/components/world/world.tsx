@@ -32,15 +32,17 @@ import { AccountMenu } from '@/components/account-menu';
 import { ModeSwitch } from '@/components/mode-switch';
 import { VerifyBanner } from '@/components/verify-banner';
 import { WorkspaceMenu } from '@/components/workspace-menu';
+import { useLocale, useMessages } from '@/lib/i18n';
+import { canvasMessages } from '@/messages/canvas';
+import { commonMessages } from '@/messages/common';
 import { WorldContext, type SaveState, type WorldApi } from './context';
 import { Inspector } from './inspector';
-import { buildWorld, flowEdges, flowFrameHeight, flowNodes, FLOW, ids, nextFlowPosition, regionInfo, STEP_WIDTH, stepNode, type RegionKey, type WorldNode } from './layout';
+import { buildWorld, flowEdges, flowFrameHeight, flowNodes, FLOW, ids, nextFlowPosition, regionKeys, STEP_WIDTH, stepNode, type WorldNode } from './layout';
 import { nodeTypes } from './nodes';
 import type { WorldData } from './types';
 
 export type { WorldData } from './types';
 
-const SAMPLE_TEXT = 'Example post';
 const stepIdOf = (nodeId: string) => nodeId.split(':').slice(2).join(':');
 const flowEdgePrefix = (flowId: string) => `e:flow:${flowId}:`;
 const patterns: Record<Exclude<ThemeCanvas['pattern'], 'none'>, BackgroundVariant> = {
@@ -77,30 +79,30 @@ function fitFrames(nodes: WorldNode[]): WorldNode[] {
   });
 }
 
-function label(node: WorldNode): string {
+function label(node: WorldNode, t: (typeof canvasMessages)['en']): string {
   switch (node.type) {
     case 'region':
-      return node.data.title;
+      return t.regions[node.data.region].title;
     case 'network':
-      return `${node.data.network.info.name} (network)`;
+      return t.destinations.network(node.data.network.info.name);
     case 'account':
       return `${node.data.account.displayName ?? node.data.account.handle} · ${catalog[node.data.account.provider].name}`;
     case 'flow':
-      return `${node.data.name} (flow)`;
+      return t.destinations.flow(node.data.name);
     case 'composer':
-      return 'New post';
+      return t.destinations.composer;
     case 'posts':
-      return 'Recent posts';
+      return t.destinations.posts;
     case 'calendar':
-      return 'Calendar';
+      return t.destinations.calendar;
     case 'plugin':
-      return `${node.data.plugin.manifest.name} (theme)`;
+      return t.destinations.theme(node.data.plugin.manifest.name);
     case 'pluginInstall':
-      return 'Theme editor';
+      return t.destinations.themeEditor;
     case 'activity':
-      return 'Activity';
+      return t.destinations.activity;
     case 'members':
-      return 'Members and invites';
+      return t.destinations.members;
     default:
       return '';
   }
@@ -115,6 +117,9 @@ export function World({ data }: { data: WorldData }) {
 }
 
 function WorldCanvas({ data }: { data: WorldData }) {
+  const t = useMessages(canvasMessages);
+  const common = useMessages(commonMessages);
+  const locale = useLocale();
   const rf = useReactFlow<WorldNode>();
   const initial = useMemo(() => buildWorld(data, data.positions), []); // eslint-disable-line react-hooks/exhaustive-deps
   const [nodes, setNodes, onNodesChange] = useNodesState<WorldNode>(initial.nodes);
@@ -196,9 +201,9 @@ function WorldCanvas({ data }: { data: WorldData }) {
       return { length: countText(text, info.capabilities.text.counter), max: textLimit(info, { media: [] }, { maxLength: account.maxLength ?? undefined }) };
     };
     const result: Record<string, FlowPlan> = {};
-    for (const node of nodes) if (node.type === 'flow') result[node.data.flowId] = planFlow(serializeFlow(node.data.flowId, nodes, edges), SAMPLE_TEXT, measure);
+    for (const node of nodes) if (node.type === 'flow') result[node.data.flowId] = planFlow(serializeFlow(node.data.flowId, nodes, edges), t.sampleText, measure, locale);
     return result;
-  }, [nodes, edges, data.accounts]);
+  }, [nodes, edges, data.accounts, t.sampleText, locale]);
 
   // ---------------------------------------------------------------- saving
   const scheduleFlowSave = useCallback((flowId: string) => {
@@ -378,11 +383,11 @@ function WorldCanvas({ data }: { data: WorldData }) {
 
   const createFlow = useCallback(async () => {
     const position = nextFlowPosition(state.current.nodes);
-    const flow = await createFlowAction({ name: 'New flow', ...position });
+    const flow = await createFlowAction({ name: t.newFlowName, ...position });
     knownFlows.current.add(flow.id);
     setNodes((ns) => fitFrames([...ns.map((n) => (n.selected ? { ...n, selected: false } : n)), ...flowNodes(flow, position)]));
     setTimeout(() => focus(ids.flow(flow.id)), 50);
-  }, [focus, setNodes]);
+  }, [focus, setNodes, t.newFlowName]);
 
   const isValidConnection: IsValidConnection = useCallback((connection) => {
     const source = rf.getNode(connection.source) as WorldNode | undefined;
@@ -470,7 +475,7 @@ function WorldCanvas({ data }: { data: WorldData }) {
   );
 
   const selected = nodes.find((node) => node.id === selectedId);
-  const destinations = nodes.filter((node) => label(node));
+  const destinations = nodes.filter((node) => label(node, t));
   // The theme decides how connections are drawn.
   const { canvas } = data.appearance;
   const allEdges = useMemo(() => [...edges, ...derivedEdges].map((edge) => ({ ...edge, type: edgeTypes[canvas.edges] })), [edges, derivedEdges, canvas.edges]);
@@ -495,7 +500,7 @@ function WorldCanvas({ data }: { data: WorldData }) {
         colorMode={mode}
         deleteKeyCode={['Backspace', 'Delete']}
         proOptions={{ hideAttribution: true }}
-        aria-label="Postwerk canvas"
+        aria-label={t.canvasLabel}
       >
         {canvas.pattern !== 'none' && <Background variant={patterns[canvas.pattern]} gap={canvas.gap} size={canvas.size} lineWidth={canvas.size} />}
         <Controls showInteractive={false} position="bottom-left" />
@@ -509,20 +514,20 @@ function WorldCanvas({ data }: { data: WorldData }) {
 
         <Panel position="top-left" className="world-toolbar">
           <strong className="brand">Postwerk</strong>
-          <nav aria-label="Regions">
-            {(Object.keys(regionInfo) as RegionKey[]).map((key) => (
+          <nav aria-label={t.regionsLabel}>
+            {regionKeys.map((key) => (
               <a key={key} href={`#n=${ids.region(key)}`}>
-                {regionInfo[key].title}
+                {t.regions[key].title}
               </a>
             ))}
           </nav>
           <input
             className="jump"
             list="world-destinations"
-            placeholder="Go to…"
-            aria-label="Go to"
+            placeholder={t.goToPlaceholder}
+            aria-label={t.goTo}
             onChange={(e) => {
-              const target = destinations.find((node) => label(node) === e.target.value);
+              const target = destinations.find((node) => label(node, t) === e.target.value);
               if (target) {
                 history.pushState(null, '', `#n=${target.id}`);
                 focus(target.id);
@@ -532,25 +537,25 @@ function WorldCanvas({ data }: { data: WorldData }) {
           />
           <datalist id="world-destinations">
             {destinations.map((node) => (
-              <option key={node.id} value={label(node)} />
+              <option key={node.id} value={label(node, t)} />
             ))}
           </datalist>
           <button type="button" className="small" onClick={createFlow}>
-            + New flow
+            {t.newFlow}
           </button>
         </Panel>
 
         <Panel position="top-right" className="world-account">
           <WorkspaceMenu current={data.workspace} workspaces={data.workspaces} teamHref={`#n=${ids.region('team')}`} />
           <ModeSwitch mode={data.appearance.mode} onChange={setMode} />
-          <a href={`#n=${ids.region('plugins')}`}>Themes</a>
-          <AccountMenu user={data.user} links={[{ href: '/posts', label: 'List view' }]} />
+          <a href={`#n=${ids.region('plugins')}`}>{t.themesLink}</a>
+          <AccountMenu user={data.user} links={[{ href: '/posts', label: common.nav.listView }]} />
         </Panel>
 
         {notice && (
           <Panel position="top-center" className={`world-notice ${notice.kind}`} role={notice.kind === 'error' ? 'alert' : 'status'}>
             {notice.text}
-            <button type="button" className="icon-button" aria-label="Dismiss" onClick={() => setNotice(null)}>
+            <button type="button" className="icon-button" aria-label={common.dismiss} onClick={() => setNotice(null)}>
               ×
             </button>
           </Panel>

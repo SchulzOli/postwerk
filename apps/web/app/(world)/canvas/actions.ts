@@ -17,7 +17,9 @@ import {
 } from '@postwerk/core';
 import { getDb } from '@postwerk/db';
 import { record } from '@/lib/audit';
+import { getMessages, localizedError } from '@/lib/i18n-server';
 import { requireAdmin, requireSession } from '@/lib/session';
+import { themesMessages } from '@/messages/themes';
 
 export async function createFlowAction(input: { name: string; x: number; y: number }) {
   const { user, workspace } = await requireSession();
@@ -32,7 +34,7 @@ export async function saveFlowAction(flowId: string, input: { name?: string; gra
   try {
     return { ok: await saveFlow(getDb(), workspace.id, flowId, input) };
   } catch (error) {
-    return { ok: false, error: (error as Error).message };
+    return { ok: false, error: await localizedError(error) };
   }
 }
 
@@ -56,17 +58,18 @@ export type PluginState = { error?: string; success?: string };
 /** Installs (or updates) a custom theme and switches the installer to it, so edits show right away. */
 export async function installPluginAction(_: PluginState, form: FormData): Promise<PluginState> {
   const { user, workspace } = await requireAdmin();
+  const t = await getMessages(themesMessages);
   const source = String(form.get('manifest') ?? '');
-  if (!source.trim()) return { error: 'Choose a theme file or paste its JSON first.' };
+  if (!source.trim()) return { error: t.chooseFirst };
   try {
     const db = getDb();
     const theme = await installPlugin(db, workspace.id, source);
     await setMemberTheme(db, workspace.id, user.id, theme.id);
     await record({ action: 'plugin.installed', userId: user.id, workspaceId: workspace.id, target: theme.name, details: { id: theme.id, version: theme.version } });
     revalidatePath('/', 'layout');
-    return { success: `${theme.name} is installed and in use.` };
+    return { success: t.installed(theme.name) };
   } catch (error) {
-    if (error instanceof ThemeError) return { error: error.message };
+    if (error instanceof ThemeError) return { error: await localizedError(error) };
     throw error;
   }
 }

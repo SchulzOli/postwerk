@@ -3,8 +3,9 @@ import { and, eq, gt } from 'drizzle-orm';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { cache } from 'react';
-import { createWorkspace, generateToken, hashToken, listUserWorkspaces } from '@postwerk/core';
+import { createWorkspace, generateToken, hashToken, isLocale, listUserWorkspaces } from '@postwerk/core';
 import { getDb, sessions, users } from '@postwerk/db';
+import { authMessages } from '@/messages/auth';
 import { secureCookies } from './env';
 
 const COOKIE = 'postwerk_session';
@@ -43,7 +44,8 @@ export const getSession = cache(async () => {
   let memberships = await listUserWorkspaces(db, row.user.id);
   if (memberships.length === 0) {
     // Removed from every workspace: start over with a fresh personal one.
-    await createWorkspace(db, row.user.id, `${row.user.name}'s workspace`);
+    // (Named in the account's language; getLocale() would ask for this session again.)
+    await createWorkspace(db, row.user.id, authMessages[isLocale(row.user.locale) ? row.user.locale : 'en'].defaultWorkspace(row.user.name));
     memberships = await listUserWorkspaces(db, row.user.id);
   }
   const membership = memberships.find((candidate) => candidate.id === row.workspaceId) ?? memberships[0]!;

@@ -2,7 +2,7 @@
 
 import { Handle, Position, type NodeProps } from '@xyflow/react';
 import { useTransition } from 'react';
-import { stepLabels, type FlowStep } from '@postwerk/core/flow';
+import type { FlowStep } from '@postwerk/core/flow';
 import { catalog } from '@postwerk/providers/catalog';
 import { Composer } from '@/components/composer';
 import { LocalTime } from '@/components/local-time';
@@ -13,45 +13,37 @@ import { retryPostAction, submitPost } from '@/app/(app)/posts/actions';
 import { chooseThemeAction, installBuiltinPluginAction } from '@/app/(world)/canvas/actions';
 import { useWorld } from './context';
 import { describeActivity, isWarning } from '@/lib/activity';
-import { canEdit, canPostAgain, canRetry, statusLabels } from '@/lib/post-status';
+import { useLocale, useMessages } from '@/lib/i18n';
+import { intlLocale } from '@/lib/locale';
+import { canEdit, canPostAgain, canRetry } from '@/lib/post-status';
 import { Calendar } from '@/components/calendar';
+import { canvasMessages, formatMinutes } from '@/messages/canvas';
+import { commonMessages } from '@/messages/common';
+import { mediaSummary, networksMessages } from '@/messages/networks';
+import { themesMessages } from '@/messages/themes';
 import { ids, type WorldNode } from './layout';
 import type { WorldData } from './types';
 
 type Props<T extends WorldNode['type']> = NodeProps<Extract<WorldNode, { type: T }>>;
 
-export function mediaSummary(id: keyof typeof catalog): string {
-  const { media } = catalog[id].capabilities;
-  if (media.maxImages === 0 && media.maxVideos === 0) return 'Text only';
-  const parts = [];
-  if (media.maxImages > 0) parts.push(`${media.maxImages} image${media.maxImages === 1 ? '' : 's'}`);
-  if (media.maxVideos > 0) parts.push(`${media.maxVideos} video${media.maxVideos === 1 ? '' : 's'}`);
-  return `${parts.join(media.mixed ? ' + ' : ' or ')}${media.required ? ' · media required' : ''}`;
-}
-
-function formatMinutes(minutes: number): string {
-  if (minutes < 60) return `${minutes} min`;
-  const days = Math.floor(minutes / 1440);
-  const hours = Math.floor((minutes % 1440) / 60);
-  const rest = minutes % 60;
-  return [days && `${days} d`, hours && `${hours} h`, rest && `${rest} min`].filter(Boolean).join(' ');
-}
-
 export function RegionNode({ data }: Props<'region'>) {
+  const { title, subtitle } = useMessages(canvasMessages).regions[data.region];
   return (
     <div className={`region region-${data.region}`}>
       <header className="region-drag">
-        <h2>{data.title}</h2>
-        <p>{data.subtitle}</p>
+        <h2>{title}</h2>
+        <p>{subtitle}</p>
       </header>
     </div>
   );
 }
 
 export function NetworkNode({ data, selected }: Props<'network'>) {
+  const t = useMessages(networksMessages);
+  const locale = useLocale();
   const { info, available } = data.network;
   const status = data.accountCount > 0 ? 'connected' : available ? 'ready' : 'setup';
-  const label = { connected: `${data.accountCount} connected`, ready: 'Ready to connect', setup: 'Needs setup' }[status];
+  const label = { connected: t.statusConnected(data.accountCount), ready: t.statusReady, setup: t.statusSetup }[status];
   return (
     <div className={`world-card network-node ${selected ? 'is-selected' : ''}`}>
       <div className="row-tight">
@@ -60,7 +52,7 @@ export function NetworkNode({ data, selected }: Props<'network'>) {
       </div>
       <span className={`status-text status-${status}`}>{label}</span>
       <small className="muted">
-        {info.capabilities.text.maxLength.toLocaleString()} chars · {mediaSummary(info.id)}
+        {t.chars(info.capabilities.text.maxLength.toLocaleString(intlLocale(locale)))} · {mediaSummary(info.capabilities.media, t)}
       </small>
       <Handle type="source" position={Position.Right} id="out" isConnectable={false} />
     </div>
@@ -68,6 +60,7 @@ export function NetworkNode({ data, selected }: Props<'network'>) {
 }
 
 export function AccountNode({ data, selected }: Props<'account'>) {
+  const common = useMessages(commonMessages);
   const { account } = data;
   return (
     <div className={`world-card account-node ${selected ? 'is-selected' : ''}`}>
@@ -81,37 +74,38 @@ export function AccountNode({ data, selected }: Props<'account'>) {
           </small>
         </div>
       </div>
-      {account.status === 'needs_reauth' && <span className="badge badge-warn">Reconnect needed</span>}
+      {account.status === 'needs_reauth' && <span className="badge badge-warn">{common.reconnectNeeded}</span>}
     </div>
   );
 }
 
 export function FlowNode({ data, selected }: Props<'flow'>) {
+  const t = useMessages(canvasMessages);
   const world = useWorld();
   const plan = world.plans[data.flowId];
   const save = world.saveState[data.flowId] ?? 'saved';
   return (
     <div className={`flow-frame ${selected ? 'is-selected' : ''}`}>
       <header className="flow-header">
-        <span className="flow-drag" title="Drag to move the flow">⠿</span>
+        <span className="flow-drag" title={t.dragFlow}>⠿</span>
         <input
           className="nodrag flow-name"
-          aria-label="Flow name"
+          aria-label={t.flowName}
           defaultValue={data.name}
           onBlur={(e) => e.target.value !== data.name && world.renameFlow(data.flowId, e.target.value)}
           onKeyDown={(e) => e.key === 'Enter' && (e.target as HTMLInputElement).blur()}
         />
         <div className="flow-tools nodrag">
-          <button type="button" className="secondary small" onClick={() => world.addStep(data.flowId, 'addText')}>+ Add text</button>
-          <button type="button" className="secondary small" onClick={() => world.addStep(data.flowId, 'shorten')}>+ Shorten</button>
-          <button type="button" className="secondary small" onClick={() => world.addStep(data.flowId, 'delay')}>+ Wait</button>
-          <button type="button" className="small" onClick={() => world.addStep(data.flowId, 'target')}>+ Account</button>
+          <button type="button" className="secondary small" onClick={() => world.addStep(data.flowId, 'addText')}>{t.addText}</button>
+          <button type="button" className="secondary small" onClick={() => world.addStep(data.flowId, 'shorten')}>{t.addShorten}</button>
+          <button type="button" className="secondary small" onClick={() => world.addStep(data.flowId, 'delay')}>{t.addWait}</button>
+          <button type="button" className="small" onClick={() => world.addStep(data.flowId, 'target')}>{t.addAccount}</button>
         </div>
-        <span className={`save-state save-${save}`}>{{ saved: 'Saved', saving: 'Saving…', unsaved: 'Unsaved', error: 'Not saved' }[save]}</span>
+        <span className={`save-state save-${save}`}>{t.saveState[save]}</span>
       </header>
       {plan && (
         <p className={plan.errors.length ? 'flow-plan error' : 'flow-plan muted'}>
-          {plan.errors.length ? plan.errors[0] : `Publishes to ${plan.targets.length} account${plan.targets.length === 1 ? '' : 's'}.`}
+          {plan.errors.length ? plan.errors[0] : t.publishesTo(plan.targets.length)}
         </p>
       )}
     </div>
@@ -119,6 +113,7 @@ export function FlowNode({ data, selected }: Props<'flow'>) {
 }
 
 export function StepNode({ data, selected }: Props<'step'>) {
+  const t = useMessages(canvasMessages);
   const world = useWorld();
   const { step, flowId } = data;
   const update = (patch: Partial<FlowStep>) => world.updateStep(flowId, step.id, patch);
@@ -128,26 +123,26 @@ export function StepNode({ data, selected }: Props<'step'>) {
     <div className={`world-card step-node step-${step.type} ${selected ? 'is-selected' : ''}`}>
       {step.type !== 'trigger' && <Handle type="target" position={Position.Left} id="in" />}
       <div className="row-tight">
-        <strong className="grow">{stepLabels[step.type]}</strong>
+        <strong className="grow">{t.steps[step.type]}</strong>
         {step.type !== 'trigger' && (
-          <button type="button" className="icon-button nodrag" aria-label="Remove step" onClick={() => world.removeStep(flowId, step.id)}>
+          <button type="button" className="icon-button nodrag" aria-label={t.removeStep} onClick={() => world.removeStep(flowId, step.id)}>
             ×
           </button>
         )}
       </div>
 
-      {step.type === 'trigger' && <small className="muted">Starts when a post is published with this flow.</small>}
+      {step.type === 'trigger' && <small className="muted">{t.triggerHint}</small>}
 
       {step.type === 'addText' && (
         <>
-          <select className="nodrag" aria-label="Placement" value={step.placement} onChange={(e) => update({ placement: e.target.value as 'start' | 'end' })}>
-            <option value="end">At the end</option>
-            <option value="start">At the start</option>
+          <select className="nodrag" aria-label={t.placement} value={step.placement} onChange={(e) => update({ placement: e.target.value as 'start' | 'end' })}>
+            <option value="end">{t.atEnd}</option>
+            <option value="start">{t.atStart}</option>
           </select>
           <textarea
             className="nodrag nowheel"
             rows={2}
-            aria-label="Text to add"
+            aria-label={t.textToAdd}
             placeholder="#physio #rückengesundheit"
             defaultValue={step.text}
             onChange={(e) => update({ text: e.target.value })}
@@ -155,7 +150,7 @@ export function StepNode({ data, selected }: Props<'step'>) {
         </>
       )}
 
-      {step.type === 'shorten' && <small className="muted">Cuts the text to each network’s limit, ending with “…”.</small>}
+      {step.type === 'shorten' && <small className="muted">{t.shortenHint}</small>}
 
       {step.type === 'delay' && (
         <label className="row-tight nodrag">
@@ -163,28 +158,31 @@ export function StepNode({ data, selected }: Props<'step'>) {
             type="number"
             min={0}
             step={5}
-            aria-label="Minutes"
+            aria-label={t.minutes}
             defaultValue={step.minutes}
             onChange={(e) => update({ minutes: Math.max(0, Number(e.target.value) || 0) })}
           />
-          <span className="muted">min{step.minutes >= 60 ? ` (${formatMinutes(step.minutes)})` : ''}</span>
+          <span className="muted">
+            {t.minutesUnit}
+            {step.minutes >= 60 ? ` (${formatMinutes(step.minutes, t)})` : ''}
+          </span>
         </label>
       )}
 
       {step.type === 'target' && (
         <>
-          <select className="nodrag" aria-label="Account" value={step.accountId} onChange={(e) => update({ accountId: e.target.value })}>
-            <option value="">Choose account…</option>
+          <select className="nodrag" aria-label={t.account} value={step.accountId} onChange={(e) => update({ accountId: e.target.value })}>
+            <option value="">{t.chooseAccount}</option>
             {world.data.accounts.map((a) => (
               <option key={a.id} value={a.id}>
                 {catalog[a.provider].name}: {a.handle}
               </option>
             ))}
           </select>
-          {step.accountId && !account && <small className="error">This account was disconnected.</small>}
+          {step.accountId && !account && <small className="error">{t.accountGone}</small>}
           {account && (
             <a className="small-link nodrag" href={`#n=${ids.account(account.id)}`}>
-              Go to account →
+              {t.goToAccount}
             </a>
           )}
         </>
@@ -200,6 +198,8 @@ export function StepNode({ data, selected }: Props<'step'>) {
 }
 
 export function ComposerNode({ selected }: Props<'composer'>) {
+  const t = useMessages(canvasMessages);
+  const common = useMessages(commonMessages);
   const world = useWorld();
   const { composing } = world;
   const accounts = world.data.accounts.map((account) => ({
@@ -207,15 +207,17 @@ export function ComposerNode({ selected }: Props<'composer'>) {
     handle: account.handle,
     provider: account.provider,
     maxLength: account.maxLength,
-    disabledReason: account.status === 'needs_reauth' ? 'Reconnect needed' : undefined,
+    disabledReason: account.status === 'needs_reauth' ? common.reconnectNeeded : undefined,
   }));
   return (
     <div className={`world-panel ${selected ? 'is-selected' : ''}`}>
-      <header className="panel-drag">{composing?.postId ? 'Edit post' : composing ? 'Post again' : 'New post'}</header>
+      <header className="panel-drag">{composing?.postId ? t.editPost : composing ? t.postAgain : t.newPost}</header>
       <div className="nodrag nowheel nopan panel-body">
         {accounts.length === 0 ? (
           <p className="muted">
-            Connect an account in <a href={`#n=${ids.region('networks')}`}>Networks</a> first.
+            {t.connectFirst.before}
+            <a href={`#n=${ids.region('networks')}`}>{t.connectFirst.link}</a>
+            {t.connectFirst.after}
           </p>
         ) : (
           <Composer
@@ -239,6 +241,8 @@ export function ComposerNode({ selected }: Props<'composer'>) {
 }
 
 function PostActions({ post }: { post: WorldData['posts'][number] }) {
+  const t = useMessages(canvasMessages);
+  const common = useMessages(commonMessages);
   const world = useWorld();
   const [pending, startTransition] = useTransition();
   const editable = canEdit(post.status);
@@ -249,17 +253,17 @@ function PostActions({ post }: { post: WorldData['posts'][number] }) {
     <div className="row-tight post-actions">
       {editable && (
         <button type="button" className="link small-link" disabled={pending} onClick={() => startTransition(() => world.composeFrom(post.id))}>
-          Edit
+          {common.edit}
         </button>
       )}
       {retry && (
         <button type="button" className="link small-link" disabled={pending} onClick={() => startTransition(() => retryPostAction(post.id))}>
-          {pending ? 'Retrying…' : 'Retry failed'}
+          {pending ? t.retrying : t.retryFailed}
         </button>
       )}
       {again && (
         <button type="button" className="link small-link" disabled={pending} onClick={() => startTransition(() => world.composeFrom(post.id, true))}>
-          Post again
+          {t.postAgain}
         </button>
       )}
     </div>
@@ -267,21 +271,23 @@ function PostActions({ post }: { post: WorldData['posts'][number] }) {
 }
 
 export function PostsNode({ selected }: Props<'posts'>) {
+  const t = useMessages(canvasMessages);
+  const common = useMessages(commonMessages);
   const world = useWorld();
   const handles = new Map(world.data.accounts.map((account) => [account.id, account]));
   return (
     <div className={`world-panel ${selected ? 'is-selected' : ''}`}>
       <header className="panel-drag">
-        Recent posts <a className="small-link nodrag" href="/posts">Full list →</a>
+        {t.recentPosts} <a className="small-link nodrag" href="/posts">{t.fullList}</a>
       </header>
       <div className="nodrag nowheel nopan panel-body stack">
-        {world.data.posts.length === 0 && <p className="muted">Nothing published yet.</p>}
+        {world.data.posts.length === 0 && <p className="muted">{t.nothingPublished}</p>}
         {world.data.posts.map((post) => (
           <article key={post.id} className="post-mini">
             <div className="row-tight">
-              <span className={`badge status-${post.status}`}>{statusLabels[post.status]}</span>
+              <span className={`badge status-${post.status}`}>{common.status[post.status]}</span>
               <small className="muted grow">{post.scheduledAt && <LocalTime iso={post.scheduledAt} />}</small>
-              {post.mediaCount > 0 && <small className="muted">{post.mediaCount} media</small>}
+              {post.mediaCount > 0 && <small className="muted">{t.mediaCount(post.mediaCount)}</small>}
             </div>
             <p className="clip-2">{post.text}</p>
             {post.media.length > 0 && (
@@ -296,8 +302,8 @@ export function PostsNode({ selected }: Props<'posts'>) {
               {post.targets.map((target) => {
                 const account = handles.get(target.accountId);
                 return (
-                  <a key={target.accountId} href={`#n=${ids.account(target.accountId)}`} className={`chip chip-${target.status}`} title={target.error ?? target.status}>
-                    {account ? `${catalog[account.provider].name} · ${account.handle}` : 'Removed account'}
+                  <a key={target.accountId} href={`#n=${ids.account(target.accountId)}`} className={`chip chip-${target.status}`} title={target.error ?? common.targetStatus[target.status]}>
+                    {account ? `${catalog[account.provider].name} · ${account.handle}` : common.removedAccount}
                   </a>
                 );
               })}
@@ -310,11 +316,13 @@ export function PostsNode({ selected }: Props<'posts'>) {
 }
 
 export function CalendarNode({ selected }: Props<'calendar'>) {
+  const t = useMessages(canvasMessages);
+  const common = useMessages(commonMessages);
   const world = useWorld();
   return (
     <div className={`world-panel calendar-panel ${selected ? 'is-selected' : ''}`}>
       <header className="panel-drag">
-        Calendar <a className="small-link nodrag" href="/calendar">Full page →</a>
+        {common.nav.calendar} <a className="small-link nodrag" href="/calendar">{t.fullPage}</a>
       </header>
       <div className="nodrag nowheel nopan panel-body">
         <Calendar seed={world.data.calendar} onEdit={(postId, asCopy) => void world.composeFrom(postId, asCopy)} onCreate={world.composeAt} />
@@ -324,6 +332,7 @@ export function CalendarNode({ selected }: Props<'calendar'>) {
 }
 
 export function PluginNode({ data, selected }: Props<'plugin'>) {
+  const t = useMessages(themesMessages);
   const world = useWorld();
   const [pending, startTransition] = useTransition();
   const { manifest, builtin, installed } = data.plugin;
@@ -333,22 +342,22 @@ export function PluginNode({ data, selected }: Props<'plugin'>) {
       <div className="row-tight">
         <strong className="grow clip">{manifest.name}</strong>
         {active ? (
-          <span className="badge badge-active">In use</span>
+          <span className="badge badge-active">{t.inUse}</span>
         ) : installed ? (
           <button type="button" className="secondary small nodrag" disabled={pending} onClick={() => startTransition(() => chooseThemeAction(manifest.id))}>
-            {pending ? 'Switching…' : 'Use'}
+            {pending ? t.switching : t.use}
           </button>
         ) : (
           world.data.canManage && (
             <button type="button" className="small nodrag" disabled={pending} onClick={() => startTransition(() => installBuiltinPluginAction(manifest.id))}>
-              {pending ? 'Installing…' : 'Install'}
+              {pending ? t.installing : t.install}
             </button>
           )
         )}
       </div>
       <small className="muted meta clip">
-        {installed ? `${manifest.author} · v${manifest.version}` : 'Not installed'}
-        {builtin ? ' · Built-in' : ''}
+        {installed ? `${manifest.author} · v${manifest.version}` : t.notInstalled}
+        {builtin ? t.builtinSuffix : ''}
       </small>
       <p className="clip-2 muted">{manifest.description}</p>
       <ThemePreview theme={manifest} />
@@ -357,38 +366,40 @@ export function PluginNode({ data, selected }: Props<'plugin'>) {
 }
 
 export function PluginInstallNode({ id, selected }: Props<'pluginInstall'>) {
+  const t = useMessages(themesMessages);
   const world = useWorld();
   return (
     <div className={`world-card plugin-node is-available ${selected ? 'is-selected' : ''}`}>
-      <strong>+ Add a theme</strong>
-      <p className="muted">
-        Start from any theme, change colors, fonts and shapes for light and dark mode, and install it. Or install a theme file someone shared.
-      </p>
+      <strong>{t.addTheme}</strong>
+      <p className="muted">{t.addThemeHint}</p>
       <button type="button" className="small nodrag" onClick={() => world.focus(id)}>
-        Open theme editor
+        {t.openEditor}
       </button>
     </div>
   );
 }
 
 export function ActivityNode({ selected }: Props<'activity'>) {
+  const t = useMessages(canvasMessages);
+  const common = useMessages(commonMessages);
+  const locale = useLocale();
   const world = useWorld();
   const items = world.data.activity;
   return (
     <div className={`world-panel ${selected ? 'is-selected' : ''}`}>
       <header className="panel-drag">
-        Activity {items && <a className="small-link nodrag" href="/activity">All activity →</a>}
+        {common.nav.activity} {items && <a className="small-link nodrag" href="/activity">{t.allActivity}</a>}
       </header>
       <div className="nodrag nowheel nopan panel-body">
         {items === null ? (
-          <p className="muted">Only workspace owners and admins can see the activity log.</p>
+          <p className="muted">{t.activityAdminsOnly}</p>
         ) : items.length === 0 ? (
-          <p className="muted">Nothing has happened yet.</p>
+          <p className="muted">{t.nothingHappened}</p>
         ) : (
           <ul className="activity-list">
             {items.map((item) => (
               <li key={item.id} className={isWarning(item) ? 'activity-warn' : undefined}>
-                <span>{describeActivity(item)}</span> <small className="muted"><RelativeTime iso={item.createdAt} /></small>
+                <span>{describeActivity(item, locale)}</span> <small className="muted"><RelativeTime iso={item.createdAt} /></small>
               </li>
             ))}
           </ul>
@@ -399,11 +410,12 @@ export function ActivityNode({ selected }: Props<'activity'>) {
 }
 
 export function MembersNode({ selected }: Props<'members'>) {
+  const t = useMessages(canvasMessages);
   const world = useWorld();
   return (
     <div className={`world-panel ${selected ? 'is-selected' : ''}`}>
       <header className="panel-drag">
-        {world.data.workspace.name} <span className="muted">{world.data.team.members.length} {world.data.team.members.length === 1 ? 'member' : 'members'}</span>
+        {world.data.workspace.name} <span className="muted">{t.members(world.data.team.members.length)}</span>
       </header>
       <div className="nodrag nowheel nopan panel-body">
         <TeamPanel data={world.data.team} />

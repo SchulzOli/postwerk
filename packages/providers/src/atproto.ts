@@ -120,17 +120,19 @@ interface DidDocument {
 }
 
 export async function resolveHandle(handle: string): Promise<string> {
-  if (!HANDLE.test(handle)) throw new ProviderError(`"${handle}" is not a Bluesky handle. It looks like you.bsky.social.`);
+  if (!HANDLE.test(handle)) {
+    throw new ProviderError(`"${handle}" is not a Bluesky handle. It looks like you.bsky.social.`, { de: `„${handle}“ ist kein Bluesky-Handle. Es sieht aus wie du.bsky.social.` });
+  }
   try {
     const { did } = await getJson<{ did?: string }>(withQuery(`${atprotoNetwork.appView}/xrpc/com.atproto.identity.resolveHandle`, { handle }), 'Bluesky');
     if (typeof did === 'string' && (DID_PLC.test(did) || DID_WEB.test(did))) return did;
   } catch (error) {
     // 400 means "unknown handle"; anything else is Bluesky being unreachable.
     if (!(error instanceof ProviderError && error.status === 400)) {
-      throw new ProviderError('Bluesky could not be reached. Please try again in a moment.', { retryable: true, cause: error });
+      throw new ProviderError('Bluesky could not be reached. Please try again in a moment.', { retryable: true, cause: error, de: 'Bluesky ist nicht erreichbar. Bitte versuch es gleich noch einmal.' });
     }
   }
-  throw new ProviderError(`We could not find @${handle} on Bluesky. Check the handle and try again.`);
+  throw new ProviderError(`We could not find @${handle} on Bluesky. Check the handle and try again.`, { de: `Wir haben @${handle} auf Bluesky nicht gefunden. Prüf das Handle und versuch es noch einmal.` });
 }
 
 export async function resolveDid(did: string): Promise<DidDocument> {
@@ -178,7 +180,9 @@ export async function authServerMetadata(issuer: string): Promise<AuthServerMeta
   // Mix-up protection: the server must call itself what we asked for.
   if (metadata.issuer !== issuer) throw new ProviderError('The sign-in server does not identify itself correctly.');
   if (metadata.client_id_metadata_document_supported !== true || !metadata.pushed_authorization_request_endpoint || !metadata.dpop_signing_alg_values_supported?.includes('ES256')) {
-    throw new ProviderError('This server does not support signing in with Bluesky yet. Use an app password instead.');
+    throw new ProviderError('This server does not support signing in with Bluesky yet. Use an app password instead.', {
+      de: 'Dieser Server unterstützt die Anmeldung mit Bluesky noch nicht. Verwende stattdessen ein App-Passwort.',
+    });
   }
   for (const endpoint of [metadata.authorization_endpoint, metadata.token_endpoint, metadata.pushed_authorization_request_endpoint]) checkUrl(endpoint, 'The sign-in server');
   return metadata;
@@ -214,7 +218,7 @@ async function resolveLogin(input: string): Promise<{ metadata: AuthServerMetada
     }
   }
   const handleOrDid = value.replace(/^@/, '').toLowerCase();
-  if (!handleOrDid) throw new ProviderError('Please enter your Bluesky handle.');
+  if (!handleOrDid) throw new ProviderError('Please enter your Bluesky handle.', { de: 'Bitte gib dein Bluesky-Handle ein.' });
   const did = handleOrDid.startsWith('did:') ? handleOrDid : await resolveHandle(handleOrDid);
   const doc = await resolveDid(did);
   const handle = handleOf(doc);
@@ -227,7 +231,10 @@ async function verifyIssuer(did: string, issuer: string): Promise<{ pds: string;
   const doc = await resolveDid(did);
   const pds = pdsOf(doc);
   const metadata = await authServerForPds(pds);
-  if (metadata.issuer !== issuer) throw new ProviderError('This account is not managed by the server that signed it in. Please try again.', { needsReauth: true });
+  if (metadata.issuer !== issuer) throw new ProviderError('This account is not managed by the server that signed it in. Please try again.', {
+      needsReauth: true,
+      de: 'Dieses Konto wird nicht von dem Server verwaltet, bei dem du dich angemeldet hast. Bitte versuch es noch einmal.',
+    });
   return { pds, handle: handleOf(doc) };
 }
 
@@ -388,7 +395,7 @@ export async function startLogin(client: AtprotoClient, input: string, state: st
     code_challenge_method: 'S256',
     login_hint: hint,
   });
-  if (typeof par.request_uri !== 'string') throw new ProviderError('The sign-in server gave an unexpected answer. Please try again.');
+  if (typeof par.request_uri !== 'string') throw new ProviderError('The sign-in server gave an unexpected answer. Please try again.', { de: 'Der Anmeldeserver hat unerwartet geantwortet. Bitte versuch es noch einmal.' });
   return {
     url: withQuery(metadata.authorization_endpoint, { client_id: client.clientId, request_uri: par.request_uri }),
     pending: { issuer: metadata.issuer, clientId: client.clientId, redirectUri: client.redirectUri, kid: key?.kid, codeVerifier, dpop },
@@ -403,7 +410,7 @@ function checkTokens(tokens: TokenResponse, now: number): Pick<AtprotoSession, '
     typeof tokens.sub !== 'string' ||
     !tokens.scope?.split(' ').includes('atproto')
   ) {
-    throw new ProviderError('The sign-in server gave an unexpected answer. Please try again.');
+    throw new ProviderError('The sign-in server gave an unexpected answer. Please try again.', { de: 'Der Anmeldeserver hat unerwartet geantwortet. Bitte versuch es noch einmal.' });
   }
   return {
     sub: tokens.sub,
@@ -419,7 +426,7 @@ function checkTokens(tokens: TokenResponse, now: number): Pick<AtprotoSession, '
 export async function finishLogin(keys: PrivateJwk[], pending: PendingLogin, params: { code: string; iss: string | null }): Promise<AtprotoSession> {
   const metadata = await authServerMetadata(pending.issuer);
   if (params.iss === null ? metadata.authorization_response_iss_parameter_supported : params.iss !== metadata.issuer) {
-    throw new ProviderError('The sign-in came back from a different server. Please try again.');
+    throw new ProviderError('The sign-in came back from a different server. Please try again.', { de: 'Die Anmeldung kam von einem anderen Server zurück. Bitte versuch es noch einmal.' });
   }
   const now = Date.now();
   const tokens = checkTokens(

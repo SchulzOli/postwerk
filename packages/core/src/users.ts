@@ -1,7 +1,9 @@
 import { and, eq, gt, ne } from 'drizzle-orm';
 import { emailTokens, sessions, users, type Database, type Transaction } from '@postwerk/db';
+import { isLocale, LocalizedError, type Locale } from './i18n';
 import { isMailConfigured, sendMail } from './mail';
 import { resetPasswordMail, verifyEmailMail } from './mail-templates';
+import { userMessages } from './messages';
 import { generateToken, hashPassword, hashToken, verifyPassword } from './password';
 
 export const VERIFY_TTL_MS = 3 * 24 * 60 * 60_000;
@@ -11,11 +13,15 @@ export const MIN_PASSWORD_LENGTH = 10;
 type TokenKind = 'verify_email' | 'reset_password';
 
 /** Problem with what the user typed; the message is meant for them. */
-export class UserInputError extends Error {}
+export class UserInputError extends LocalizedError {
+  constructor(pick: (m: (typeof userMessages)['en']) => string) {
+    super((locale) => pick(userMessages[locale]));
+  }
+}
 
 export function checkNewPassword(password: string): void {
-  if (password.length < MIN_PASSWORD_LENGTH) throw new UserInputError(`Use at least ${MIN_PASSWORD_LENGTH} characters for your password.`);
-  if (password.length > 500) throw new UserInputError('That password is too long.');
+  if (password.length < MIN_PASSWORD_LENGTH) throw new UserInputError((m) => m.passwordTooShort(MIN_PASSWORD_LENGTH));
+  if (password.length > 500) throw new UserInputError((m) => m.passwordTooLong);
 }
 
 async function createEmailToken(db: Database, userId: string, kind: TokenKind, email: string, ttlMs: number, now = new Date()): Promise<string> {
@@ -38,9 +44,9 @@ export async function isEmailTokenValid(db: Database, token: string, kind: Token
 }
 
 /** Emails a confirmation link for the user's current address. */
-export async function sendVerificationEmail(db: Database, user: { id: string; name: string; email: string }, appUrl: string): Promise<void> {
+export async function sendVerificationEmail(db: Database, user: { id: string; name: string; email: string }, appUrl: string, locale: Locale = 'en'): Promise<void> {
   const token = await createEmailToken(db, user.id, 'verify_email', user.email, VERIFY_TTL_MS);
-  await sendMail(verifyEmailMail(user.email, user.name, `${appUrl}/verify-email/${token}`));
+  await sendMail(verifyEmailMail(user.email, user.name, `${appUrl}/verify-email/${token}`, locale));
 }
 
 /** Confirms the address the link was sent to; returns the user id, or undefined for a bad link. */
@@ -66,11 +72,12 @@ export function needsEmailVerification(user: { emailVerifiedAt: Date | null }): 
  * (for the audit log) but callers must answer the same either way, so the
  * form does not reveal who has an account.
  */
-export async function requestPasswordReset(db: Database, email: string, appUrl: string): Promise<string | undefined> {
+export async function requestPasswordReset(db: Database, email: string, appUrl: string, locale: Locale = 'en'): Promise<string | undefined> {
   const user = await db.query.users.findFirst({ where: eq(users.email, email.trim().toLowerCase()) });
   if (!user) return undefined;
   const token = await createEmailToken(db, user.id, 'reset_password', user.email, RESET_TTL_MS);
-  await sendMail(resetPasswordMail(user.email, user.name, `${appUrl}/reset-password/${token}`));
+  // In the language the person chose, else the one they are using right now.
+  await sendMail(resetPasswordMail(user.email, user.name, `${appUrl}/reset-password/${token}`, isLocale(user.locale) ? user.locale : locale));
   return user.id;
 }
 
@@ -83,7 +90,7 @@ export async function resetPassword(db: Database, token: string, password: strin
   const passwordHash = await hashPassword(password);
   return db.transaction(async (tx) => {
     const row = await consumeEmailToken(tx, token, 'reset_password');
-    if (!row) throw new UserInputError('This reset link has expired or was already used. Ask for a new one.');
+    if (!row) throw new UserInputError((m) => m.resetExpired);
     await tx.update(users).set({ passwordHash }).where(eq(users.id, row.userId));
     await tx.update(users).set({ emailVerifiedAt: new Date() }).where(and(eq(users.id, row.userId), eq(users.email, row.email)));
     await tx.delete(emailTokens).where(and(eq(emailTokens.userId, row.userId), eq(emailTokens.kind, 'reset_password')));
@@ -95,19 +102,21 @@ export async function resetPassword(db: Database, token: string, password: strin
 /** Changes the password after checking the current one; other sessions are signed out. */
 export async function changePassword(db: Database, userId: string, current: string, next: string, keepSessionId: string): Promise<void> {
   const user = await db.query.users.findFirst({ where: eq(users.id, userId) });
-  if (!user || !(await verifyPassword(current, user.passwordHash))) throw new UserInputError('Your current password is not right.');
+  if (!user || !(await verifyPassword(current, user.passwordHash))) throw new UserInputError((m) => m.wrongPassword);
   checkNewPassword(next);
   await db.update(users).set({ passwordHash: await hashPassword(next) }).where(eq(users.id, userId));
   await db.delete(sessions).where(and(eq(sessions.userId, userId), ne(sessions.id, keepSessionId)));
 }
 
-export async function updateProfile(db: Database, userId: string, input: { name?: string; notifyFailures?: boolean }): Promise<void> {
+/** `locale: null` follows the browser's language. */
+export async function updateProfile(db: Database, userId: string, input: { name?: string; notifyFailures?: boolean; locale?: Locale | null }): Promise<void> {
   const set: Partial<typeof users.$inferInsert> = {};
   if (input.name !== undefined) {
     const name = input.name.trim().slice(0, 80);
-    if (!name) throw new UserInputError('Please enter your name.');
+    if (!name) throw new UserInputError((m) => m.enterName);
     set.name = name;
   }
   if (input.notifyFailures !== undefined) set.notifyFailures = input.notifyFailures;
+  if (input.locale !== undefined) set.locale = input.locale;
   if (Object.keys(set).length > 0) await db.update(users).set(set).where(eq(users.id, userId));
 }

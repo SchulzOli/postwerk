@@ -23,7 +23,9 @@ const WEBHOOK_PATH = /^\/api(?:\/v\d+)?\/webhooks\/(\d+)\/([A-Za-z0-9_-]+)\/?$/;
 /** Validates a pasted webhook URL and normalizes it to https://discord.com/api/webhooks/{id}/{token}. */
 export function normalizeWebhookUrl(input: string): string {
   const invalid = () =>
-    new ProviderError('That is not a Discord webhook URL. Copy it from Server Settings → Integrations → Webhooks → Copy Webhook URL.');
+    new ProviderError('That is not a Discord webhook URL. Copy it from Server Settings → Integrations → Webhooks → Copy Webhook URL.', {
+      de: 'Das ist keine Discord-Webhook-URL. Kopiere sie unter Servereinstellungen → Integrationen → Webhooks → Webhook-URL kopieren.',
+    });
   const trimmed = input.trim();
   if (!trimmed) throw invalid();
   let url: URL;

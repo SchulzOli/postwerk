@@ -2,7 +2,9 @@
 
 import { useEffect, useRef, useState, type Dispatch, type SetStateAction } from 'react';
 import { formatBytes } from '@postwerk/providers/validate';
+import { useLocale, useMessages } from '@/lib/i18n';
 import { ACCEPTED_MEDIA, checkMediaUrl, MAX_IMAGE_BYTES, type ComposerMediaInput } from '@/lib/media';
+import { uploadMessages } from '@/messages/upload';
 
 /** One attached file in the composer: uploading, uploaded, failed, or added by link. */
 export interface ComposerMedia {
@@ -34,7 +36,7 @@ interface Uploaded {
   size: number;
 }
 
-function upload(file: File, onProgress: (share: number) => void): Promise<Uploaded> {
+function upload(file: File, onProgress: (share: number) => void, t: (typeof uploadMessages)['en']): Promise<Uploaded> {
   // XMLHttpRequest, because fetch cannot report upload progress.
   return new Promise((resolve, reject) => {
     const request = new XMLHttpRequest();
@@ -49,9 +51,9 @@ function upload(file: File, onProgress: (share: number) => void): Promise<Upload
         // Not JSON (e.g. a proxy error page).
       }
       if (request.status < 300 && body.id) resolve(body as Uploaded);
-      else reject(new Error(body.error ?? `The upload failed (${request.status}). Please try again.`));
+      else reject(new Error(body.error ?? t.failedWithStatus(request.status)));
     };
-    request.onerror = () => reject(new Error('The upload failed. Check your connection and try again.'));
+    request.onerror = () => reject(new Error(t.failedConnection));
     request.send(file);
   });
 }
@@ -64,6 +66,8 @@ interface Props {
 }
 
 export function MediaPicker({ items, setItems }: Props) {
+  const locale = useLocale();
+  const t = useMessages(uploadMessages);
   const input = useRef<HTMLInputElement>(null);
   const previews = useRef(new Set<string>());
   const [dragging, setDragging] = useState(false);
@@ -82,11 +86,11 @@ export function MediaPicker({ items, setItems }: Props) {
       const preview = URL.createObjectURL(file);
       previews.current.add(preview);
       const item: ComposerMedia = { localId, url: preview, kind, size: file.size, mimeType: file.type, altText: '', progress: 0 };
-      if (!ACCEPTED_MEDIA.split(',').includes(file.type)) item.error = `${file.name}: upload JPEG, PNG, GIF or WebP images, or MP4, MOV or WebM videos.`;
-      else if (kind === 'image' && file.size > MAX_IMAGE_BYTES) item.error = `${file.name}: images can be up to ${formatBytes(MAX_IMAGE_BYTES)}.`;
+      if (!ACCEPTED_MEDIA.split(',').includes(file.type)) item.error = t.wrongType(file.name);
+      else if (kind === 'image' && file.size > MAX_IMAGE_BYTES) item.error = t.imageTooBig(file.name, formatBytes(MAX_IMAGE_BYTES));
       setItems((current) => [...current, item]);
       if (item.error) continue;
-      upload(file, (progress) => update(localId, { progress }))
+      upload(file, (progress) => update(localId, { progress }), t)
         .then((uploaded) => {
           // Keep showing the local preview until the browser has the stored file.
           update(localId, { id: uploaded.id, url: uploaded.url, kind: uploaded.kind, size: uploaded.size, mimeType: uploaded.mimeType, progress: undefined });
@@ -98,7 +102,7 @@ export function MediaPicker({ items, setItems }: Props) {
   }
 
   function addLink() {
-    const checked = checkMediaUrl(link);
+    const checked = checkMediaUrl(link, locale);
     if ('error' in checked) return setLinkError(checked.error);
     setItems((current) => [...current, { localId: nextId(), ...checked.media, altText: '' }]);
     setLink('');
@@ -129,9 +133,9 @@ export function MediaPicker({ items, setItems }: Props) {
           if (e.dataTransfer.files.length > 0) addFiles(e.dataTransfer.files);
         }}
       >
-        <span>Drop images or videos here, or</span>
+        <span>{t.dropHere}</span>
         <button type="button" className="secondary small" onClick={() => input.current?.click()}>
-          Choose files
+          {t.chooseFiles}
         </button>
         <input
           ref={input}
@@ -169,28 +173,28 @@ export function MediaPicker({ items, setItems }: Props) {
                   <small className="error">{item.error}</small>
                 ) : (
                   <input
-                    aria-label="Alt text"
-                    placeholder={item.kind === 'video' ? 'Describe the video (optional)' : 'Alt text: describe the image'}
+                    aria-label={t.altText}
+                    placeholder={item.kind === 'video' ? t.describeVideo : t.describeImage}
                     value={item.altText}
                     maxLength={1500}
                     onChange={(e) => update(item.localId, { altText: e.target.value })}
                   />
                 )}
                 <small className="muted" hidden={Boolean(item.error)}>
-                  {item.kind === 'video' ? 'Video' : 'Image'}
+                  {item.kind === 'video' ? t.video : t.image}
                   {item.size !== undefined && ` · ${formatBytes(item.size)}`}
-                  {!item.id && item.progress === undefined && !item.error && ' · link'}
-                  {item.progress !== undefined && ` · uploading ${Math.round(item.progress * 100)}%`}
+                  {!item.id && item.progress === undefined && !item.error && t.viaLink}
+                  {item.progress !== undefined && t.uploadingPercent(Math.round(item.progress * 100))}
                 </small>
               </div>
               <div className="media-actions">
-                <button type="button" className="icon-button" aria-label="Move left" disabled={index === 0} onClick={() => move(index, -1)}>
+                <button type="button" className="icon-button" aria-label={t.moveLeft} disabled={index === 0} onClick={() => move(index, -1)}>
                   ‹
                 </button>
-                <button type="button" className="icon-button" aria-label="Move right" disabled={index === items.length - 1} onClick={() => move(index, 1)}>
+                <button type="button" className="icon-button" aria-label={t.moveRight} disabled={index === items.length - 1} onClick={() => move(index, 1)}>
                   ›
                 </button>
-                <button type="button" className="icon-button" aria-label="Remove" onClick={() => setItems((current) => current.filter((other) => other.localId !== item.localId))}>
+                <button type="button" className="icon-button" aria-label={t.remove} onClick={() => setItems((current) => current.filter((other) => other.localId !== item.localId))}>
                   ×
                 </button>
               </div>
@@ -200,12 +204,12 @@ export function MediaPicker({ items, setItems }: Props) {
       )}
 
       <details className="media-link">
-        <summary className="small-link">Add a file by link instead</summary>
+        <summary className="small-link">{t.addByLink}</summary>
         <div className="row-tight">
           <input
             type="url"
-            placeholder="https://example.com/photo.jpg"
-            aria-label="Media link"
+            placeholder={t.linkPlaceholder}
+            aria-label={t.mediaLink}
             value={link}
             onChange={(e) => setLink(e.target.value)}
             onKeyDown={(e) => {
@@ -216,7 +220,7 @@ export function MediaPicker({ items, setItems }: Props) {
             }}
           />
           <button type="button" className="secondary small" disabled={!link.trim()} onClick={addLink}>
-            Add
+            {t.add}
           </button>
         </div>
         {linkError && <small className="error">{linkError}</small>}

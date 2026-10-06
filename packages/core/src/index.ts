@@ -20,3 +20,5 @@ export * from './users';
 export * from './notifications';
 export * from './storage';
 export * from './media';
+export * from './i18n';
+export * from './messages';

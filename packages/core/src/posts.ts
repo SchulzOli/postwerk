@@ -3,6 +3,8 @@ import { posts, postTargets, socialAccounts, type Database, type PostMedia, type
 import { countText, getProvider, getProviderInfo, isProviderId, resolveOptions, textLimit, validateContent, type ProviderId } from '@postwerk/providers';
 import { planPost, type TextVariants } from './flow';
 import { getFlow } from './flows';
+import type { Locale } from './i18n';
+import { postMessages } from './messages';
 
 export interface PostInput {
   workspaceId: string;
@@ -19,6 +21,8 @@ export interface PostInput {
   /** null publishes as soon as the worker picks it up. */
   scheduledAt: Date | null;
   draft?: boolean;
+  /** Language of the error messages. */
+  locale?: Locale;
 }
 
 export interface CreatePostInput extends PostInput {
@@ -43,6 +47,8 @@ interface PreparedTarget {
 /** Validates a post against every account it goes to and works out the targets (shared by create and update). */
 async function prepareTargets(db: Database | Transaction, input: PostInput): Promise<{ ok: true; targets: PreparedTarget[]; variants: TextVariants } | { ok: false; errors: string[] }> {
   const media = input.media ?? [];
+  const locale = input.locale ?? 'en';
+  const m = postMessages[locale];
   const workspaceAccounts = await db.query.socialAccounts.findMany({ where: eq(socialAccounts.workspaceId, input.workspaceId) });
   const byId = new Map(workspaceAccounts.map((account) => [account.id, account]));
   const providerOf = (accountId: string) => byId.get(accountId)?.provider;
@@ -51,7 +57,7 @@ async function prepareTargets(db: Database | Transaction, input: PostInput): Pro
   let flowName = '';
   if (input.flowId) {
     const flow = await getFlow(db, input.workspaceId, input.flowId);
-    if (!flow) return { ok: false, errors: ['The selected flow no longer exists.'] };
+    if (!flow) return { ok: false, errors: [m.flowGone] };
     graph = flow.graph;
     flowName = flow.name;
   }
@@ -61,10 +67,10 @@ async function prepareTargets(db: Database | Transaction, input: PostInput): Pro
     const info = getProviderInfo(account.provider);
     return { length: countText(text, info.capabilities.text.counter), max: textLimit(info, { media }, { maxLength: account.maxLength ?? undefined }) };
   };
-  const plan = planPost({ text: input.text, variants: input.variants ?? {}, providerOf, graph, accountIds: input.accountIds }, measure);
+  const plan = planPost({ text: input.text, variants: input.variants ?? {}, providerOf, graph, accountIds: input.accountIds, locale }, measure);
   if (plan.errors.length > 0) return { ok: false, errors: plan.errors.map((error) => `${flowName}: ${error}`) };
-  if (plan.targets.length === 0) return { ok: false, errors: ['Choose at least one account.'] };
-  if (plan.targets.some((target) => !byId.has(target.accountId))) return { ok: false, errors: ['One of the selected accounts no longer exists.'] };
+  if (plan.targets.length === 0) return { ok: false, errors: [m.chooseAccount] };
+  if (plan.targets.some((target) => !byId.has(target.accountId))) return { ok: false, errors: [m.accountGone] };
 
   const errors: string[] = [];
   const targets = plan.targets.map((target) => {
@@ -73,8 +79,8 @@ async function prepareTargets(db: Database | Transaction, input: PostInput): Pro
     const options = resolveOptions(info, input.options?.[account.provider] ?? {});
     const content = { text: target.text, media, options };
     const limits = { maxLength: account.maxLength ?? undefined };
-    const issues = account.status === 'needs_reauth' ? ['Account needs to be reconnected.'] : [];
-    issues.push(...validateContent(info, content, limits), ...(getProvider(account.provider).validate?.(content, limits) ?? []));
+    const issues = account.status === 'needs_reauth' ? [m.reconnect] : [];
+    issues.push(...validateContent(info, content, limits, locale), ...(getProvider(account.provider).validate?.(content, limits) ?? []));
     errors.push(...issues.map((issue) => `${account.handle}: ${issue}`));
     return { socialAccountId: account.id, options, text: target.text === input.text ? null : target.text, delayMinutes: target.delayMinutes };
   });
@@ -121,12 +127,12 @@ export async function createPost(db: Database, input: CreatePostInput): Promise<
  * (partly) out or a network is publishing it right now; the locks keep the
  * worker from claiming it meanwhile.
  */
-async function lockEditable(tx: Transaction, workspaceId: string, postId: string, allowed: PostStatus[] = EDITABLE_STATUSES) {
+async function lockEditable(tx: Transaction, workspaceId: string, postId: string, locale: Locale, allowed: PostStatus[] = EDITABLE_STATUSES) {
   const [post] = await tx.select().from(posts).where(and(eq(posts.id, postId), eq(posts.workspaceId, workspaceId))).for('update');
-  if (!post) return { error: 'This post no longer exists.' } as const;
+  if (!post) return { error: postMessages[locale].postGone } as const;
   const targets = await tx.select().from(postTargets).where(eq(postTargets.postId, postId)).for('update');
   if (!allowed.includes(post.status) || targets.some((target) => target.status === 'publishing' || target.status === 'published')) {
-    return { error: 'This post is already going out, so it cannot be changed anymore.' } as const;
+    return { error: postMessages[locale].goingOut } as const;
   }
   return { post, targets } as const;
 }
@@ -134,7 +140,7 @@ async function lockEditable(tx: Transaction, workspaceId: string, postId: string
 /** Replaces a not-yet-published post: text, media, accounts or flow, per-network texts and time. */
 export async function updatePost(db: Database, postId: string, input: PostInput): Promise<UpdateResult> {
   return db.transaction(async (tx) => {
-    const locked = await lockEditable(tx, input.workspaceId, postId);
+    const locked = await lockEditable(tx, input.workspaceId, postId, input.locale ?? 'en');
     if ('error' in locked) return { ok: false, errors: [locked.error!] };
     const prepared = await prepareTargets(tx, input);
     if (!prepared.ok) return prepared;
@@ -158,10 +164,10 @@ export async function updatePost(db: Database, postId: string, input: PostInput)
 }
 
 /** Moves a scheduled post (and its flow's delayed targets) to a new time. */
-export async function reschedulePost(db: Database, workspaceId: string, postId: string, scheduledAt: Date): Promise<UpdateResult> {
-  if (Number.isNaN(scheduledAt.getTime())) return { ok: false, errors: ['Please pick a date and time.'] };
+export async function reschedulePost(db: Database, workspaceId: string, postId: string, scheduledAt: Date, locale: Locale = 'en'): Promise<UpdateResult> {
+  if (Number.isNaN(scheduledAt.getTime())) return { ok: false, errors: [postMessages[locale].pickTime] };
   return db.transaction(async (tx) => {
-    const locked = await lockEditable(tx, workspaceId, postId, ['draft', 'scheduled']);
+    const locked = await lockEditable(tx, workspaceId, postId, locale, ['draft', 'scheduled']);
     if ('error' in locked) return { ok: false, errors: [locked.error!] };
     await tx.update(posts).set({ scheduledAt, updatedAt: new Date() }).where(eq(posts.id, postId));
     for (const target of locked.targets) {

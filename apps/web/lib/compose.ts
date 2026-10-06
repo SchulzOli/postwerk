@@ -3,13 +3,16 @@ import { asc, eq } from 'drizzle-orm';
 import { getPostForEdit, listFlows } from '@postwerk/core';
 import { getDb, socialAccounts } from '@postwerk/db';
 import type { ComposerAccount, ComposerInitial } from '@/components/composer';
+import { commonMessages } from '@/messages/common';
+import { getMessages } from './i18n-server';
 
 /** Accounts and flows the composer offers in a workspace. */
 export async function loadComposerChoices(workspaceId: string) {
   const db = getDb();
-  const [accounts, flows] = await Promise.all([
+  const [accounts, flows, common] = await Promise.all([
     db.query.socialAccounts.findMany({ where: eq(socialAccounts.workspaceId, workspaceId), orderBy: [asc(socialAccounts.provider), asc(socialAccounts.handle)] }),
     listFlows(db, workspaceId),
+    getMessages(commonMessages),
   ]);
   return {
     accounts: accounts.map(
@@ -18,7 +21,7 @@ export async function loadComposerChoices(workspaceId: string) {
         handle: account.handle,
         provider: account.provider,
         maxLength: account.maxLength,
-        disabledReason: account.status === 'needs_reauth' ? 'Reconnect needed' : undefined,
+        disabledReason: account.status === 'needs_reauth' ? common.reconnectNeeded : undefined,
       }),
     ),
     flows: flows.map((flow) => ({ id: flow.id, name: flow.name, graph: flow.graph })),

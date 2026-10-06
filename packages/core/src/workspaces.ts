@@ -1,11 +1,17 @@
 import { and, asc, eq, gt, isNull } from 'drizzle-orm';
 import { invites, sessions, users, workspaceMembers, workspaces, type Database, type MemberRole, type Transaction as Tx } from '@postwerk/db';
 import { decrypt, encrypt } from './crypto';
+import { LocalizedError } from './i18n';
+import { workspaceMessages } from './messages';
 import { generateToken, hashToken } from './password';
 import { installBuiltinPlugins } from './plugins';
 
 /** A rule was broken (e.g. removing the last owner); the message is meant for the user. */
-export class PermissionError extends Error {}
+export class PermissionError extends LocalizedError {
+  constructor(pick: (m: (typeof workspaceMessages)['en']) => string) {
+    super((locale) => pick(workspaceMessages[locale]));
+  }
+}
 
 export const roles: MemberRole[] = ['owner', 'admin', 'editor'];
 export const INVITE_TTL_MS = 7 * 24 * 60 * 60_000;
@@ -20,13 +26,13 @@ export const canManageWorkspace = (role: MemberRole) => role === 'owner' || role
 
 /** Owners may do anything; admins may handle everyone except owners. */
 function assertCanManage(actor: Actor, targetRole: MemberRole, newRole?: MemberRole) {
-  if (!canManageWorkspace(actor.role)) throw new PermissionError('Only workspace owners and admins can manage members.');
-  if ((targetRole === 'owner' || newRole === 'owner') && actor.role !== 'owner') throw new PermissionError('Only owners can change owners.');
+  if (!canManageWorkspace(actor.role)) throw new PermissionError((m) => m.manageMembers);
+  if ((targetRole === 'owner' || newRole === 'owner') && actor.role !== 'owner') throw new PermissionError((m) => m.changeOwners);
 }
 
 function workspaceName(name: string): string {
   const trimmed = name.trim().slice(0, 80);
-  if (!trimmed) throw new PermissionError('Please give the workspace a name.');
+  if (!trimmed) throw new PermissionError((m) => m.enterName);
   return trimmed;
 }
 
@@ -43,7 +49,7 @@ export async function createWorkspace(db: Database | Tx, userId: string, name: s
 }
 
 export async function renameWorkspace(db: Database, workspaceId: string, actor: Actor, name: string): Promise<string> {
-  if (!canManageWorkspace(actor.role)) throw new PermissionError('Only workspace owners and admins can rename the workspace.');
+  if (!canManageWorkspace(actor.role)) throw new PermissionError((m) => m.rename);
   const next = workspaceName(name);
   await db.update(workspaces).set({ name: next }).where(eq(workspaces.id, workspaceId));
   return next;
@@ -74,14 +80,14 @@ async function lockMembers(tx: Tx, workspaceId: string) {
 }
 
 export async function changeMemberRole(db: Database, workspaceId: string, actor: Actor, targetUserId: string, role: MemberRole) {
-  if (!roles.includes(role)) throw new PermissionError('Unknown role.');
+  if (!roles.includes(role)) throw new PermissionError((m) => m.unknownRole);
   return db.transaction(async (tx) => {
     const members = await lockMembers(tx, workspaceId);
     const target = members.find((member) => member.userId === targetUserId);
-    if (!target) throw new PermissionError('This person is not a member of the workspace.');
+    if (!target) throw new PermissionError((m) => m.notMember);
     assertCanManage(actor, target.role, role);
     if (target.role === 'owner' && role !== 'owner' && members.filter((member) => member.role === 'owner').length === 1) {
-      throw new PermissionError('A workspace needs at least one owner. Make someone else owner first.');
+      throw new PermissionError((m) => m.lastOwner);
     }
     await tx
       .update(workspaceMembers)
@@ -96,12 +102,10 @@ export async function removeMember(db: Database, workspaceId: string, actor: Act
   await db.transaction(async (tx) => {
     const members = await lockMembers(tx, workspaceId);
     const target = members.find((member) => member.userId === targetUserId);
-    if (!target) throw new PermissionError('This person is not a member of the workspace.');
+    if (!target) throw new PermissionError((m) => m.notMember);
     if (actor.userId !== targetUserId) assertCanManage(actor, target.role);
     if (target.role === 'owner' && members.filter((member) => member.role === 'owner').length === 1) {
-      throw new PermissionError(
-        actor.userId === targetUserId ? 'You are the only owner. Make someone else owner before you leave.' : 'A workspace needs at least one owner.',
-      );
+      throw new PermissionError((m) => (actor.userId === targetUserId ? m.onlyOwnerLeaving : m.needsOwner));
     }
     await tx.delete(workspaceMembers).where(and(eq(workspaceMembers.workspaceId, workspaceId), eq(workspaceMembers.userId, targetUserId)));
   });
@@ -114,10 +118,10 @@ export async function createInvite(
   input: { workspaceId: string; actor: Actor; email?: string; role: MemberRole },
   now = new Date(),
 ): Promise<{ id: string; token: string }> {
-  if (!roles.includes(input.role)) throw new PermissionError('Unknown role.');
+  if (!roles.includes(input.role)) throw new PermissionError((m) => m.unknownRole);
   assertCanManage(input.actor, 'editor', input.role);
   const email = input.email?.trim().toLowerCase() || null;
-  if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) throw new PermissionError('Please enter a valid email address, or leave it empty for a link.');
+  if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) throw new PermissionError((m) => m.invalidEmail);
   const token = generateToken();
   const [invite] = await db
     .insert(invites)
@@ -150,7 +154,7 @@ export async function listInvites(db: Database, workspaceId: string, now = new D
 }
 
 export async function revokeInvite(db: Database, workspaceId: string, actor: Actor, inviteId: string) {
-  if (!canManageWorkspace(actor.role)) throw new PermissionError('Only workspace owners and admins can revoke invites.');
+  if (!canManageWorkspace(actor.role)) throw new PermissionError((m) => m.revokeInvites);
   const [deleted] = await db
     .delete(invites)
     .where(and(eq(invites.id, inviteId), eq(invites.workspaceId, workspaceId), isNull(invites.acceptedAt)))
@@ -179,7 +183,7 @@ export async function acceptInvite(db: Database, token: string, userId: string, 
   return db.transaction(async (tx) => {
     const [invite] = await tx.select().from(invites).where(eq(invites.tokenHash, hashToken(token))).for('update');
     if (!invite || invite.acceptedAt || invite.expiresAt <= now) {
-      throw new PermissionError('This invite link has expired or was already used. Ask for a new one.');
+      throw new PermissionError((m) => m.inviteExpired);
     }
     const existing = await tx.query.workspaceMembers.findFirst({
       where: and(eq(workspaceMembers.workspaceId, invite.workspaceId), eq(workspaceMembers.userId, userId)),

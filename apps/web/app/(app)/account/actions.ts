@@ -5,7 +5,9 @@ import { changePassword, hitRateLimit, limits, rateLimitKey, retryIn, sendVerifi
 import { getDb } from '@postwerk/db';
 import { record } from '@/lib/audit';
 import { appUrl } from '@/lib/env';
+import { getLocale, getMessages, localizedError } from '@/lib/i18n-server';
 import { requireSession } from '@/lib/session';
+import { accountMessages } from '@/messages/account';
 
 export type AccountState = { error?: string; success?: string };
 
@@ -13,7 +15,7 @@ async function attempt(run: () => Promise<void>, success: string): Promise<Accou
   try {
     await run();
   } catch (error) {
-    if (error instanceof UserInputError) return { error: error.message };
+    if (error instanceof UserInputError) return { error: await localizedError(error) };
     throw error;
   }
   revalidatePath('/', 'layout');
@@ -22,14 +24,16 @@ async function attempt(run: () => Promise<void>, success: string): Promise<Accou
 
 export async function updateNameAction(_: AccountState, form: FormData): Promise<AccountState> {
   const { user } = await requireSession();
-  return attempt(() => updateProfile(getDb(), user.id, { name: String(form.get('name') ?? '') }), 'Saved.');
+  const t = await getMessages(accountMessages);
+  return attempt(() => updateProfile(getDb(), user.id, { name: String(form.get('name') ?? '') }), t.saved);
 }
 
 export async function changePasswordAction(_: AccountState, form: FormData): Promise<AccountState> {
   const { user, sessionId } = await requireSession();
+  const t = await getMessages(accountMessages);
   const result = await attempt(
     () => changePassword(getDb(), user.id, String(form.get('current') ?? ''), String(form.get('password') ?? ''), sessionId),
-    'Password changed. Other devices were signed out.',
+    t.passwordChanged,
   );
   if (result.success) await record({ action: 'password.changed', userId: user.id });
   return result;
@@ -37,20 +41,23 @@ export async function changePasswordAction(_: AccountState, form: FormData): Pro
 
 export async function setNotifyFailuresAction(enabled: boolean): Promise<AccountState> {
   const { user } = await requireSession();
-  return attempt(() => updateProfile(getDb(), user.id, { notifyFailures: enabled }), enabled ? 'You will get an email when a post fails.' : 'No more failure emails.');
+  const t = await getMessages(accountMessages);
+  return attempt(() => updateProfile(getDb(), user.id, { notifyFailures: enabled }), enabled ? t.notifyOn : t.notifyOff);
 }
 
 export async function resendVerificationAction(): Promise<AccountState> {
   const { user } = await requireSession();
-  if (user.emailVerifiedAt) return { success: 'Your email address is already confirmed.' };
+  const locale = await getLocale();
+  const t = accountMessages[locale];
+  if (user.emailVerifiedAt) return { success: t.alreadyConfirmed };
   const db = getDb();
   const limit = await hitRateLimit(db, rateLimitKey('verify:user', user.id), limits.emailAddress);
-  if (!limit.allowed) return { error: `We already sent a few emails. Please try again ${retryIn(limit.retryAfterMs)}.` };
+  if (!limit.allowed) return { error: t.tooManyEmails(retryIn(limit.retryAfterMs, locale)) };
   try {
-    await sendVerificationEmail(db, user, appUrl);
+    await sendVerificationEmail(db, user, appUrl, locale);
   } catch (error) {
     console.error('verification email failed', error);
-    return { error: 'The email could not be sent. Please try again later.' };
+    return { error: t.emailFailed };
   }
-  return { success: `Sent. Check ${user.email} for the link.` };
+  return { success: t.confirmationSent(user.email) };
 }

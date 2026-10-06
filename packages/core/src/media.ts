@@ -3,9 +3,15 @@ import { and, eq, inArray, sql } from 'drizzle-orm';
 import { media, type Database, type Media, type PostMedia } from '@postwerk/db';
 import { formatBytes, type MediaItem, type PublishContext } from '@postwerk/providers';
 import { getMediaStorage, mediaTypes, type MediaStorage, type MediaType } from './storage';
+import { LocalizedError } from './i18n';
+import { mediaMessages } from './messages';
 
 /** Something is wrong with an upload; the message is meant for the user. */
-export class MediaError extends Error {}
+export class MediaError extends LocalizedError {
+  constructor(pick: (m: (typeof mediaMessages)['en']) => string) {
+    super((locale) => pick(mediaMessages[locale]));
+  }
+}
 
 type Env = Record<string, string | undefined>;
 
@@ -42,19 +48,19 @@ function checkedUpload(body: ReadableStream<Uint8Array>, kind: 'image' | 'video'
     new TransformStream<Uint8Array, Uint8Array>({
       transform(chunk, controller) {
         received += chunk.byteLength;
-        if (received > size) throw new MediaError('The file is larger than announced.');
+        if (received > size) throw new MediaError((m) => m.largerThanAnnounced);
         if (!sniffed) {
           head = new Uint8Array([...head, ...chunk.subarray(0, SNIFF_BYTES)]);
           if (head.length >= SNIFF_BYTES || received === size) {
             const type = sniffMediaType(head);
-            if (!type || mediaTypes[type].kind !== kind) throw new MediaError('This file is not a supported image or video.');
+            if (!type || mediaTypes[type].kind !== kind) throw new MediaError((m) => m.notMedia);
             sniffed = true;
           }
         }
         controller.enqueue(chunk);
       },
       flush() {
-        if (received !== size) throw new MediaError('The upload was interrupted. Please try again.');
+        if (received !== size) throw new MediaError((m) => m.interrupted);
       },
     }),
   );
@@ -68,10 +74,10 @@ export async function storeUpload(
 ): Promise<Media> {
   const contentType = input.contentType.split(';')[0]!.trim().toLowerCase();
   const type = mediaTypes[contentType as MediaType];
-  if (!type) throw new MediaError('Upload JPEG, PNG, GIF or WebP images, or MP4, MOV or WebM videos.');
-  if (!Number.isInteger(input.size) || input.size <= 0) throw new MediaError('The file is empty.');
+  if (!type) throw new MediaError((m) => m.unsupportedType);
+  if (!Number.isInteger(input.size) || input.size <= 0) throw new MediaError((m) => m.empty);
   const limit = uploadLimits()[type.kind];
-  if (input.size > limit) throw new MediaError(`${type.kind === 'image' ? 'Images' : 'Videos'} can be up to ${formatBytes(limit)}.`);
+  if (input.size > limit) throw new MediaError((m) => m.tooLarge({ kind: type.kind, limit: formatBytes(limit) }));
 
   const key = `${input.workspaceId}/${randomUUID()}.${type.ext}`;
   try {

@@ -4,18 +4,26 @@ import { getDb } from '@postwerk/db';
 import { LocalTime } from '@/components/local-time';
 import { describeActivity, isWarning } from '@/lib/activity';
 import { toActivity } from '@/lib/activity-server';
+import { getLocale, getMessages } from '@/lib/i18n-server';
 import { requireSession } from '@/lib/session';
+import { activityMessages } from '@/messages/activity';
+import { commonMessages } from '@/messages/common';
 
-export const metadata = { title: 'Activity · Postwerk' };
+export async function generateMetadata() {
+  const [t, common] = await Promise.all([getMessages(activityMessages), getMessages(commonMessages)]);
+  return { title: common.title(t.pageTitle) };
+}
 
 const PAGE = 50;
 
 export default async function ActivityPage({ searchParams }: { searchParams: Promise<Record<string, string | undefined>> }) {
   const { workspace, role } = await requireSession();
+  const locale = await getLocale();
+  const t = activityMessages[locale];
   if (role === 'editor') {
     return (
       <div className="card">
-        <p className="muted">Only workspace owners and admins can see the activity log.</p>
+        <p className="muted">{t.editorsOnly}</p>
       </div>
     );
   }
@@ -28,18 +36,18 @@ export default async function ActivityPage({ searchParams }: { searchParams: Pro
   return (
     <div className="stack-lg">
       <div className="row">
-        <h1 className="grow">Activity</h1>
-        {before && <Link href="/activity" className="button secondary">Newest</Link>}
+        <h1 className="grow">{t.pageTitle}</h1>
+        {before && <Link href="/activity" className="button secondary">{t.newest}</Link>}
       </div>
       <div className="card">
         {items.length === 0 ? (
-          <p className="muted">Nothing {before ? 'older' : 'yet'}.</p>
+          <p className="muted">{t.nothing(Boolean(before))}</p>
         ) : (
           <ul className="list activity-table">
             {items.map((item) => (
               <li key={item.id} className="row">
                 <span className={isWarning(item) ? 'grow activity-warn' : 'grow'}>
-                  <span>{describeActivity(item)}</span>
+                  <span>{describeActivity(item, locale)}</span>
                 </span>
                 {item.ip && <small className="muted">{item.ip}</small>}
                 <small className="muted">
@@ -52,7 +60,7 @@ export default async function ActivityPage({ searchParams }: { searchParams: Pro
       </div>
       {items.length === PAGE && oldest && (
         <Link href={`/activity?before=${encodeURIComponent(oldest)}`} className="button secondary">
-          Older
+          {t.older}
         </Link>
       )}
     </div>

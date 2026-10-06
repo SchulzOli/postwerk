@@ -2,21 +2,30 @@ import { asc, eq } from 'drizzle-orm';
 import { isBlueskyOAuthAvailable, isProviderAvailable, listFlows, listPosts, listWorkspaceAudit, loadCanvasPositions, needsEmailVerification } from '@postwerk/core';
 import { builtinThemes, defaultCanvas } from '@postwerk/core/theme';
 import { getDb, socialAccounts } from '@postwerk/db';
-import { getProvider, providerInfos } from '@postwerk/providers';
+import { getProvider, localizeFields, localizeInfo, providerInfos } from '@postwerk/providers';
 import { World, type WorldData } from '@/components/world/world';
 import { toActivity } from '@/lib/activity-server';
 import { loadCalendarAroundNow } from '@/lib/calendar-server';
 import { appUrl } from '@/lib/env';
 import { getAppearance } from '@/lib/appearance';
+import { getLocale, getMessages } from '@/lib/i18n-server';
 import { requireSession } from '@/lib/session';
 import { loadTeam } from '@/lib/team';
+import { canvasMessages } from '@/messages/canvas';
+import { commonMessages } from '@/messages/common';
+import { networksMessages } from '@/messages/networks';
 
-export const metadata = { title: 'Canvas · Postwerk' };
+export async function generateMetadata() {
+  const common = await getMessages(commonMessages);
+  return { title: common.title(common.nav.canvas) };
+}
 
 export default async function CanvasPage({ searchParams }: { searchParams: Promise<Record<string, string | undefined>> }) {
   const session = await requireSession();
   const { user, workspace, role } = session;
   const { connected, error, notice } = await searchParams;
+  const locale = await getLocale();
+  const [t, networksText] = await Promise.all([getMessages(canvasMessages), getMessages(networksMessages)]);
   const db = getDb();
   const canManage = role !== 'editor';
   const [accounts, flows, posts, positions, appearance, activity, team, calendar] = await Promise.all([
@@ -46,13 +55,13 @@ export default async function CanvasPage({ searchParams }: { searchParams: Promi
       .map((info) => {
         const { connector } = getProvider(info.id);
         return {
-          info,
+          info: localizeInfo(info, locale),
           available: isProviderAvailable(info.id),
           connector:
             connector.kind === 'form'
-              ? { kind: 'form' as const, fields: connector.fields }
+              ? { kind: 'form' as const, fields: localizeFields(info.id, connector.fields, locale) }
               : connector.kind === 'atproto'
-                ? { kind: 'atproto' as const, fields: connector.fields, oauth: isBlueskyOAuthAvailable(appUrl) }
+                ? { kind: 'atproto' as const, fields: localizeFields(info.id, connector.fields, locale), oauth: isBlueskyOAuthAvailable(appUrl) }
                 : { kind: connector.kind },
         };
       }),
@@ -84,13 +93,13 @@ export default async function CanvasPage({ searchParams }: { searchParams: Promi
     activity: activity?.map(toActivity) ?? null,
     appearance: { mode: appearance.mode, themeId: appearance.theme?.id ?? null, canvas: appearance.theme?.canvas ?? defaultCanvas },
     notice: connected
-      ? { kind: 'success', text: `Connected ${connected}.` }
+      ? { kind: 'success', text: networksText.connectedNotice(connected) }
       : error
         ? { kind: 'error', text: error }
         : notice === 'verified'
-          ? { kind: 'success', text: 'Thanks, your email address is confirmed.' }
+          ? { kind: 'success', text: t.verified }
           : notice === 'verify-expired'
-            ? { kind: 'error', text: 'That confirmation link has expired. Send a new one from your account settings.' }
+            ? { kind: 'error', text: t.verifyExpired }
             : null,
   };
   // A different workspace is a different world: remount instead of merging.

@@ -49,6 +49,8 @@ export const users = pgTable('users', {
   emailVerifiedAt: timestamp('email_verified_at', { withTimezone: true }),
   /** Email the user when one of their posts fails. */
   notifyFailures: boolean('notify_failures').notNull().default(true),
+  /** UI and email language ("en", "de"); null follows the browser. */
+  locale: text('locale'),
   createdAt: createdAt(),
 });
 

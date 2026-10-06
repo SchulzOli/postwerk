@@ -64,9 +64,11 @@ async function profileOf(did: string, handle: string | undefined): Promise<Accou
 }
 
 export async function connect(credentials: BlueskyAppPassword): Promise<ConnectedAccount<BlueskyAppPassword>> {
-  if (!credentials.identifier) throw new ProviderError('Please enter your Bluesky handle.');
+  if (!credentials.identifier) throw new ProviderError('Please enter your Bluesky handle.', { de: 'Bitte gib dein Bluesky-Handle ein.' });
   if (!isAppPassword(credentials.appPassword)) {
-    throw new ProviderError('Please use an app password (Settings → Privacy and security → App passwords), not your main password.');
+    throw new ProviderError('Please use an app password (Settings → Privacy and security → App passwords), not your main password.', {
+      de: 'Bitte verwende ein App-Passwort (Einstellungen → Datenschutz und Sicherheit → App-Passwörter), nicht dein Hauptpasswort.',
+    });
   }
   const agent = await signIn(credentials);
   const { did, handle } = agent.session!;

@@ -1,4 +1,6 @@
+import type { Locale } from '@postwerk/core/i18n';
 import type { PostMedia } from '@postwerk/db/types';
+import { uploadMessages } from '@/messages/upload';
 
 const VIDEO_EXTENSION = /\.(mp4|mov|m4v|webm)(?:[?#]|$)/i;
 
@@ -18,16 +20,17 @@ function isInternalHost(hostname: string): boolean {
 }
 
 /** Checks media added by link instead of upload: it must be a public https URL. */
-export function checkMediaUrl(input: string): { media: Pick<PostMedia, 'url' | 'kind'> } | { error: string } {
+export function checkMediaUrl(input: string, locale: Locale = 'en'): { media: Pick<PostMedia, 'url' | 'kind'> } | { error: string } {
+  const m = uploadMessages[locale];
   const url = input.trim();
   let parsed: URL;
   try {
     parsed = new URL(url);
   } catch {
-    return { error: `"${url}" is not a valid link.` };
+    return { error: m.invalidLink(url) };
   }
-  if (parsed.protocol !== 'https:') return { error: 'Links to media must start with https://.' };
-  if (isInternalHost(parsed.hostname)) return { error: 'Media links must point to a public server.' };
+  if (parsed.protocol !== 'https:') return { error: m.httpsOnly };
+  if (isInternalHost(parsed.hostname)) return { error: m.publicOnly };
   return { media: { url, kind: VIDEO_EXTENSION.test(parsed.pathname) ? 'video' : 'image' } };
 }
 

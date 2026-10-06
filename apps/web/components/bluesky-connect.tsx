@@ -2,16 +2,19 @@
 
 import type { FormField } from '@postwerk/providers/catalog';
 import { connectBluesky, connectWithForm } from '@/app/(app)/accounts/actions';
+import { useMessages } from '@/lib/i18n';
+import { networksMessages } from '@/messages/networks';
 import { ConnectForm } from './connect-form';
 
 /** Sign in on the user's Bluesky server (OAuth), with app passwords as the fallback. */
 export function BlueskyConnect({ fields, oauth }: { fields: FormField[]; oauth: boolean }) {
-  const appPassword = <ConnectForm action={connectWithForm.bind(null, 'bluesky')} submitLabel="Connect with app password" fields={fields} secondary={oauth} />;
+  const t = useMessages(networksMessages);
+  const appPassword = <ConnectForm action={connectWithForm.bind(null, 'bluesky')} submitLabel={t.bluesky.connectWithAppPassword} fields={fields} secondary={oauth} />;
   if (!oauth) {
     return (
       <div className="stack-sm">
         {appPassword}
-        <small className="muted">Signing in on Bluesky itself needs Postwerk on an https address (APP_URL).</small>
+        <small className="muted">{t.bluesky.needsHttps}</small>
       </div>
     );
   }
@@ -19,11 +22,11 @@ export function BlueskyConnect({ fields, oauth }: { fields: FormField[]; oauth: 
     <div className="stack">
       <ConnectForm
         action={connectBluesky}
-        submitLabel="Continue to Bluesky"
-        fields={[{ name: 'handle', label: 'Handle', placeholder: 'you.bsky.social', hint: 'You sign in on your Bluesky server; Postwerk never sees your password.' }]}
+        submitLabel={t.continueTo('Bluesky')}
+        fields={[{ name: 'handle', label: fields.find((field) => field.name === 'handle')?.label ?? 'Handle', placeholder: t.bluesky.placeholder, hint: t.bluesky.handleHint }]}
       />
       <details className="stack-sm">
-        <summary className="small-link">Use an app password instead</summary>
+        <summary className="small-link">{t.bluesky.appPassword}</summary>
         {appPassword}
       </details>
     </div>

@@ -4,7 +4,9 @@ import { getDb } from '@postwerk/db';
 import { getProvider, isProviderId, Mastodon, ProviderError, type ConnectedAccount } from '@postwerk/providers';
 import { record } from '@/lib/audit';
 import { appUrl, redirectUriFor } from '@/lib/env';
+import { getMessages, localizedError } from '@/lib/i18n-server';
 import { getSession } from '@/lib/session';
+import { networksMessages } from '@/messages/networks';
 
 /** Back to the network on the canvas, with a notice. */
 function back(params: Record<string, string>, provider?: string) {
@@ -24,15 +26,16 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
   if (!session) return NextResponse.redirect(`${appUrl}/login`);
 
   const provider = getProvider(providerId);
+  const t = await getMessages(networksMessages);
   const { searchParams } = request.nextUrl;
   const code = searchParams.get('code');
   const stateParam = searchParams.get('state');
-  if (searchParams.get('error')) return back({ error: `${provider.name} authorization was cancelled.` }, providerId);
-  if (!code || !stateParam) return back({ error: `${provider.name} did not return an authorization code.` }, providerId);
+  if (searchParams.get('error')) return back({ error: t.cancelled(provider.name) }, providerId);
+  if (!code || !stateParam) return back({ error: t.noCode(provider.name) }, providerId);
 
   const db = getDb();
   const state = await consumeOAuthState(db, stateParam, session.user.id);
-  if (!state || state.provider !== providerId) return back({ error: 'This sign-in link has expired. Please try again.' }, providerId);
+  if (!state || state.provider !== providerId) return back({ error: t.linkExpired }, providerId);
 
   try {
     const redirectUri = redirectUriFor(providerId);
@@ -47,7 +50,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       accounts = [await finishBlueskyLogin(db, state.data, { code, iss: searchParams.get('iss') })];
     } else {
       const client = oauthClientFor(providerId);
-      if (provider.connector.kind !== 'oauth2' || !client) return back({ error: `${provider.name} is not set up on this server.` }, providerId);
+      if (provider.connector.kind !== 'oauth2' || !client) return back({ error: t.notSetUp(provider.name) }, providerId);
       accounts = await provider.connector.exchange(client, { code, redirectUri, codeVerifier: state.data.codeVerifier });
     }
     await saveConnectedAccounts(db, state.workspaceId, providerId, accounts);
@@ -57,6 +60,6 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     return back({ connected: accounts.map((account) => account.profile.handle).join(', ') }, providerId);
   } catch (error) {
     if (!(error instanceof ProviderError)) console.error(error);
-    return back({ error: error instanceof ProviderError ? error.message : `Connecting ${provider.name} failed.` }, providerId);
+    return back({ error: error instanceof ProviderError ? await localizedError(error) : t.failed(provider.name) }, providerId);
   }
 }

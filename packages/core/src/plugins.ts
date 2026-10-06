@@ -46,7 +46,7 @@ export async function installBuiltinPlugins(db: Writer, workspaceId: string): Pr
 /** (Re)installs one built-in plugin. */
 export async function installBuiltinPlugin(db: Database, workspaceId: string, id: string): Promise<ThemeManifest> {
   const theme = builtinTheme(id);
-  if (!theme) throw new ThemeError('This plugin does not ship with Postwerk.');
+  if (!theme) throw new ThemeError((m) => m.notBuiltin);
   await db.insert(plugins).values({ workspaceId, pluginId: id, kind: 'theme', builtin: true }).onConflictDoNothing();
   return theme;
 }
@@ -58,7 +58,7 @@ export async function installBuiltinPlugin(db: Database, workspaceId: string, id
 export async function installPlugin(db: Database, workspaceId: string, input: unknown): Promise<ThemeManifest> {
   const manifest = parseThemeManifest(input);
   if (builtinTheme(manifest.id)) {
-    throw new ThemeError(`“${manifest.id}” is the id of a built-in theme. Give your theme its own id, like "${manifest.id}-custom".`);
+    throw new ThemeError((m) => m.builtinId(manifest.id));
   }
   await db
     .insert(plugins)

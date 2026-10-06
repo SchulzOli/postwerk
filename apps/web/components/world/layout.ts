@@ -5,7 +5,7 @@ import type { AccountData, FlowData, NetworkData, PluginData, WorldData } from '
 export type RegionKey = 'networks' | 'accounts' | 'flows' | 'compose' | 'calendar' | 'posts' | 'plugins' | 'team';
 
 export type WorldNode =
-  | Node<{ region: RegionKey; title: string; subtitle: string }, 'region'>
+  | Node<{ region: RegionKey }, 'region'>
   | Node<{ network: NetworkData; accountCount: number }, 'network'>
   | Node<{ account: AccountData }, 'account'>
   | Node<{ flowId: string; name: string }, 'flow'>
@@ -34,16 +34,8 @@ export const ids = {
   members: 'panel:members',
 };
 
-export const regionInfo: Record<RegionKey, { title: string; subtitle: string }> = {
-  networks: { title: 'Networks', subtitle: 'Every network Postwerk can publish to, and what it needs' },
-  accounts: { title: 'Accounts', subtitle: 'Connected profiles, pages, boards and channels' },
-  flows: { title: 'Flows', subtitle: 'Reusable publishing pipelines: adapt, delay and fan out' },
-  compose: { title: 'Compose', subtitle: 'Write once, publish everywhere' },
-  calendar: { title: 'Calendar', subtitle: 'When posts go out — drag one to move it' },
-  posts: { title: 'Posts', subtitle: 'What went out and what is coming' },
-  plugins: { title: 'Plugins', subtitle: 'Themes for how Postwerk looks — each one with a light and a dark mode' },
-  team: { title: 'Team', subtitle: 'Who works here and what happened' },
-};
+/** Regions in toolbar order; their titles and subtitles are in `canvasMessages.regions`. */
+export const regionKeys: RegionKey[] = ['networks', 'accounts', 'flows', 'compose', 'calendar', 'posts', 'plugins', 'team'];
 
 const NETWORK = { width: 240, height: 112, gap: 20, columns: 4 };
 const ACCOUNT = { width: 250, height: 76, gap: 16, columns: 2 };
@@ -151,7 +143,7 @@ export function buildWorld(data: WorldData, saved: Record<string, { x: number; y
     id: ids.region(key),
     type: 'region',
     position: place(ids.region(key), position),
-    data: { region: key, ...regionInfo[key] },
+    data: { region: key },
     style: { width: size.width, height: size.height },
     deletable: false,
     dragHandle: '.region-drag',
