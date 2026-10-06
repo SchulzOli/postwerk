@@ -1,5 +1,7 @@
 # Postwerk
 
+[![CI](https://github.com/SchulzOli/postwerk/actions/workflows/ci.yml/badge.svg)](https://github.com/SchulzOli/postwerk/actions/workflows/ci.yml) [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+
 Self-hosted social media scheduling. Connect your accounts with one click, write a post once, publish it everywhere — now or later.
 
 - **One big canvas.** Networks, accounts, flows, the composer and your posts live in a single zoomable 2D world. Drag things where you like, and link to any node or view (`/canvas#n=network:instagram`, `/canvas#@x,y,zoom`).
@@ -95,3 +97,11 @@ The UI is in English and German. Texts live in typed catalogs — `apps/web/mess
 | `npm run build` | Production builds of web and worker |
 | `npm run db:generate` | Create a migration after changing `packages/db/src/schema.ts` |
 | `npm run db:migrate` | Apply migrations |
+
+## Contributing
+
+Contributions are welcome — bug reports, ideas, translations and code. Read [CONTRIBUTING.md](CONTRIBUTING.md) for the setup, checks and conventions, and report security problems privately as described in [SECURITY.md](SECURITY.md). Everyone taking part follows the [code of conduct](CODE_OF_CONDUCT.md).
+
+## License
+
+Postwerk is open source under the [MIT License](LICENSE). Its dependencies have their own licenses, almost all MIT, Apache-2.0, ISC or BSD; the image library `sharp` that Next.js installs includes `libvips` under LGPL-3.0.
