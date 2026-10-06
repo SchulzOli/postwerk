@@ -41,9 +41,11 @@ export function RegionNode({ data }: Props<'region'>) {
 export function NetworkNode({ data, selected }: Props<'network'>) {
   const t = useMessages(networksMessages);
   const locale = useLocale();
-  const { info, available, bridge } = data.network;
-  const status = data.accountCount > 0 ? 'connected' : available ? 'ready' : 'setup';
-  const label = { connected: t.statusConnected(data.accountCount), ready: bridge ? t.statusReadyVia(bridge) : t.statusReady, setup: t.statusSetup }[status];
+  const { info, available, bridge, off } = data.network;
+  const status = off ? 'setup' : data.accountCount > 0 ? 'connected' : available ? 'ready' : 'setup';
+  const label = off
+    ? t.statusOff
+    : { connected: t.statusConnected(data.accountCount), ready: bridge ? t.statusReadyVia(bridge) : t.statusReady, setup: t.statusSetup }[status];
   return (
     <div className={`world-card network-node ${selected ? 'is-selected' : ''}`}>
       <div className="row-tight">

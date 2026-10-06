@@ -44,18 +44,56 @@ export const validationMessages = defineMessages({
 interface InfoText {
   description: string;
   options?: Record<string, { label?: string; hint?: string; choices?: Record<string, string> }>;
+  /** Setup notes for server admins: own accounts vs. other people's. */
+  setup?: { ownUse: string; review: string };
 }
 
 /** German texts of the network catalog (descriptions and per-post fields). */
 const germanInfo: Partial<Record<ProviderId, InfoText>> = {
   mastodon: { description: 'Gib deinen Server ein und erlaube den Zugriff dort. Keine Entwickler-Einrichtung nötig.' },
   bluesky: { description: 'Melde dich mit deinem Bluesky-Konto an oder nutze ein App-Passwort.' },
-  facebook: { description: 'Poste auf die Facebook-Seiten, die du verwaltest.' },
-  instagram: { description: 'Poste Fotos, Karussells und Reels auf professionelle Instagram-Konten.' },
-  threads: { description: 'Poste Texte, Fotos und Videos auf Threads.' },
-  linkedin: { description: 'Poste auf dein persönliches LinkedIn-Profil.' },
-  linkedin_page: { description: 'Poste auf LinkedIn-Unternehmensseiten, die du verwaltest.' },
-  x: { description: 'Poste auf X (früher Twitter).' },
+  facebook: {
+    description: 'Poste auf die Facebook-Seiten, die du verwaltest.',
+    setup: {
+      ownUse: 'Eine Meta-App. Solange sie nur Seiten von Personen mit einer Rolle in der App bedient (Admin, Entwickler oder Tester), reicht Standard Access: kein App-Review.',
+      review: 'Unternehmensverifizierung und App-Review für pages_show_list, pages_manage_posts und pages_read_engagement.',
+    },
+  },
+  instagram: {
+    description: 'Poste Fotos, Karussells und Reels auf professionelle Instagram-Konten.',
+    setup: {
+      ownUse: 'Standard Access reicht, solange die App nur professionelle Konten bedient, die du verwaltest und die eine Rolle in der App haben (Instagram-Tester): kein App-Review.',
+      review: 'App-Review für instagram_business_basic und instagram_business_content_publish; Unternehmensverifizierung für Advanced Access.',
+    },
+  },
+  threads: {
+    description: 'Poste Texte, Fotos und Videos auf Threads.',
+    setup: {
+      ownUse: 'Threads-Konten, die als Tester der App eingetragen sind, können sich ohne App-Review verbinden.',
+      review: 'App-Review für threads_basic und threads_content_publish.',
+    },
+  },
+  linkedin: {
+    description: 'Poste auf dein persönliches LinkedIn-Profil.',
+    setup: {
+      ownUse: 'Self-Service: Füge der App die Produkte „Share on LinkedIn“ und „Sign In with LinkedIn using OpenID Connect“ hinzu; sie funktionieren sofort. Die App muss mit einer LinkedIn-Seite verknüpft sein.',
+      review: 'Nichts weiter: Dieselben Self-Service-Produkte funktionieren für alle Mitglieder.',
+    },
+  },
+  linkedin_page: {
+    description: 'Poste auf LinkedIn-Unternehmensseiten, die du verwaltest.',
+    setup: {
+      ownUse: 'Auch für eigene Seiten: die Community Management API, die LinkedIn auf Antrag nach einer Prüfung vergibt, nur an eingetragene Unternehmen.',
+      review: 'Derselbe Zugang zur Community Management API.',
+    },
+  },
+  x: {
+    description: 'Poste auf X (früher Twitter).',
+    setup: {
+      ownUse: 'Kein Review, aber die X-API kostet pro Nutzung. Eine App mit OAuth 2.0 (tweet.read, tweet.write, users.read, media.write, offline.access).',
+      review: 'Nichts weiter: dieselbe kostenpflichtige API.',
+    },
+  },
   tiktok: {
     description: 'Poste Videos und Foto-Karussells auf TikTok.',
     options: {
@@ -65,6 +103,10 @@ const germanInfo: Partial<Record<ProviderId, InfoText>> = {
         choices: { PUBLIC_TO_EVERYONE: 'Alle', MUTUAL_FOLLOW_FRIENDS: 'Freunde', FOLLOWER_OF_CREATOR: 'Follower', SELF_ONLY: 'Nur ich' },
       },
     },
+    setup: {
+      ownUse: 'Nicht möglich: TikTok genehmigt keine Tools, die nur in eigene Konten oder die des eigenen Teams posten, und ungeprüfte Apps posten nur privat. Nutze die Bridge.',
+      review: 'Audit der Content Posting API (Direct Post); Medien müssen von einer verifizierten Domain kommen, und der Composer bräuchte zuerst TikToks vorgeschriebene Veröffentlichungsansicht.',
+    },
   },
   youtube: {
     description: 'Lade Videos und Shorts auf deinen YouTube-Kanal hoch.',
@@ -72,22 +114,40 @@ const germanInfo: Partial<Record<ProviderId, InfoText>> = {
       title: { label: 'Videotitel' },
       privacy: { label: 'Sichtbarkeit', choices: { public: 'Öffentlich', unlisted: 'Nicht gelistet', private: 'Privat' } },
     },
+    setup: {
+      ownUse: 'Auch für den eigenen Kanal bleiben Uploads privat, bis das Google-Cloud-Projekt YouTubes API-Audit bestanden hat. Im Modus „Testing“ laufen Anmeldungen nach 7 Tagen ab.',
+      review: 'Das API-Audit und dazu die Google-OAuth-Verifizierung für den Scope youtube.upload.',
+    },
   },
   pinterest: {
     description: 'Erstelle Pins auf deinen Pinnwänden. Jede Pinnwand wird als eigenes Konto verbunden.',
     options: { title: { label: 'Pin-Titel' }, link: { label: 'Ziel-Link', hint: 'Wohin der Pin beim Anklicken führt.' } },
+    setup: {
+      ownUse: 'Testzugang (Trial) gibt es mit der App, er kann aber auf Pinterests Sandbox beschränkt sein; Standard Access braucht eine Prüfung mit Demo-Video.',
+      review: 'Standard Access (Prüfung mit Demo-Video).',
+    },
   },
   reddit: {
     description: 'Reiche Textbeiträge in Subreddits ein.',
     options: { subreddit: { hint: 'Ohne r/, z. B. „physiotherapy“.' }, title: { label: 'Titel' } },
+    setup: {
+      ownUse: 'Beantrage API-Zugang: Seit November 2025 gibt Reddit neue Apps nach seiner Responsible Builder Policy von Hand frei.',
+      review: 'Dieselbe Freigabe, mit Beschreibung deines Dienstes.',
+    },
   },
-  google_business: { description: 'Veröffentliche Neuigkeiten zu deinem Unternehmen in der Google-Suche und in Maps.' },
+  google_business: {
+    description: 'Veröffentliche Neuigkeiten zu deinem Unternehmen in der Google-Suche und in Maps.',
+    setup: {
+      ownUse: 'Beantrage den Zugang zu den Business Profile APIs über Googles Formular (Freigabe dauert Tage bis Wochen). Im Modus „Testing“ laufen Anmeldungen nach 7 Tagen ab.',
+      review: 'Derselbe Zugang und dazu die Google-OAuth-Verifizierung.',
+    },
+  },
   telegram: { description: 'Poste über deinen eigenen Bot in einen Kanal oder eine Gruppe.' },
   discord: { description: 'Poste über einen Webhook in einen Discord-Kanal.' },
   sandbox: { description: 'Ein Test-Netzwerk zum Ausprobieren. Schreib #fail oder #flaky in einen Beitrag, um Fehler zu simulieren.' },
 };
 
-/** A network's catalog entry with its texts in a language (setup notes for admins stay English). */
+/** A network's catalog entry with its texts in a language. */
 export function localizeInfo<T extends ProviderInfo>(info: T, locale: Locale): T {
   const text = locale === 'de' ? germanInfo[info.id] : undefined;
   if (!text) return info;
@@ -101,7 +161,12 @@ export function localizeInfo<T extends ProviderInfo>(info: T, locale: Locale): T
       choices: field.choices?.map((choice) => ({ ...choice, label: translated.choices?.[choice.value] ?? choice.label })),
     };
   };
-  return { ...info, description: text.description, capabilities: { ...info.capabilities, options: info.capabilities.options.map(option) } };
+  return {
+    ...info,
+    description: text.description,
+    capabilities: { ...info.capabilities, options: info.capabilities.options.map(option) },
+    setup: text.setup ? { ...info.setup, ...text.setup } : info.setup,
+  };
 }
 
 /** German texts of the connect forms (field name → texts). */

@@ -6,7 +6,6 @@ import {
   createOAuthState,
   disconnectAccount as disconnect,
   getOrRegisterMastodonApp,
-  isProviderAvailable,
   networkRoute,
   oauthClientFor,
   saveConnectedAccounts,
@@ -33,6 +32,7 @@ async function message(error: unknown): Promise<string> {
 
 export async function connectMastodon(_: ConnectState, form: FormData): Promise<ConnectState> {
   const { user, workspace } = await requireAdmin();
+  if (networkRoute('mastodon') !== 'native') return { error: (await getMessages(networksMessages)).notAvailable };
   let target: string;
   try {
     const instanceUrl = Mastodon.normalizeInstanceUrl(String(form.get('instance') ?? ''));
@@ -50,6 +50,7 @@ export async function connectMastodon(_: ConnectState, form: FormData): Promise<
 /** Sends the browser to the user's Bluesky server to sign in (AT Protocol OAuth). */
 export async function connectBluesky(_: ConnectState, form: FormData): Promise<ConnectState> {
   const { user, workspace } = await requireAdmin();
+  if (networkRoute('bluesky') !== 'native') return { error: (await getMessages(networksMessages)).notAvailable };
   const handle = String(form.get('handle') ?? '');
   let target: string;
   try {
@@ -64,7 +65,7 @@ export async function connectBluesky(_: ConnectState, form: FormData): Promise<C
 export async function connectWithForm(providerId: string, _: ConnectState, form: FormData): Promise<ConnectState> {
   const { user, workspace } = await requireAdmin();
   const t = await getMessages(networksMessages);
-  if (!isProviderId(providerId) || !isProviderAvailable(providerId)) return { error: t.notAvailable };
+  if (!isProviderId(providerId) || networkRoute(providerId) !== 'native') return { error: t.notAvailable };
   const provider = getProvider(providerId);
   if (provider.connector.kind !== 'form' && provider.connector.kind !== 'atproto') return { error: t.notForm };
 
@@ -94,7 +95,7 @@ export async function startOAuth(providerId: string) {
   if (!isProviderId(providerId)) redirect('/accounts');
   const provider = getProvider(providerId);
   const client = oauthClientFor(providerId);
-  if (provider.connector.kind !== 'oauth2' || !client) {
+  if (provider.connector.kind !== 'oauth2' || !client || networkRoute(providerId) !== 'native') {
     const t = await getMessages(networksMessages);
     redirect(`/canvas?${new URLSearchParams({ error: t.notSetUpYet(provider.name) })}#n=network:${providerId}`);
   }

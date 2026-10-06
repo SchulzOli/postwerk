@@ -24,7 +24,7 @@ export const catalog: Record<ProviderId, ProviderInfo> = {
       media: { maxImages: 4, maxVideos: 1, required: false, mixed: false, altText: true, maxImageBytes: 16 * MB, maxVideoBytes: 99 * MB },
       options: [],
     },
-    setup: { operator: 'none', docsUrl: 'https://docs.joinmastodon.org/methods/statuses/#create' },
+    setup: { operator: 'none', docsUrl: 'https://docs.joinmastodon.org/methods/statuses/#create', guide: 'networks/open#mastodon' },
   },
 
   bluesky: {
@@ -37,7 +37,7 @@ export const catalog: Record<ProviderId, ProviderInfo> = {
       media: { maxImages: 4, maxVideos: 0, required: false, mixed: false, altText: true, maxImageBytes: 1_000_000 },
       options: [],
     },
-    setup: { operator: 'none', docsUrl: 'https://docs.bsky.app/docs/advanced-guides/posts' },
+    setup: { operator: 'none', docsUrl: 'https://docs.bsky.app/docs/advanced-guides/posts', guide: 'networks/open#bluesky' },
     privacyUrl: 'https://bsky.social/about/support/privacy-policy',
   },
 
@@ -54,8 +54,10 @@ export const catalog: Record<ProviderId, ProviderInfo> = {
     setup: {
       operator: 'operator-app',
       envPrefix: 'FACEBOOK',
-      review: 'Meta business verification and App Review for pages_show_list, pages_manage_posts, pages_read_engagement.',
+      ownUse: 'One Meta app. While it only serves Pages of people with a role on the app (admin, developer or tester), standard access is enough: no App Review.',
+      review: 'Business verification and App Review for pages_show_list, pages_manage_posts and pages_read_engagement.',
       docsUrl: 'https://developers.facebook.com/docs/pages-api/posts',
+      guide: 'networks/meta#facebook',
     },
     privacyUrl: 'https://www.facebook.com/privacy/policy',
   },
@@ -73,8 +75,10 @@ export const catalog: Record<ProviderId, ProviderInfo> = {
     setup: {
       operator: 'operator-app',
       envPrefix: 'INSTAGRAM',
-      review: 'Instagram API with Instagram Login: App Review for instagram_business_basic and instagram_business_content_publish; business verification for advanced access.',
+      ownUse: 'Standard access is enough while the app only serves professional accounts you manage that have a role on the app (Instagram tester): no App Review.',
+      review: 'App Review for instagram_business_basic and instagram_business_content_publish; business verification for advanced access.',
       docsUrl: 'https://developers.facebook.com/docs/instagram-platform/content-publishing',
+      guide: 'networks/meta#instagram',
     },
     privacyUrl: 'https://privacycenter.instagram.com/policy',
   },
@@ -92,8 +96,10 @@ export const catalog: Record<ProviderId, ProviderInfo> = {
     setup: {
       operator: 'operator-app',
       envPrefix: 'THREADS',
+      ownUse: 'Threads accounts added as testers of the app can connect without App Review.',
       review: 'App Review for threads_basic and threads_content_publish.',
       docsUrl: 'https://developers.facebook.com/docs/threads/posts',
+      guide: 'networks/meta#threads',
     },
     privacyUrl: 'https://help.instagram.com/515230437301944',
   },
@@ -111,8 +117,10 @@ export const catalog: Record<ProviderId, ProviderInfo> = {
     setup: {
       operator: 'operator-app',
       envPrefix: 'LINKEDIN',
-      review: 'Self-serve: add the "Share on LinkedIn" and "Sign In with LinkedIn using OpenID Connect" products to the app.',
+      ownUse: 'Self-serve: add the products "Share on LinkedIn" and "Sign In with LinkedIn using OpenID Connect" to the app; they work right away. The app must be linked to a LinkedIn Page.',
+      review: 'Nothing more: the same self-serve products work for every member.',
       docsUrl: 'https://learn.microsoft.com/linkedin/consumer/integrations/self-serve/share-on-linkedin',
+      guide: 'networks/linkedin#profile',
     },
     privacyUrl: 'https://www.linkedin.com/legal/privacy-policy',
   },
@@ -130,8 +138,10 @@ export const catalog: Record<ProviderId, ProviderInfo> = {
     setup: {
       operator: 'operator-app',
       envPrefix: 'LINKEDIN',
-      review: 'Community Management API access (partner review; requires a registered legal entity).',
+      ownUse: 'Even for your own Pages: the Community Management API, which LinkedIn grants on request after a review, only to registered legal entities.',
+      review: 'The same Community Management API access.',
       docsUrl: 'https://learn.microsoft.com/linkedin/marketing/community-management/shares/posts-api',
+      guide: 'networks/linkedin#company-pages',
     },
     privacyUrl: 'https://www.linkedin.com/legal/privacy-policy',
   },
@@ -149,8 +159,10 @@ export const catalog: Record<ProviderId, ProviderInfo> = {
     setup: {
       operator: 'operator-app',
       envPrefix: 'X',
-      review: 'Paid API access (pay-per-use). OAuth 2.0 app with tweet.read, tweet.write, users.read, media.write, offline.access.',
+      ownUse: 'No review, but the X API is paid per use. An app with OAuth 2.0 (tweet.read, tweet.write, users.read, media.write, offline.access).',
+      review: 'Nothing more: same paid API.',
       docsUrl: 'https://docs.x.com/x-api/posts/create-post',
+      guide: 'networks/x',
     },
     privacyUrl: 'https://x.com/en/privacy',
   },
@@ -181,8 +193,10 @@ export const catalog: Record<ProviderId, ProviderInfo> = {
     setup: {
       operator: 'operator-app',
       envPrefix: 'TIKTOK',
-      review: 'Content Posting API with Direct Post; audit required before posts can be public. Media URLs must be on a verified domain.',
+      ownUse: 'Not possible: TikTok does not approve tools that post only to your own or your team’s accounts, and unaudited apps can only post privately. Use the bridge.',
+      review: 'Content Posting API audit (Direct Post); media must come from a verified domain, and the composer would need TikTok’s required posting screen first.',
       docsUrl: 'https://developers.tiktok.com/doc/content-posting-api-get-started',
+      guide: 'networks/tiktok',
     },
     privacyUrl: 'https://www.tiktok.com/legal/page/eea/privacy-policy/en',
   },
@@ -213,8 +227,10 @@ export const catalog: Record<ProviderId, ProviderInfo> = {
     setup: {
       operator: 'operator-app',
       envPrefix: 'GOOGLE',
-      review: 'Google OAuth verification for the youtube.upload scope and a quota extension; uploads from unverified projects stay private.',
+      ownUse: 'Even for your own channel, uploads stay private until the Google Cloud project passes YouTube’s API audit. In "Testing" mode, sign-ins expire after 7 days.',
+      review: 'The API audit, plus Google OAuth verification for the youtube.upload scope.',
       docsUrl: 'https://developers.google.com/youtube/v3/guides/uploading_a_video',
+      guide: 'networks/google#youtube',
     },
     privacyUrl: 'https://policies.google.com/privacy',
   },
@@ -235,8 +251,10 @@ export const catalog: Record<ProviderId, ProviderInfo> = {
     setup: {
       operator: 'operator-app',
       envPrefix: 'PINTEREST',
-      review: 'Trial access is granted on app creation; Standard access needs a review.',
+      ownUse: 'Trial access comes with the app but may be limited to Pinterest’s sandbox; standard access needs a review with a demo video.',
+      review: 'Standard access (review with a demo video).',
       docsUrl: 'https://developers.pinterest.com/docs/api/v5/pins-create',
+      guide: 'networks/pinterest',
     },
     privacyUrl: 'https://policy.pinterest.com/en/privacy-policy',
   },
@@ -257,8 +275,10 @@ export const catalog: Record<ProviderId, ProviderInfo> = {
     setup: {
       operator: 'operator-app',
       envPrefix: 'REDDIT',
-      review: 'Manual API approval under Reddit’s Responsible Builder Policy (self-service ended November 2025).',
+      ownUse: 'Request API access: since November 2025 Reddit approves new apps manually under its Responsible Builder Policy.',
+      review: 'The same approval, describing your service.',
       docsUrl: 'https://www.reddit.com/dev/api/#POST_api_submit',
+      guide: 'networks/reddit',
     },
     privacyUrl: 'https://www.reddit.com/policies/privacy-policy',
   },
@@ -276,8 +296,10 @@ export const catalog: Record<ProviderId, ProviderInfo> = {
     setup: {
       operator: 'operator-app',
       envPrefix: 'GOOGLE',
-      review: 'Business Profile API access request form (approval takes days to weeks).',
+      ownUse: 'Request access to the Business Profile APIs with Google’s form (approval takes days to weeks). In "Testing" mode, sign-ins expire after 7 days.',
+      review: 'The same access, plus Google OAuth verification.',
       docsUrl: 'https://developers.google.com/my-business/content/posts-data',
+      guide: 'networks/google#business-profile',
     },
     privacyUrl: 'https://policies.google.com/privacy',
   },
@@ -293,7 +315,7 @@ export const catalog: Record<ProviderId, ProviderInfo> = {
       media: { maxImages: 10, maxVideos: 10, required: false, mixed: true, altText: false, maxImageBytes: 5 * MB, maxVideoBytes: 20 * MB },
       options: [],
     },
-    setup: { operator: 'none', docsUrl: 'https://core.telegram.org/bots/api#sendmessage' },
+    setup: { operator: 'none', docsUrl: 'https://core.telegram.org/bots/api#sendmessage', guide: 'networks/open#telegram' },
     privacyUrl: 'https://telegram.org/privacy',
   },
 
@@ -307,7 +329,7 @@ export const catalog: Record<ProviderId, ProviderInfo> = {
       media: { maxImages: 10, maxVideos: 10, required: false, mixed: true, altText: false },
       options: [],
     },
-    setup: { operator: 'none', docsUrl: 'https://discord.com/developers/docs/resources/webhook#execute-webhook' },
+    setup: { operator: 'none', docsUrl: 'https://discord.com/developers/docs/resources/webhook#execute-webhook', guide: 'networks/open#discord' },
     privacyUrl: 'https://discord.com/privacy',
   },
 
@@ -321,7 +343,7 @@ export const catalog: Record<ProviderId, ProviderInfo> = {
       media: { maxImages: 10, maxVideos: 10, required: false, mixed: true, altText: true },
       options: [],
     },
-    setup: { operator: 'none', docsUrl: 'https://github.com/SchulzOli/postwerk' },
+    setup: { operator: 'none', docsUrl: 'https://github.com/SchulzOli/postwerk', guide: 'getting-started#try-it-with-the-sandbox' },
   },
 };
 
@@ -333,3 +355,9 @@ export function getProviderInfo(id: ProviderId): ProviderInfo {
 
 export type { OptionField, ProviderId, ProviderInfo } from './types';
 export type { FormField } from './types';
+
+/** Where Postwerk's documentation is published (GitHub Pages). */
+export const DOCS_URL = 'https://schulzoli.github.io/postwerk';
+
+/** A network's step-by-step setup guide on the docs site. */
+export const guideUrl = (info: Pick<ProviderInfo, 'setup'>) => `${DOCS_URL}/${info.setup.guide}`;

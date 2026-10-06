@@ -47,6 +47,7 @@ describe('legal pages', () => {
   it('lists the networks people can connect here', () => {
     const ids = (env: Record<string, string>) => offeredNetworks(env).map(({ info, viaBridge }) => `${info.id}${viaBridge ? ' (bridge)' : ''}`);
     expect(ids({ ENABLE_SANDBOX: 'true' })).toEqual(['mastodon', 'bluesky', 'telegram', 'discord']);
+    expect(ids({ HIDE_NETWORKS: 'telegram,discord' })).toEqual(['mastodon', 'bluesky']);
     expect(ids({ ZERNIO_API_KEY: 'zk', ZERNIO_NETWORKS: 'instagram', LINKEDIN_CLIENT_ID: 'id', LINKEDIN_CLIENT_SECRET: 's' })).toEqual([
       'mastodon',
       'bluesky',

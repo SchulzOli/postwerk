@@ -95,6 +95,6 @@ export function offeredNetworks(env: Env = process.env): { info: ProviderInfo; v
   return providerInfos
     .filter((info) => info.id !== 'sandbox')
     .map((info) => ({ info, route: networkRoute(info.id, env) }))
-    .filter(({ route }) => route !== 'unavailable')
+    .filter(({ route }) => route === 'native' || route === 'bridge')
     .map(({ info, route }) => ({ info, viaBridge: route === 'bridge' }));
 }
