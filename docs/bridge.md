@@ -1,6 +1,6 @@
-# The bridge
+# The Zernio bridge
 
-Most networks only accept posts from a developer app they have reviewed (see [PLATFORMS.md](PLATFORMS.md)). Until the server admin has those apps, the **bridge** connects them through an aggregator API that already passed every review. People click "Continue to Instagram", sign in on the aggregator's pages, and the account appears in Postwerk. Posts go out through the aggregator.
+Most networks only accept posts from a developer app they know. The bridge is one of the [three ways to offer a network](networks/index.md): instead of registering your own app, the **bridge** connects the network through an aggregator API that already passed every review. People click "Continue to Instagram", sign in on the aggregator's pages, and the account appears in Postwerk. Posts go out through the aggregator.
 
 Postwerk uses [Zernio](https://zernio.com) (formerly Late) for this. The bridge is an interface (`Bridge` in `packages/providers/src/bridge.ts`), so another aggregator can be added later.
 
@@ -40,7 +40,7 @@ Optional settings:
 
 ## How it works
 
-**Routing.** For each network, Postwerk picks the first that works: its own developer app ("native") → the bridge → "needs setup". Mastodon, Bluesky, Telegram and Discord never need the bridge. `networkRoute()` in `packages/core/src/bridge.ts` decides.
+**Routing.** For each network, Postwerk picks the first that works: its own developer app ("native") → the bridge → "needs setup"; `HIDE_NETWORKS` switches networks off. Mastodon, Bluesky, Telegram and Discord never need the bridge. `networkRoute()` in `packages/core/src/bridge.ts` decides.
 
 **Connecting.** Zernio groups accounts in profiles; a profile holds one account per network. Postwerk creates profiles per workspace as needed ("Praxis · Postwerk", "Praxis · Postwerk 2", …), so a workspace can connect several accounts of one network. "Continue to …" creates a sign-in state and sends the browser to Zernio's hosted pages. Zernio sends it back to `/api/bridge/callback`. Postwerk then:
 
@@ -64,7 +64,7 @@ A rejected API key is reported as a server problem, not as a reconnect.
 
 ## Privacy
 
-Posts, media and the connected accounts' tokens pass through Zernio. Mention it as a processor in your privacy policy and sign (or accept) its DPA.
+Posts, media and the connected accounts' tokens pass through Zernio. Accept its data processing agreement. Postwerk's [built-in privacy page](legal.md) names Zernio as a processor, with the networks it connects, as soon as `ZERNIO_API_KEY` is set; if you use your own privacy policy, add it there.
 
 ## Moving a network to its own developer app
 

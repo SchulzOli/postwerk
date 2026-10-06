@@ -42,6 +42,8 @@ export const networksMessages = defineMessages({
     statusConnected: (count: number) => `${count} connected`,
     statusReady: 'Ready to connect',
     statusSetup: 'Needs setup',
+    statusOff: 'Switched off',
+    offNote: 'The server admin switched this network off (HIDE_NETWORKS), so it is not offered for connecting. Accounts already connected stay.',
     // Bluesky
     bluesky: {
       handleHint: 'You sign in on your Bluesky server; Postwerk never sees your password.',
@@ -57,6 +59,20 @@ export const networksMessages = defineMessages({
     bridgeNote: (p: { network: string; bridge: string }) =>
       `${p.network} connects through ${p.bridge}, a social media API from the EU. ${p.bridge} keeps the access to the account; Postwerk only stores which account it is.`,
     orBridge: (bridge: string) => ({ before: 'Or set ', after: ` to connect it through ${bridge}, without a developer app.` }),
+    // How a network is offered on this server (the server admin decides)
+    setupOnServer: 'Setup on this server',
+    setupChoose: 'The server admin decides how to offer it. Every Postwerk server uses its own developer apps; the Postwerk project runs none for others.',
+    optionOwnApp: 'Your own developer app',
+    ownAccountsOnly: 'Only your own accounts',
+    othersToo: 'Other people’s accounts too',
+    callbackUrl: 'Callback URL to register',
+    reviewPages: 'Website and legal pages for the app settings',
+    reviewPagesMissing: { before: 'Set ', and: ' and ', after: ' first: app settings and reviews ask for a privacy policy and more.' },
+    optionBridge: (bridge: string) => `Through ${bridge}`,
+    optionBridgeText: { before: 'Set ', after: ': no developer app and no review; billed per connected account.' },
+    optionOff: 'Not at all',
+    optionOffText: { before: 'Add ', middle: ' to ', after: ' to hide it.' },
+    guideLink: 'Step-by-step guide →',
     bridgeAbout: (bridge: string) =>
       `Networks marked “via ${bridge}” connect through ${bridge}, a social media API from the EU. ${bridge} keeps the access to the accounts; Postwerk only stores which accounts they are.`,
     reconnect: 'Reconnect',
@@ -124,6 +140,8 @@ export const networksMessages = defineMessages({
     statusConnected: (count) => `${count} verbunden`,
     statusReady: 'Bereit zum Verbinden',
     statusSetup: 'Einrichtung nötig',
+    statusOff: 'Ausgeschaltet',
+    offNote: 'Die Server-Admins haben dieses Netzwerk ausgeschaltet (HIDE_NETWORKS), deshalb wird es nicht zum Verbinden angeboten. Schon verbundene Konten bleiben.',
     bluesky: {
       handleHint: 'Du meldest dich auf deinem Bluesky-Server an; Postwerk sieht dein Passwort nie.',
       placeholder: 'du.bsky.social',
@@ -137,6 +155,19 @@ export const networksMessages = defineMessages({
     bridgeNote: (p) =>
       `${p.network} wird über ${p.bridge} verbunden, eine Social-Media-API aus der EU. ${p.bridge} verwaltet den Zugriff auf das Konto; Postwerk speichert nur, um welches Konto es geht.`,
     orBridge: (bridge) => ({ before: 'Oder setze ', after: `, um es ohne Entwickler-App über ${bridge} zu verbinden.` }),
+    setupOnServer: 'Einrichtung auf diesem Server',
+    setupChoose: 'Die Server-Admins entscheiden, wie es angeboten wird. Jeder Postwerk-Server nutzt eigene Entwickler-Apps; das Postwerk-Projekt betreibt keine für andere.',
+    optionOwnApp: 'Eigene Entwickler-App',
+    ownAccountsOnly: 'Nur eigene Konten',
+    othersToo: 'Auch Konten anderer Leute',
+    callbackUrl: 'Callback-URL zum Eintragen',
+    reviewPages: 'Website und Rechtstexte für die App-Einstellungen',
+    reviewPagesMissing: { before: 'Setze zuerst ', and: ' und ', after: ': App-Einstellungen und Prüfungen verlangen eine Datenschutzerklärung und mehr.' },
+    optionBridge: (bridge) => `Über ${bridge}`,
+    optionBridgeText: { before: 'Setze ', after: ': keine Entwickler-App, keine Prüfung; Abrechnung pro verbundenem Konto.' },
+    optionOff: 'Gar nicht',
+    optionOffText: { before: 'Trage ', middle: ' in ', after: ' ein, um es auszublenden.' },
+    guideLink: 'Schritt-für-Schritt-Anleitung →',
     bridgeAbout: (bridge) =>
       `Netzwerke mit „über ${bridge}“ werden über ${bridge} verbunden, eine Social-Media-API aus der EU. ${bridge} verwaltet den Zugriff auf die Konten; Postwerk speichert nur, um welche Konten es geht.`,
     reconnect: 'Neu verbinden',

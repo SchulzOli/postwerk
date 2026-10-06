@@ -6,17 +6,21 @@ import { logOut } from '@/app/(auth)/actions';
 import { setLocaleAction } from '@/app/actions/locale';
 import { useLocale, useMessages } from '@/lib/i18n';
 import { accountMessages } from '@/messages/account';
+import { legalMessages } from '@/messages/legal';
 
 interface Props {
   user: { name: string; email: string };
   /** Extra links, e.g. switching between canvas and list view. */
   links?: { href: string; label: string }[];
+  /** The server's about and legal pages that are set up. */
+  legal?: { page: keyof (typeof legalMessages)['en']['links']; href: string }[];
 }
 
 /** The user's initial; opens account settings, extra links, the other language and log out. */
-export function AccountMenu({ user, links = [] }: Props) {
+export function AccountMenu({ user, links = [], legal = [] }: Props) {
   const menu = useRef<HTMLDetailsElement>(null);
   const t = useMessages(accountMessages);
+  const legalText = useMessages(legalMessages).links;
   const other = useLocale() === 'de' ? 'en' : 'de';
   useEffect(() => {
     const close = (event: Event) => {
@@ -49,6 +53,15 @@ export function AccountMenu({ user, links = [] }: Props) {
         <form action={logOut}>
           <button type="submit" className="menu-item">{t.logOut}</button>
         </form>
+        {legal.length > 0 && (
+          <nav className="menu-legal">
+            {legal.map((link) => (
+              <a key={link.page} href={link.href}>
+                {legalText[link.page]}
+              </a>
+            ))}
+          </nav>
+        )}
       </div>
     </details>
   );

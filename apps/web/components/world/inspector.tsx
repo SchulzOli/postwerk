@@ -3,7 +3,7 @@
 import { useActionState, useMemo, useState, useTransition } from 'react';
 import { errorText } from '@postwerk/core/i18n';
 import { parseThemeManifest, type ThemeManifest } from '@postwerk/core/theme';
-import { catalog } from '@postwerk/providers/catalog';
+import { catalog, guideUrl } from '@postwerk/providers/catalog';
 import { connectMastodon, connectWithForm, disconnectAccount, startBridgeConnectAction, startOAuth } from '@/app/(app)/accounts/actions';
 import { BlueskyConnect } from '@/components/bluesky-connect';
 import { chooseThemeAction, installBuiltinPluginAction, installPluginAction, uninstallPluginAction } from '@/app/(world)/canvas/actions';
@@ -13,11 +13,12 @@ import { useLocale, useMessages } from '@/lib/i18n';
 import { intlLocale } from '@/lib/locale';
 import { canvasMessages } from '@/messages/canvas';
 import { commonMessages } from '@/messages/common';
+import { legalMessages } from '@/messages/legal';
 import { mediaSummary, networksMessages, usageCost, usageMonthLabel } from '@/messages/networks';
 import { themesMessages } from '@/messages/themes';
 import { useWorld } from './context';
 import { ids, type WorldNode } from './layout';
-import type { BridgeUsageData } from './types';
+import type { BridgeUsageData, NetworkData } from './types';
 
 function CopyLink({ id }: { id: string }) {
   const t = useMessages(canvasMessages);
@@ -47,7 +48,7 @@ function NetworkInspector({ node }: { node: Extract<WorldNode, { type: 'network'
   const t = useMessages(networksMessages);
   const locale = useLocale();
   const world = useWorld();
-  const { info, available, connector, bridge, bridgeable } = node.data.network;
+  const { info, available, connector, bridge, off } = node.data.network;
   const { text, media, options } = info.capabilities;
   const accounts = world.data.accounts.filter((account) => account.provider === info.id);
   return (
@@ -116,27 +117,111 @@ function NetworkInspector({ node }: { node: Extract<WorldNode, { type: 'network'
         </section>
       )}
 
-      {!available && (
+      {off ? (
+        <p className="muted">{t.offNote}</p>
+      ) : !available ? (
         <section className="stack-sm setup-box">
           <h3>{t.setupTitle}</h3>
-          <p className="muted">{info.setup.review}</p>
-          <p>
-            {t.envSet} <code>{info.setup.envPrefix}_CLIENT_ID</code> {t.envAnd} <code>{info.setup.envPrefix}_CLIENT_SECRET</code>
-            {t.envCallback} <code>/api/connect/{info.id}/callback</code>.
-          </p>
-          {bridgeable && (
-            <p>
-              {t.orBridge(bridgeable.name).before}
-              <code>{bridgeable.env}</code>
-              {t.orBridge(bridgeable.name).after}
-            </p>
-          )}
+          <SetupChoice network={node.data.network} />
         </section>
+      ) : (
+        info.setup.operator === 'operator-app' &&
+        world.data.canManage && (
+          <details className="setup-box">
+            <summary>{t.setupOnServer}</summary>
+            <SetupChoice network={node.data.network} />
+          </details>
+        )
       )}
-      <a href={info.setup.docsUrl} target="_blank" rel="noreferrer">
-        {t.developerDocsLink}
-      </a>
+      <p className="row-tight wrap">
+        <a href={guideUrl(info)} target="_blank" rel="noreferrer">
+          {t.guideLink}
+        </a>
+        <a href={info.setup.docsUrl} target="_blank" rel="noreferrer">
+          {t.developerDocsLink}
+        </a>
+      </p>
     </>
+  );
+}
+
+/** A read-only value to copy, e.g. the callback URL for a developer console. */
+function CopyField({ label, value }: { label: string; value: string }) {
+  return (
+    <label className="stack-sm">
+      <small className="muted">{label}</small>
+      <input readOnly value={value} onFocus={(event) => event.currentTarget.select()} />
+    </label>
+  );
+}
+
+/**
+ * How the server admin can offer a network: their own developer app (for
+ * their own accounts, or for other people's too), the bridge, or not at all.
+ */
+function SetupChoice({ network }: { network: NetworkData }) {
+  const t = useMessages(networksMessages);
+  const legalText = useMessages(legalMessages).links;
+  const world = useWorld();
+  const { info, bridge, bridgeable, callbackUrl } = network;
+  const pages = world.data.legal.filter((link) => link.page !== 'imprint');
+  const absolute = (href: string) => (href.startsWith('/') ? `${world.data.serverUrl}${href}` : href);
+  return (
+    <div className="stack-sm">
+      <p className="muted">{t.setupChoose}</p>
+
+      <strong>{t.optionOwnApp}</strong>
+      {info.setup.ownUse && (
+        <p>
+          <em>{t.ownAccountsOnly}:</em> {info.setup.ownUse}
+        </p>
+      )}
+      {info.setup.review && (
+        <p>
+          <em>{t.othersToo}:</em> {info.setup.review}
+        </p>
+      )}
+      <p>
+        {t.envSet} <code>{info.setup.envPrefix}_CLIENT_ID</code> {t.envAnd} <code>{info.setup.envPrefix}_CLIENT_SECRET</code>.
+      </p>
+      {callbackUrl && <CopyField label={t.callbackUrl} value={callbackUrl} />}
+      {pages.some((link) => link.page === 'privacy') ? (
+        <div className="stack-sm">
+          <small className="muted">{t.reviewPages}</small>
+          {pages.map((link) => (
+            <CopyField key={link.page} label={legalText[link.page]} value={absolute(link.href)} />
+          ))}
+        </div>
+      ) : (
+        <p className="muted">
+          {t.reviewPagesMissing.before}
+          <code>OPERATOR_NAME</code>
+          {t.reviewPagesMissing.and}
+          <code>OPERATOR_EMAIL</code>
+          {t.reviewPagesMissing.after}
+        </p>
+      )}
+
+      {bridgeable && !bridge && (
+        <>
+          <strong>{t.optionBridge(bridgeable.name)}</strong>
+          <p>
+            {t.optionBridgeText.before}
+            <code>{bridgeable.env}</code>
+            {t.optionBridgeText.after}
+          </p>
+        </>
+      )}
+
+      <strong>{t.optionOff}</strong>
+      <p>
+        {t.optionOffText.before}
+        <code>{info.id}</code>
+        {t.optionOffText.middle}
+        <code>HIDE_NETWORKS</code>
+        {t.optionOffText.after}
+      </p>
+    </div>
   );
 }
 

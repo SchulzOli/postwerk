@@ -1,4 +1,4 @@
-import { and, desc, eq, isNull, lt } from 'drizzle-orm';
+import { and, desc, eq, isNotNull, isNull, lt } from 'drizzle-orm';
 import { auditLog, type Database } from '@postwerk/db';
 
 /** Everything we record. Workspace-less events (sign-ins, password changes) concern only the user. */
@@ -53,6 +53,15 @@ export async function audit(db: Pick<Database, 'insert'>, entry: AuditInput): Pr
   } catch (error) {
     console.error('audit log write failed', entry.action, error);
   }
+}
+
+/** How long the activity log keeps IP addresses (the events themselves stay). The privacy page names this. */
+export const AUDIT_IP_DAYS = 90;
+
+/** Housekeeping: removes IP addresses from events older than AUDIT_IP_DAYS. */
+export async function forgetOldAuditIps(db: Database, now = new Date()): Promise<void> {
+  const cutoff = new Date(now.getTime() - AUDIT_IP_DAYS * 24 * 60 * 60_000);
+  await db.update(auditLog).set({ ip: null }).where(and(isNotNull(auditLog.ip), lt(auditLog.createdAt, cutoff)));
 }
 
 /** A workspace's events, newest first; pass the oldest `createdAt` you have as `before` for the next page. */

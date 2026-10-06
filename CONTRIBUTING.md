@@ -6,7 +6,7 @@ Thanks for helping! Bug reports, ideas, translations and code are all welcome.
 
 - **Bugs and ideas:** open an issue first, so we can agree on the approach before you put time into a pull request.
 - **Security problems:** please report them privately, see [SECURITY.md](SECURITY.md).
-- **Larger changes:** check [docs/PLAN.md](docs/PLAN.md) to see where the project is heading.
+- **Larger changes:** check [docs/plan.md](docs/plan.md) to see where the project is heading.
 
 ## Development setup
 
@@ -48,7 +48,8 @@ Conventions:
 - **Text** shown to people exists in English and German (informal "du"). Add both to the area's catalog in `apps/web/messages/`; core and provider texts live in their `messages.ts`. TypeScript tells you when a translation is missing.
 - **UI copy** is short and plain, and error messages say what to do next.
 - **Schema changes** need a migration: change `packages/db/src/schema.ts`, run `npm run db:generate`, and commit the SQL.
-- **New networks** follow `docs/PLATFORMS.md` → "Adding a network"; `packages/providers/src/linkedin.ts` is the reference implementation.
+- **New networks** follow `docs/platforms.md` → "Adding a network"; `packages/providers/src/linkedin.ts` is the reference implementation.
+- **Documentation** lives in `docs/` and is published to [schulzoli.github.io/postwerk](https://schulzoli.github.io/postwerk/). Preview it with `cd docs && npm install && npm run dev`.
 
 ## Pull requests
 

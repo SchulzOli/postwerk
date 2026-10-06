@@ -6,9 +6,10 @@ import { bridges, getProvider, isBridgeId, localizeFields, localizeInfo, provide
 import { World, type WorldData } from '@/components/world/world';
 import { toActivity } from '@/lib/activity-server';
 import { loadCalendarAroundNow } from '@/lib/calendar-server';
-import { appUrl } from '@/lib/env';
+import { appUrl, redirectUriFor } from '@/lib/env';
 import { getAppearance } from '@/lib/appearance';
 import { getLocale, getMessages } from '@/lib/i18n-server';
+import { legalLinks } from '@/lib/legal';
 import { requireSession } from '@/lib/session';
 import { loadTeam } from '@/lib/team';
 import { canvasMessages } from '@/messages/canvas';
@@ -53,12 +54,16 @@ export default async function CanvasPage({ searchParams }: { searchParams: Promi
     canManage,
     networks: providerInfos
       .filter((info) => info.id !== 'sandbox' || isProviderAvailable('sandbox'))
+      // Networks the admin switched off stay only while accounts of them are connected.
+      .filter((info) => networkRoute(info.id) !== 'off' || accounts.some((account) => account.provider === info.id))
       .map((info) => {
         const { connector } = getProvider(info.id);
         const route = networkRoute(info.id);
         return {
           info: localizeInfo(info, locale),
-          available: route !== 'unavailable',
+          available: route === 'native' || route === 'bridge',
+          off: route === 'off',
+          callbackUrl: info.setup.operator === 'operator-app' ? redirectUriFor(info.id) : null,
           bridge: route === 'bridge' ? (bridgeSetup()?.bridge.name ?? null) : null,
           bridgeable: bridgeFor(info.id),
           connector:
@@ -96,6 +101,8 @@ export default async function CanvasPage({ searchParams }: { searchParams: Promi
       ...appearance.installed.filter((plugin) => !plugin.builtin).map((plugin) => ({ manifest: plugin.manifest, builtin: false, installed: true })),
     ],
     activity: activity?.map(toActivity) ?? null,
+    legal: legalLinks(),
+    serverUrl: appUrl,
     bridgeUsage: usage && { name: usage.name, accounts: usage.accounts, profiles: usage.profiles, months: usage.months, price: usage.price },
     appearance: { mode: appearance.mode, themeId: appearance.theme?.id ?? null, canvas: appearance.theme?.canvas ?? defaultCanvas },
     notice: connected

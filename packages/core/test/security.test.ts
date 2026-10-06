@@ -1,6 +1,6 @@
 import { sql } from 'drizzle-orm';
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import { createDb, oauthStates, rateLimits, sessions, users, workspaces, type Database } from '@postwerk/db';
+import { auditLog, createDb, oauthStates, rateLimits, sessions, users, workspaces, type Database } from '@postwerk/db';
 import { runMigrations } from '../../db/src/migrate';
 import { audit, listUserSecurityAudit, listWorkspaceAudit } from '../src/audit';
 import { runHousekeeping } from '../src/housekeeping';
@@ -112,5 +112,19 @@ describe.skipIf(!url)('rate limits and audit log (Postgres)', () => {
     expect((await db.select().from(rateLimits)).map((row) => row.key)).toEqual(['new']);
     expect(await db.select().from(oauthStates)).toHaveLength(0);
     expect((await db.select().from(sessions)).map((row) => row.id)).toEqual(['valid']);
+  });
+
+  it('housekeeping forgets IP addresses after 90 days but keeps the events', async () => {
+    const old = new Date(Date.now() - 91 * 24 * 60 * 60_000);
+    await db.insert(auditLog).values([
+      { action: 'login.succeeded', userId, ip: '203.0.113.1', createdAt: old },
+      { action: 'login.failed', userId, ip: '203.0.113.2' },
+    ]);
+    await runHousekeeping(db);
+    const rows = await db.select().from(auditLog);
+    expect(rows.map((row) => [row.action, row.ip]).sort()).toEqual([
+      ['login.failed', '203.0.113.2'],
+      ['login.succeeded', null],
+    ]);
   });
 });

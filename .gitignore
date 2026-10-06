@@ -10,3 +10,5 @@ coverage
 *.tsbuildinfo
 next-env.d.ts
 data/
+docs/.vitepress/cache
+docs/.vitepress/link-report.md

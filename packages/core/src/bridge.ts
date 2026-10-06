@@ -39,16 +39,23 @@ function listedNetworks(env: Env): Set<string> | undefined {
   return list?.length ? new Set(list) : undefined;
 }
 
-export type NetworkRoute = 'native' | 'bridge' | 'unavailable';
+export type NetworkRoute = 'native' | 'bridge' | 'unavailable' | 'off';
+
+/** Networks the admin chose not to offer (HIDE_NETWORKS, comma-separated ids). */
+export function hiddenNetworks(env: Env = process.env): Set<string> {
+  return new Set((env.HIDE_NETWORKS ?? '').split(',').map((name) => name.trim()).filter(Boolean));
+}
 
 /**
- * How people connect a network on this server:
+ * How people connect a network on this server, as the admin decided:
  * native (its own API: no setup needed, or the admin's developer app) →
- * bridge (the aggregator) → unavailable ("coming soon" until either is set up).
+ * bridge (the aggregator) → unavailable ("needs setup" until either is set up).
  * Networks listed in ZERNIO_NETWORKS use the bridge even when native works;
- * when the list is set, other networks never use it.
+ * when the list is set, other networks never use it. Networks in
+ * HIDE_NETWORKS are off: not offered at all (connected accounts keep working).
  */
 export function networkRoute(id: ProviderId, env: Env = process.env): NetworkRoute {
+  if (hiddenNetworks(env).has(id)) return 'off';
   const setup = bridgeSetup(env);
   const bridgeable = Boolean(setup?.bridge.platforms[id]);
   const listed = listedNetworks(env);

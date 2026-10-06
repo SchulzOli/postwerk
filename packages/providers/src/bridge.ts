@@ -43,6 +43,9 @@ export interface BridgeAccount {
 export interface Bridge {
   id: BridgeId;
   name: string;
+  /** Who runs it, for the server's privacy page (a processor of posts and account access). */
+  company: string;
+  privacyUrl: string;
   /** Postwerk networks the bridge can publish to, with the bridge's platform name for each. */
   platforms: Partial<Record<ProviderId, string>>;
   /** Creates a profile (a group of accounts; Postwerk uses them per workspace) and returns its id. */

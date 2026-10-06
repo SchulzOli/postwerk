@@ -1,17 +1,19 @@
 # Postwerk
 
-Self-hosted social media scheduler. TypeScript monorepo (npm workspaces). Plan: `docs/PLAN.md`.
+Self-hosted social media scheduler. TypeScript monorepo (npm workspaces). Plan: `docs/plan.md`.
 
 ## Layout
 - `apps/web` — Next.js 16 App Router. Read `apps/web/AGENTS.md` before changing Next.js code.
   - `/canvas` is the main UI: `components/world/` (React Flow). `layout.ts` builds the world from server data; node ids (`network:x`, `account:id`, `flow:id`, `step:flow:step`, `region:x`) are also deep-link targets. Inputs inside nodes need `nodrag` (and `nowheel` for scrollables).
   - The flow planner (`@postwerk/core/flow`) is pure and runs in the browser and on the server — keep it free of Node/DB imports.
-  - The look is a theme plugin (`@postwerk/core/theme`, also browser-safe; built-ins in `packages/core/src/themes/`, format in `docs/THEMES.md`). Style components with the tokens from `app/globals.css` (`var(--surface)`, `var(--radius-card)`…), never hard-coded colors, fonts or radii, so every theme works in light and dark.
+  - The look is a theme plugin (`@postwerk/core/theme`, also browser-safe; built-ins in `packages/core/src/themes/`, format in `docs/themes.md`). Style components with the tokens from `app/globals.css` (`var(--surface)`, `var(--radius-card)`…), never hard-coded colors, fonts or radii, so every theme works in light and dark.
 - `apps/worker` — publishing loop (`runPublishCycle` from `@postwerk/core`), bundled with esbuild.
 - `packages/core` — business logic; web and worker only call into this.
 - `packages/db` — Drizzle schema. After schema changes: `npm run db:generate`, commit the SQL in `packages/db/drizzle/`.
-- `packages/providers` — one file per network implementing `Provider`; static limits/options in `catalog.ts` (browser-safe). Throw `ProviderError` with `retryable`/`needsReauth`. `linkedin.ts` is the reference; see `docs/PLATFORMS.md` → "Adding a network".
-  - Aggregators (Zernio) implement `Bridge` in `bridges/`; routing, linking and usage live in `@postwerk/core` (`bridge.ts`, `bridge-usage.ts`). See `docs/BRIDGE.md`.
+- `packages/providers` — one file per network implementing `Provider`; static limits/options in `catalog.ts` (browser-safe). Throw `ProviderError` with `retryable`/`needsReauth`. `linkedin.ts` is the reference; see `docs/platforms.md` → "Adding a network".
+  - Aggregators (Zernio) implement `Bridge` in `bridges/`; routing, linking and usage live in `@postwerk/core` (`bridge.ts`, `bridge-usage.ts`). See `docs/bridge.md`.
+
+- `docs/` — the documentation website (VitePress, its own npm package outside the workspaces; GitHub Pages via `.github/workflows/docs.yml`). Pages are plain Markdown that also reads well on GitHub; link with relative `.md` paths. Each network's `setup.guide` in `catalog.ts` points to a page and heading there (a test checks it). Links are checked in CI as warnings only: `cd docs && npm run build && npm run check-links`.
 
 ## Checks before committing
 ```bash

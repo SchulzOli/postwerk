@@ -10,6 +10,10 @@ export interface NetworkData {
   info: ProviderInfo;
   /** People can connect it here: natively, or through the bridge. */
   available: boolean;
+  /** The server admin switched it off (HIDE_NETWORKS); shown only while accounts of it are connected. */
+  off: boolean;
+  /** Where the network sends people back after signing in, for the admin's developer app (null when no app is needed). */
+  callbackUrl: string | null;
   /** Name of the bridge it connects through ("Zernio"), or null when it connects natively or not at all. */
   bridge: string | null;
   /** The bridge that could connect it once the admin sets it up (for the setup notes), or null. */
@@ -91,5 +95,9 @@ export interface WorldData {
   /** Latest workspace activity; null for members who may not see it (editors). */
   activity: ActivityItem[] | null;
   bridgeUsage: BridgeUsageData | null;
+  /** The server's about and legal pages that are set up. */
+  legal: { page: 'about' | 'privacy' | 'terms' | 'imprint' | 'data-deletion'; href: string }[];
+  /** This server's public address (APP_URL). */
+  serverUrl: string;
   notice: { kind: 'success' | 'error'; text: string } | null;
 }

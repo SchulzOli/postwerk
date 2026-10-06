@@ -30,6 +30,13 @@ describe('network routing', () => {
     expect(networkRoute('mastodon', { ...listed, ZERNIO_NETWORKS: 'mastodon' })).toBe('native');
   });
 
+  it('leaves out the networks the admin switched off', () => {
+    const off = { ...env, HIDE_NETWORKS: 'x, mastodon' };
+    expect(networkRoute('x', off)).toBe('off');
+    expect(networkRoute('mastodon', off)).toBe('off');
+    expect(networkRoute('instagram', off)).toBe('bridge');
+  });
+
   it('names the bridge that could cover a network, for the setup notes', () => {
     expect(bridgeFor('tiktok')).toEqual({ name: 'Zernio', env: 'ZERNIO_API_KEY' });
     expect(bridgeFor('telegram')).toBeNull();

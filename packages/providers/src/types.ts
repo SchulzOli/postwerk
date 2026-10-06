@@ -106,9 +106,14 @@ export interface ProviderSetup {
   operator: 'none' | 'operator-app';
   /** Env var prefix for the operator app: `${prefix}_CLIENT_ID` / `${prefix}_CLIENT_SECRET`. */
   envPrefix?: string;
-  /** What the operator's app needs before strangers can use it. */
+  /** What the operator's app needs when it only serves the operator's own accounts (often no review). */
+  ownUse?: string;
+  /** What the operator's app needs before other people can connect their accounts. */
   review?: string;
+  /** The network's developer documentation. */
   docsUrl: string;
+  /** Postwerk's step-by-step guide: a path on the docs site (see `guideUrl`). */
+  guide: string;
 }
 
 export interface ProviderInfo {
@@ -119,6 +124,8 @@ export interface ProviderInfo {
   connect: 'oauth2' | 'mastodon' | 'atproto' | 'form';
   capabilities: Capabilities;
   setup: ProviderSetup;
+  /** The network's privacy policy, linked from the server's privacy page (Mastodon: each server has its own). */
+  privacyUrl?: string;
 }
 
 // ---------------------------------------------------------------------------

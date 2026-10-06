@@ -5,7 +5,7 @@
  *
  * Themes are self-contained: they cannot load files from other sites (no
  * remote url(), @import or fonts), so a theme can never track or leak data.
- * Format reference: docs/THEMES.md.
+ * Format reference: docs/themes.md.
  */
 
 import { LocalizedError } from './i18n';

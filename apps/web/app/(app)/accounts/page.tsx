@@ -1,10 +1,10 @@
 import { asc, eq } from 'drizzle-orm';
 import { bridgeFor, bridgeSetup, bridgeUsageSummary, isBlueskyOAuthAvailable, isProviderAvailable, networkRoute } from '@postwerk/core';
 import { getDb, socialAccounts } from '@postwerk/db';
-import { bridges, getProvider, isBridgeId, localizeFields, localizeInfo, providerInfos } from '@postwerk/providers';
+import { bridges, getProvider, guideUrl, isBridgeId, localizeFields, localizeInfo, providerInfos } from '@postwerk/providers';
 import { BlueskyConnect } from '@/components/bluesky-connect';
 import { ConnectForm } from '@/components/connect-form';
-import { appUrl } from '@/lib/env';
+import { appUrl, redirectUriFor } from '@/lib/env';
 import { getLocale, getMessages } from '@/lib/i18n-server';
 import { providerLabels } from '@/lib/platforms';
 import { requireSession } from '@/lib/session';
@@ -30,7 +30,7 @@ export default async function AccountsPage({ searchParams }: { searchParams: Pro
   const usage = canManage ? await bridgeUsageSummary(getDb(), workspace.id) : null;
   const month = usage?.months[0];
   const networks = providerInfos.filter((info) => info.id !== 'sandbox' || isProviderAvailable('sandbox')).map((info) => localizeInfo(info, locale));
-  const available = networks.filter((info) => networkRoute(info.id) !== 'unavailable');
+  const available = networks.filter((info) => ['native', 'bridge'].includes(networkRoute(info.id)));
   const needsSetup = networks.filter((info) => networkRoute(info.id) === 'unavailable');
   const bridgeName = bridgeSetup()?.bridge.name ?? '';
 
@@ -136,9 +136,22 @@ export default async function AccountsPage({ searchParams }: { searchParams: Pro
                   return (
                     <li key={info.id} className="stack-sm">
                       <strong>{info.name}</strong>
-                      <span className="muted">{info.setup.review}</span>
+                      {info.setup.ownUse && (
+                        <span className="muted">
+                          <em>{t.ownAccountsOnly}:</em> {info.setup.ownUse}
+                        </span>
+                      )}
+                      {info.setup.review && (
+                        <span className="muted">
+                          <em>{t.othersToo}:</em> {info.setup.review}
+                        </span>
+                      )}
                       <span>
-                        {t.envSet} <code>{info.setup.envPrefix}_CLIENT_ID</code> {t.envAnd} <code>{info.setup.envPrefix}_CLIENT_SECRET</code> ·{' '}
+                        {t.envSet} <code>{info.setup.envPrefix}_CLIENT_ID</code> {t.envAnd} <code>{info.setup.envPrefix}_CLIENT_SECRET</code>
+                        {t.envCallback} <code>{redirectUriFor(info.id)}</code>.
+                      </span>
+                      <span>
+                        <a href={guideUrl(info)} target="_blank" rel="noreferrer">{t.guideLink}</a> ·{' '}
                         <a href={info.setup.docsUrl} target="_blank" rel="noreferrer">{t.developerDocs}</a>
                       </span>
                       {bridge && (

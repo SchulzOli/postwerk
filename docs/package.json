@@ -1,0 +1,17 @@
+{
+  "name": "@postwerk/docs",
+  "private": true,
+  "description": "Postwerk's documentation website (GitHub Pages).",
+  "license": "MIT",
+  "type": "module",
+  "scripts": {
+    "dev": "vitepress dev",
+    "build": "vitepress build",
+    "preview": "vitepress preview",
+    "check-links": "node scripts/check-links.mjs .vitepress/dist",
+    "test": "node --test scripts/*.test.mjs"
+  },
+  "devDependencies": {
+    "vitepress": "^1.6.4"
+  }
+}
