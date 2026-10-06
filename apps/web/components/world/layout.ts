@@ -1,8 +1,8 @@
 import type { Edge, Node } from '@xyflow/react';
 import type { FlowStep } from '@postwerk/core/flow';
-import type { AccountData, FlowData, NetworkData, WorldData } from './types';
+import type { AccountData, FlowData, NetworkData, PluginData, WorldData } from './types';
 
-export type RegionKey = 'networks' | 'accounts' | 'flows' | 'compose' | 'posts';
+export type RegionKey = 'networks' | 'accounts' | 'flows' | 'compose' | 'posts' | 'plugins';
 
 export type WorldNode =
   | Node<{ region: RegionKey; title: string; subtitle: string }, 'region'>
@@ -11,7 +11,9 @@ export type WorldNode =
   | Node<{ flowId: string; name: string }, 'flow'>
   | Node<{ flowId: string; step: FlowStep }, 'step'>
   | Node<Record<string, never>, 'composer'>
-  | Node<Record<string, never>, 'posts'>;
+  | Node<Record<string, never>, 'posts'>
+  | Node<{ plugin: PluginData }, 'plugin'>
+  | Node<Record<string, never>, 'pluginInstall'>;
 
 /** Stable node ids double as deep-link targets (#n=<id>). */
 export const ids = {
@@ -22,6 +24,8 @@ export const ids = {
   step: (flowId: string, stepId: string) => `step:${flowId}:${stepId}`,
   composer: 'panel:composer',
   posts: 'panel:posts',
+  plugin: (id: string) => `plugin:${id}`,
+  pluginInstall: 'panel:add-theme',
 };
 
 export const regionInfo: Record<RegionKey, { title: string; subtitle: string }> = {
@@ -30,10 +34,12 @@ export const regionInfo: Record<RegionKey, { title: string; subtitle: string }> 
   flows: { title: 'Flows', subtitle: 'Reusable publishing pipelines: adapt, delay and fan out' },
   compose: { title: 'Compose', subtitle: 'Write once, publish everywhere' },
   posts: { title: 'Posts', subtitle: 'What went out and what is coming' },
+  plugins: { title: 'Plugins', subtitle: 'Themes for how Postwerk looks — each one with a light and a dark mode' },
 };
 
 const NETWORK = { width: 240, height: 112, gap: 20, columns: 4 };
 const ACCOUNT = { width: 250, height: 76, gap: 16, columns: 2 };
+const PLUGIN = { width: 300, height: 252, gap: 20, columns: 3 };
 const PAD = { x: 32, top: 88, bottom: 32 };
 export const FLOW = { width: 1180, minHeight: 300, gap: 40 };
 export const STEP_WIDTH = 220;
@@ -94,7 +100,6 @@ export function flowEdges(flow: FlowData): Edge[] {
     target: ids.step(flow.id, edge.target),
     sourceHandle: 'out',
     targetHandle: 'in',
-    type: 'smoothstep',
     className: 'flow-edge',
   }));
 }
@@ -113,13 +118,17 @@ export function buildWorld(data: WorldData, saved: Record<string, { x: number; y
   const topHeight = Math.max(networksSize.height, accountsSize.height, 760);
   const flowsHeight =
     PAD.top + data.flows.reduce((sum, flow) => sum + flowFrameHeight(flow.graph.steps) + FLOW.gap, 0) + 260;
+  const flowsY = Math.max(topHeight, 980) + 120;
+  // The "Add a theme" card comes first, so new themes are appended without moving anything.
+  const pluginsSize = gridSize(data.plugins.length + 1, PLUGIN);
 
   const regions: { key: RegionKey; position: { x: number; y: number }; size: { width: number; height: number } }[] = [
     { key: 'networks', position: { x: 0, y: 0 }, size: { width: networksSize.width, height: topHeight } },
     { key: 'accounts', position: { x: networksSize.width + 80, y: 0 }, size: { width: accountsSize.width, height: topHeight } },
     { key: 'compose', position: { x: networksSize.width + accountsSize.width + 160, y: 0 }, size: { width: 600, height: Math.max(topHeight, 980) } },
     { key: 'posts', position: { x: networksSize.width + accountsSize.width + 840, y: 0 }, size: { width: 600, height: Math.max(topHeight, 980) } },
-    { key: 'flows', position: { x: 0, y: Math.max(topHeight, 980) + 120 }, size: { width: FLOW.width + PAD.x * 2, height: flowsHeight } },
+    { key: 'flows', position: { x: 0, y: flowsY }, size: { width: FLOW.width + PAD.x * 2, height: flowsHeight } },
+    { key: 'plugins', position: { x: FLOW.width + PAD.x * 2 + 80, y: flowsY }, size: pluginsSize },
   ];
 
   const nodes: WorldNode[] = regions.map(({ key, position, size }) => ({
@@ -163,6 +172,28 @@ export function buildWorld(data: WorldData, saved: Record<string, { x: number; y
     { id: ids.composer, type: 'composer', parentId: ids.region('compose'), position: place(ids.composer, { x: PAD.x, y: PAD.top }), data: {}, deletable: false, dragHandle: '.panel-drag', style: { width: 536 } },
     { id: ids.posts, type: 'posts', parentId: ids.region('posts'), position: place(ids.posts, { x: PAD.x, y: PAD.top }), data: {}, deletable: false, dragHandle: '.panel-drag', style: { width: 536 } },
   );
+
+  nodes.push({
+    id: ids.pluginInstall,
+    type: 'pluginInstall',
+    parentId: ids.region('plugins'),
+    position: place(ids.pluginInstall, grid(0, PLUGIN)),
+    data: {},
+    deletable: false,
+    style: { width: PLUGIN.width },
+  });
+  data.plugins.forEach((plugin, index) => {
+    const id = ids.plugin(plugin.manifest.id);
+    nodes.push({
+      id,
+      type: 'plugin',
+      parentId: ids.region('plugins'),
+      position: place(id, grid(index + 1, PLUGIN)),
+      data: { plugin },
+      deletable: false,
+      style: { width: PLUGIN.width },
+    });
+  });
 
   let flowY = PAD.top;
   for (const flow of data.flows) {

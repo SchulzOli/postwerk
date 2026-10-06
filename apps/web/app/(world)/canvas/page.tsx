@@ -1,8 +1,10 @@
 import { asc, eq } from 'drizzle-orm';
 import { isProviderAvailable, listFlows, listPosts, loadCanvasPositions } from '@postwerk/core';
+import { builtinThemes, defaultCanvas } from '@postwerk/core/theme';
 import { getDb, socialAccounts } from '@postwerk/db';
 import { getProvider, providerInfos } from '@postwerk/providers';
 import { World, type WorldData } from '@/components/world/world';
+import { getAppearance } from '@/lib/appearance';
 import { requireSession } from '@/lib/session';
 
 export const metadata = { title: 'Canvas · Postwerk' };
@@ -11,7 +13,7 @@ export default async function CanvasPage({ searchParams }: { searchParams: Promi
   const { user, workspace, role } = await requireSession();
   const { connected, error } = await searchParams;
   const db = getDb();
-  const [accounts, flows, posts, positions] = await Promise.all([
+  const [accounts, flows, posts, positions, appearance] = await Promise.all([
     db.query.socialAccounts.findMany({
       where: eq(socialAccounts.workspaceId, workspace.id),
       orderBy: [asc(socialAccounts.provider), asc(socialAccounts.handle)],
@@ -19,7 +21,9 @@ export default async function CanvasPage({ searchParams }: { searchParams: Promi
     listFlows(db, workspace.id),
     listPosts(db, workspace.id),
     loadCanvasPositions(db, workspace.id),
+    getAppearance(),
   ]);
+  const installed = new Set(appearance.installed.map((plugin) => plugin.id));
 
   const data: WorldData = {
     user: { name: user.name, email: user.email },
@@ -54,6 +58,11 @@ export default async function CanvasPage({ searchParams }: { searchParams: Promi
       targets: post.targets.map((target) => ({ accountId: target.socialAccountId, status: target.status, url: target.remoteUrl, error: target.lastError })),
     })),
     positions,
+    plugins: [
+      ...builtinThemes.map((manifest) => ({ manifest, builtin: true, installed: installed.has(manifest.id) })),
+      ...appearance.installed.filter((plugin) => !plugin.builtin).map((plugin) => ({ manifest: plugin.manifest, builtin: false, installed: true })),
+    ],
+    appearance: { mode: appearance.mode, themeId: appearance.theme?.id ?? null, canvas: appearance.theme?.canvas ?? defaultCanvas },
     notice: connected ? { kind: 'success', text: `Connected ${connected}.` } : error ? { kind: 'error', text: error } : null,
   };
   return <World data={data} />;

@@ -1,9 +1,12 @@
 import Link from 'next/link';
 import { logOut } from '../(auth)/actions';
+import { ModeSwitch } from '@/components/mode-switch';
+import { getAppearance } from '@/lib/appearance';
 import { requireSession } from '@/lib/session';
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const { user, workspace } = await requireSession();
+  const { mode } = await getAppearance();
   return (
     <>
       <header className="topbar">
@@ -15,6 +18,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
         </nav>
         <div className="who">
           <span className="muted">{workspace.name}</span>
+          <ModeSwitch mode={mode} />
           <form action={logOut}>
             <button type="submit" className="link" title={user.email}>Log out</button>
           </form>

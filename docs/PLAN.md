@@ -78,6 +78,14 @@ Sizes: **S** ≈ days, **M** ≈ 1–2 weeks, **L** ≈ several weeks (one devel
 - Flow builder: New post → Add text / Shorten to fit / Wait → Publish to account; autosaved, previewed live, used by the composer
 - Next for flows: approval step, per-network text variants, recurring triggers (RSS, schedule), conditions (e.g. only if media), flow templates
 
+### Themes as plugins ✅
+- The whole look is a plugin: a theme is a JSON manifest with design tokens for light **and** dark mode (both required), canvas options (grid, connection style) and optional extra CSS — format in [THEMES.md](THEMES.md)
+- Three built-in themes — Aurora (default), Paper, Blueprint — installed in every workspace; owners/admins can uninstall and reinstall them; without any theme the plain base look remains
+- Everyone picks their own theme; light / dark / system is remembered per browser
+- Theme editor on the canvas: start from any theme, live preview of both modes, install, update by id, download and share
+- Themes are self-contained by design: no remote URLs, imports or fonts, so a theme cannot track users or leak data
+- Next: more plugin kinds behind the same install/uninstall model (e.g. flow steps, composer helpers), a shared theme gallery, trying a theme on the whole canvas before installing it
+
 ### Phase 1 — A product people can use daily
 | Item | Size |
 |---|---|

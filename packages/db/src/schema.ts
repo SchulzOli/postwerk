@@ -1,5 +1,5 @@
 import { relations, sql } from 'drizzle-orm';
-import { index, integer, jsonb, pgEnum, pgTable, primaryKey, text, timestamp, uniqueIndex, uuid } from 'drizzle-orm/pg-core';
+import { boolean, index, integer, jsonb, pgEnum, pgTable, primaryKey, text, timestamp, uniqueIndex, uuid } from 'drizzle-orm/pg-core';
 
 const id = () => uuid('id').primaryKey().defaultRandom();
 const createdAt = () => timestamp('created_at', { withTimezone: true }).notNull().defaultNow();
@@ -32,6 +32,7 @@ export interface PostMedia {
 export const accountStatus = pgEnum('account_status', ['active', 'needs_reauth']);
 export const postStatus = pgEnum('post_status', ['draft', 'scheduled', 'publishing', 'published', 'partial', 'failed']);
 export const targetStatus = pgEnum('target_status', ['pending', 'publishing', 'published', 'failed']);
+export const pluginKind = pgEnum('plugin_kind', ['theme']);
 
 export const users = pgTable('users', {
   id: id(),
@@ -65,9 +66,28 @@ export const workspaceMembers = pgTable(
     workspaceId: uuid('workspace_id').notNull().references(() => workspaces.id, { onDelete: 'cascade' }),
     userId: uuid('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
     role: memberRole('role').notNull().default('editor'),
+    /** Id of the theme plugin this member chose; null (or uninstalled) means the workspace default. */
+    theme: text('theme'),
     createdAt: createdAt(),
   },
   (t) => [primaryKey({ columns: [t.workspaceId, t.userId] }), index('workspace_members_user_idx').on(t.userId)],
+);
+
+/** Plugins installed in a workspace (themes for now, see @postwerk/core/theme). */
+export const plugins = pgTable(
+  'plugins',
+  {
+    workspaceId: uuid('workspace_id').notNull().references(() => workspaces.id, { onDelete: 'cascade' }),
+    /** The manifest's id, e.g. "paper". */
+    pluginId: text('plugin_id').notNull(),
+    kind: pluginKind('kind').notNull(),
+    /** Built-in plugins ship with Postwerk and are read from code, so they update with it. */
+    builtin: boolean('builtin').notNull().default(false),
+    /** The validated manifest of a custom plugin; null for built-ins. */
+    manifest: jsonb('manifest'),
+    installedAt: timestamp('installed_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [primaryKey({ columns: [t.workspaceId, t.pluginId] })],
 );
 
 /** OAuth clients we registered ourselves on Mastodon servers (one per server). */
@@ -200,5 +220,6 @@ export type SocialAccount = typeof socialAccounts.$inferSelect;
 export type Post = typeof posts.$inferSelect;
 export type Flow = typeof flows.$inferSelect;
 export type PostTarget = typeof postTargets.$inferSelect;
+export type Plugin = typeof plugins.$inferSelect;
 export type PostStatus = (typeof postStatus.enumValues)[number];
 export type TargetStatus = (typeof targetStatus.enumValues)[number];

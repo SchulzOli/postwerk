@@ -21,11 +21,13 @@ import {
 } from '@xyflow/react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { planFlow, type FlowGraph, type FlowPlan, type FlowStep } from '@postwerk/core/flow';
+import type { ColorMode, ThemeCanvas } from '@postwerk/core/theme';
 import { catalog } from '@postwerk/providers/catalog';
 import { countText } from '@postwerk/providers/text';
 import { textLimit } from '@postwerk/providers/validate';
 import { createFlowAction, deleteFlowAction, saveFlowAction, savePositionsAction } from '@/app/(world)/canvas/actions';
 import { logOut } from '@/app/(auth)/actions';
+import { ModeSwitch } from '@/components/mode-switch';
 import { WorldContext, type SaveState, type WorldApi } from './context';
 import { Inspector } from './inspector';
 import { buildWorld, flowEdges, flowFrameHeight, flowNodes, FLOW, ids, nextFlowPosition, regionInfo, STEP_WIDTH, stepNode, type RegionKey, type WorldNode } from './layout';
@@ -37,6 +39,14 @@ export type { WorldData } from './types';
 const SAMPLE_TEXT = 'Example post';
 const stepIdOf = (nodeId: string) => nodeId.split(':').slice(2).join(':');
 const flowEdgePrefix = (flowId: string) => `e:flow:${flowId}:`;
+const patterns: Record<Exclude<ThemeCanvas['pattern'], 'none'>, BackgroundVariant> = {
+  dots: BackgroundVariant.Dots,
+  lines: BackgroundVariant.Lines,
+  cross: BackgroundVariant.Cross,
+};
+const edgeTypes: Record<ThemeCanvas['edges'], string> = { smoothstep: 'smoothstep', bezier: 'default', step: 'step', straight: 'straight' };
+/** Minimap color per node type (theme tokens). */
+const tints: Partial<Record<string, string>> = { pluginInstall: 'plugin' };
 
 function serializeFlow(flowId: string, nodes: WorldNode[], edges: Edge[]): FlowGraph {
   const steps = nodes
@@ -77,6 +87,10 @@ function label(node: WorldNode): string {
       return 'New post';
     case 'posts':
       return 'Recent posts';
+    case 'plugin':
+      return `${node.data.plugin.manifest.name} (theme)`;
+    case 'pluginInstall':
+      return 'Theme editor';
     default:
       return '';
   }
@@ -98,6 +112,7 @@ function WorldCanvas({ data }: { data: WorldData }) {
   const [saveState, setSaveState] = useState<Record<string, SaveState>>({});
   const [selectedId, setSelectedId] = useState<string>();
   const [notice, setNotice] = useState(data.notice);
+  const [mode, setMode] = useState<ColorMode>(data.appearance.mode);
   const state = useRef({ nodes, edges });
   state.current = { nodes, edges };
   const timers = useRef(new Map<string, ReturnType<typeof setTimeout>>());
@@ -302,7 +317,7 @@ function WorldCanvas({ data }: { data: WorldData }) {
       setNodes((ns) => fitFrames([...ns.map((n) => (n.selected ? { ...n, selected: false } : n)), { ...node, selected: true }]));
       if (from) {
         setEdges((es) =>
-          addEdge({ id: `${flowEdgePrefix(flowId)}${stepIdOf(from.id)}-${id}`, source: from.id, target: node.id, sourceHandle: 'out', targetHandle: 'in', type: 'smoothstep', className: 'flow-edge' }, es),
+          addEdge({ id: `${flowEdgePrefix(flowId)}${stepIdOf(from.id)}-${id}`, source: from.id, target: node.id, sourceHandle: 'out', targetHandle: 'in', className: 'flow-edge' }, es),
         );
       }
       setSelectedId(node.id);
@@ -371,7 +386,7 @@ function WorldCanvas({ data }: { data: WorldData }) {
       if (source?.type !== 'step') return;
       const flowId = source.data.flowId;
       setEdges((es) =>
-        addEdge({ ...connection, id: `${flowEdgePrefix(flowId)}${stepIdOf(connection.source)}-${stepIdOf(connection.target)}`, type: 'smoothstep', className: 'flow-edge' }, es),
+        addEdge({ ...connection, id: `${flowEdgePrefix(flowId)}${stepIdOf(connection.source)}-${stepIdOf(connection.target)}`, className: 'flow-edge' }, es),
       );
       scheduleFlowSave(flowId);
     },
@@ -408,7 +423,9 @@ function WorldCanvas({ data }: { data: WorldData }) {
 
   const selected = nodes.find((node) => node.id === selectedId);
   const destinations = nodes.filter((node) => label(node));
-  const allEdges = useMemo(() => [...edges, ...derivedEdges], [edges, derivedEdges]);
+  // The theme decides how connections are drawn.
+  const { canvas } = data.appearance;
+  const allEdges = useMemo(() => [...edges, ...derivedEdges].map((edge) => ({ ...edge, type: edgeTypes[canvas.edges] })), [edges, derivedEdges, canvas.edges]);
 
   return (
     <WorldContext.Provider value={api}>
@@ -427,14 +444,20 @@ function WorldCanvas({ data }: { data: WorldData }) {
         onMoveEnd={onMoveEnd}
         minZoom={0.05}
         maxZoom={2}
-        colorMode="system"
+        colorMode={mode}
         deleteKeyCode={['Backspace', 'Delete']}
         proOptions={{ hideAttribution: true }}
         aria-label="Postwerk canvas"
       >
-        <Background variant={BackgroundVariant.Dots} gap={24} size={1.2} />
+        {canvas.pattern !== 'none' && <Background variant={patterns[canvas.pattern]} gap={canvas.gap} size={canvas.size} lineWidth={canvas.size} />}
         <Controls showInteractive={false} position="bottom-left" />
-        <MiniMap pannable zoomable position="bottom-right" nodeStrokeWidth={2} nodeColor={(node) => `var(--mm-${node.type ?? 'default'}, #9aa1ad)`} />
+        <MiniMap
+          pannable
+          zoomable
+          position="bottom-right"
+          nodeStrokeWidth={2}
+          nodeColor={(node) => `var(--tint-${tints[node.type ?? ''] ?? node.type}, var(--muted))`}
+        />
 
         <Panel position="top-left" className="world-toolbar">
           <strong className="brand">Postwerk</strong>
@@ -471,6 +494,8 @@ function WorldCanvas({ data }: { data: WorldData }) {
 
         <Panel position="top-right" className="world-account">
           <span className="muted">{data.workspace.name}</span>
+          <ModeSwitch mode={data.appearance.mode} onChange={setMode} />
+          <a href={`#n=${ids.region('plugins')}`}>Themes</a>
           <a href="/posts">List view</a>
           <form action={logOut}>
             <button type="submit" className="link" title={data.user.email}>

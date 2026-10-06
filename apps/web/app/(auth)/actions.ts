@@ -2,7 +2,7 @@
 
 import { eq } from 'drizzle-orm';
 import { redirect } from 'next/navigation';
-import { hashPassword, verifyPassword } from '@postwerk/core';
+import { hashPassword, installBuiltinPlugins, verifyPassword } from '@postwerk/core';
 import { getDb, users, workspaceMembers, workspaces } from '@postwerk/db';
 import { createSession, destroySession } from '@/lib/session';
 
@@ -28,6 +28,7 @@ export async function signUp(_: FormState, form: FormData): Promise<FormState> {
     if (!user) return null;
     const [workspace] = await tx.insert(workspaces).values({ name: `${name}'s workspace` }).returning({ id: workspaces.id });
     await tx.insert(workspaceMembers).values({ workspaceId: workspace!.id, userId: user.id, role: 'owner' });
+    await installBuiltinPlugins(tx, workspace!.id);
     return user.id;
   });
   if (!userId) return { error: 'An account with this email already exists.', values };
