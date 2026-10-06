@@ -50,7 +50,7 @@ const patterns: Record<Exclude<ThemeCanvas['pattern'], 'none'>, BackgroundVarian
 };
 const edgeTypes: Record<ThemeCanvas['edges'], string> = { smoothstep: 'smoothstep', bezier: 'default', step: 'step', straight: 'straight' };
 /** Minimap color per node type (theme tokens). */
-const tints: Partial<Record<string, string>> = { pluginInstall: 'plugin', activity: 'account', members: 'account' };
+const tints: Partial<Record<string, string>> = { pluginInstall: 'plugin', activity: 'account', members: 'account', calendar: 'posts' };
 
 function serializeFlow(flowId: string, nodes: WorldNode[], edges: Edge[]): FlowGraph {
   const steps = nodes
@@ -91,6 +91,8 @@ function label(node: WorldNode): string {
       return 'New post';
     case 'posts':
       return 'Recent posts';
+    case 'calendar':
+      return 'Calendar';
     case 'plugin':
       return `${node.data.plugin.manifest.name} (theme)`;
     case 'pluginInstall':
@@ -123,6 +125,7 @@ function WorldCanvas({ data }: { data: WorldData }) {
   const [mode, setMode] = useState<ColorMode>(data.appearance.mode);
   const [composing, setComposing] = useState<ComposerInitial>();
   const [composerKey, setComposerKey] = useState(0);
+  const [composeTime, setComposeTime] = useState<string>();
   const state = useRef({ nodes, edges });
   state.current = { nodes, edges };
   const timers = useRef(new Map<string, ReturnType<typeof setTimeout>>());
@@ -422,6 +425,16 @@ function WorldCanvas({ data }: { data: WorldData }) {
         return;
       }
       setComposing(result);
+      setComposeTime(undefined);
+      setComposerKey((key) => key + 1);
+      focus(ids.composer);
+    },
+    [focus],
+  );
+  const composeAt = useCallback<WorldApi['composeAt']>(
+    (iso) => {
+      setComposing(undefined);
+      setComposeTime(iso);
       setComposerKey((key) => key + 1);
       focus(ids.composer);
     },
@@ -429,6 +442,7 @@ function WorldCanvas({ data }: { data: WorldData }) {
   );
   const resetComposer = useCallback(() => {
     setComposing(undefined);
+    setComposeTime(undefined);
     setComposerKey((key) => key + 1);
   }, []);
 
@@ -447,10 +461,12 @@ function WorldCanvas({ data }: { data: WorldData }) {
       plans,
       composing,
       composeFrom,
+      composeAt,
+      composeTime,
       resetComposer,
       composerKey,
     }),
-    [data, focus, addStep, updateStep, removeStep, renameFlow, deleteFlow, saveState, plans, composing, composeFrom, resetComposer, composerKey],
+    [data, focus, addStep, updateStep, removeStep, renameFlow, deleteFlow, saveState, plans, composing, composeFrom, composeAt, composeTime, resetComposer, composerKey],
   );
 
   const selected = nodes.find((node) => node.id === selectedId);

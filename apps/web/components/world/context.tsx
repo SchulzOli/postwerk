@@ -24,6 +24,10 @@ export interface WorldApi {
   composing: ComposerInitial | undefined;
   /** Opens a post in the Compose panel, to edit it or (asCopy) post it again. */
   composeFrom(postId: string, asCopy?: boolean): Promise<void>;
+  /** Starts a new post in the Compose panel, scheduled for a time (from the calendar). */
+  composeAt(iso: string): void;
+  /** The time a new post starts with, set by composeAt. */
+  composeTime: string | undefined;
   /** Back to an empty new post. */
   resetComposer(): void;
   /** Bumped after every save, so the composer starts fresh. */

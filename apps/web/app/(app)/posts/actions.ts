@@ -7,6 +7,8 @@ import { getDb } from '@postwerk/db';
 import { isProviderId, type ProviderId } from '@postwerk/providers';
 import { record } from '@/lib/audit';
 import type { ComposerInitial } from '@/components/composer';
+import type { CalendarData } from '@/lib/calendar';
+import { loadCalendar, MAX_CALENDAR_SPAN } from '@/lib/calendar-server';
 import { loadComposerInitial } from '@/lib/compose';
 import { readComposerMedia } from '@/lib/media-server';
 import { requireSession } from '@/lib/session';
@@ -98,6 +100,16 @@ export async function retryPostAction(postId: string): Promise<void> {
 }
 
 /** Moves a scheduled post to another time (calendar drag and drop). */
+/** Posts for the calendar's current view (the browser knows the viewer's time zone, so it picks the range). */
+export async function loadCalendarAction(fromIso: string, toIso: string): Promise<CalendarData | { error: string }> {
+  const { workspace } = await requireSession();
+  const from = new Date(fromIso);
+  const to = new Date(toIso);
+  const span = to.getTime() - from.getTime();
+  if (!(span > 0 && span <= MAX_CALENDAR_SPAN)) return { error: 'The calendar could not load. Reload the page and try again.' };
+  return loadCalendar(workspace.id, from, to);
+}
+
 export async function reschedulePostAction(postId: string, iso: string): Promise<{ error?: string }> {
   const { user, workspace } = await requireSession();
   const at = new Date(iso);

@@ -1,21 +1,13 @@
 import Link from 'next/link';
 import { listPosts } from '@postwerk/core';
-import { getDb, type PostStatus } from '@postwerk/db';
+import { getDb } from '@postwerk/db';
 import { LocalTime } from '@/components/local-time';
 import { providerLabels } from '@/lib/platforms';
+import { canEdit, canPostAgain, canRetry, statusLabels } from '@/lib/post-status';
 import { requireSession } from '@/lib/session';
 import { removePost, retryPostAction } from './actions';
 
 export const metadata = { title: 'Posts · Postwerk' };
-
-const statusLabels: Record<PostStatus, string> = {
-  draft: 'Draft',
-  scheduled: 'Scheduled',
-  publishing: 'Publishing',
-  published: 'Published',
-  partial: 'Partly published',
-  failed: 'Failed',
-};
 
 export default async function PostsPage() {
   const { workspace } = await requireSession();
@@ -40,18 +32,18 @@ export default async function PostsPage() {
               <div className="row">
                 <span className={`badge status-${post.status}`}>{statusLabels[post.status]}</span>
                 <span className="muted grow">{post.scheduledAt && <LocalTime iso={post.scheduledAt.toISOString()} />}</span>
-                {(post.status === 'scheduled' || post.status === 'draft' || post.status === 'failed') && (
+                {canEdit(post.status) && (
                   <Link href={`/posts/${post.id}/edit`} className="button secondary">Edit</Link>
                 )}
-                {(post.status === 'failed' || post.status === 'partial') && (
+                {canRetry(post.status) && (
                   <form action={retryPostAction.bind(null, post.id)}>
                     <button type="submit" className="secondary">Retry failed</button>
                   </form>
                 )}
-                {(post.status === 'published' || post.status === 'partial') && (
+                {canPostAgain(post.status) && (
                   <Link href={`/posts/new?from=${post.id}`} className="button secondary">Post again</Link>
                 )}
-                {(post.status === 'scheduled' || post.status === 'draft' || post.status === 'failed') && (
+                {canEdit(post.status) && (
                   <form action={removePost}>
                     <input type="hidden" name="postId" value={post.id} />
                     <button type="submit" className="secondary">Delete</button>

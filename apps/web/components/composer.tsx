@@ -39,6 +39,8 @@ interface Props {
   /** Where to go after publishing ('/posts' or '/canvas'). */
   returnTo?: '/posts' | '/canvas';
   initial?: ComposerInitial;
+  /** ISO time a new post is scheduled for at first (planned from the calendar). */
+  scheduledAt?: string;
   /** Called after a successful save (canvas only; the list view navigates away). */
   onSaved?(): void;
   onCancel?(): void;
@@ -50,7 +52,7 @@ function toLocalInput(iso: string): string {
   return new Date(date.getTime() - date.getTimezoneOffset() * 60_000).toISOString().slice(0, 16);
 }
 
-export function Composer({ accounts, flows = [], action, returnTo = '/posts', initial, onSaved, onCancel }: Props) {
+export function Composer({ accounts, flows = [], action, returnTo = '/posts', initial, scheduledAt: startAt, onSaved, onCancel }: Props) {
   const [state, formAction, pending] = useActionState(action, {});
   const editing = Boolean(initial?.postId);
   const [text, setText] = useState(initial?.text ?? '');
@@ -60,14 +62,15 @@ export function Composer({ accounts, flows = [], action, returnTo = '/posts', in
     () => new Set(initial && !initial.flowId ? initial.accountIds : accounts.filter((a) => !a.disabledReason).map((a) => a.id)),
   );
   const [variants, setVariants] = useState<Record<string, string>>(initial?.variants ?? {});
-  const [when, setWhen] = useState<'now' | 'later'>(initial?.scheduledAt ? 'later' : 'now');
+  const firstTime = initial?.scheduledAt ?? startAt;
+  const [when, setWhen] = useState<'now' | 'later'>(firstTime ? 'later' : 'now');
   const [localTime, setLocalTime] = useState('');
   const [flowId, setFlowId] = useState(initial?.flowId ?? '');
 
   // The local time depends on the browser's time zone, so it is filled in after hydration.
   useEffect(() => {
-    if (initial?.scheduledAt) setLocalTime(toLocalInput(initial.scheduledAt));
-  }, [initial?.scheduledAt]);
+    if (firstTime) setLocalTime(toLocalInput(firstTime));
+  }, [firstTime]);
   useEffect(() => {
     if (state.saved) onSaved?.();
   }, [state.saved]); // eslint-disable-line react-hooks/exhaustive-deps

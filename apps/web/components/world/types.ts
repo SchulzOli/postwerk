@@ -2,6 +2,7 @@ import type { FlowGraph } from '@postwerk/core/flow';
 import type { ColorMode, ThemeCanvas, ThemeManifest } from '@postwerk/core/theme';
 import type { TeamData } from '@/components/team';
 import type { ActivityItem } from '@/lib/activity';
+import type { CalendarData } from '@/lib/calendar';
 import type { FormField, PostStatus, TargetStatus } from './shared-types';
 import type { ProviderId, ProviderInfo } from '@postwerk/providers/catalog';
 
@@ -60,6 +61,8 @@ export interface WorldData {
   accounts: AccountData[];
   flows: FlowData[];
   posts: PostData[];
+  /** Posts around today for the calendar; it loads other weeks itself. */
+  calendar: CalendarData;
   positions: Record<string, { x: number; y: number }>;
   /** Built-ins first (installed or not, so their cards keep their place), then custom themes. */
   plugins: PluginData[];

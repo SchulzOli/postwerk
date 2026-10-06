@@ -2,7 +2,7 @@ import type { Edge, Node } from '@xyflow/react';
 import type { FlowStep } from '@postwerk/core/flow';
 import type { AccountData, FlowData, NetworkData, PluginData, WorldData } from './types';
 
-export type RegionKey = 'networks' | 'accounts' | 'flows' | 'compose' | 'posts' | 'plugins' | 'team';
+export type RegionKey = 'networks' | 'accounts' | 'flows' | 'compose' | 'calendar' | 'posts' | 'plugins' | 'team';
 
 export type WorldNode =
   | Node<{ region: RegionKey; title: string; subtitle: string }, 'region'>
@@ -12,6 +12,7 @@ export type WorldNode =
   | Node<{ flowId: string; step: FlowStep }, 'step'>
   | Node<Record<string, never>, 'composer'>
   | Node<Record<string, never>, 'posts'>
+  | Node<Record<string, never>, 'calendar'>
   | Node<{ plugin: PluginData }, 'plugin'>
   | Node<Record<string, never>, 'pluginInstall'>
   | Node<Record<string, never>, 'activity'>
@@ -26,6 +27,7 @@ export const ids = {
   step: (flowId: string, stepId: string) => `step:${flowId}:${stepId}`,
   composer: 'panel:composer',
   posts: 'panel:posts',
+  calendar: 'panel:calendar',
   plugin: (id: string) => `plugin:${id}`,
   pluginInstall: 'panel:add-theme',
   activity: 'panel:activity',
@@ -37,6 +39,7 @@ export const regionInfo: Record<RegionKey, { title: string; subtitle: string }> 
   accounts: { title: 'Accounts', subtitle: 'Connected profiles, pages, boards and channels' },
   flows: { title: 'Flows', subtitle: 'Reusable publishing pipelines: adapt, delay and fan out' },
   compose: { title: 'Compose', subtitle: 'Write once, publish everywhere' },
+  calendar: { title: 'Calendar', subtitle: 'When posts go out — drag one to move it' },
   posts: { title: 'Posts', subtitle: 'What went out and what is coming' },
   plugins: { title: 'Plugins', subtitle: 'Themes for how Postwerk looks — each one with a light and a dark mode' },
   team: { title: 'Team', subtitle: 'Who works here and what happened' },
@@ -47,6 +50,8 @@ const ACCOUNT = { width: 250, height: 76, gap: 16, columns: 2 };
 const PLUGIN = { width: 300, height: 252, gap: 20, columns: 3 };
 const PAD = { x: 32, top: 88, bottom: 32 };
 export const FLOW = { width: 1180, minHeight: 300, gap: 40 };
+/** The panel is about 1030px high at most (month view with a post open). */
+const CALENDAR = { width: 1100, height: 1180 };
 export const STEP_WIDTH = 220;
 
 function grid(index: number, cell: { width: number; height: number; gap: number; columns: number }) {
@@ -135,6 +140,11 @@ export function buildWorld(data: WorldData, saved: Record<string, { x: number; y
     { key: 'team', position: { x: networksSize.width + accountsSize.width + 1520, y: 0 }, size: { width: 1168, height: Math.max(topHeight, 980) } },
     { key: 'flows', position: { x: 0, y: flowsY }, size: { width: FLOW.width + PAD.x * 2, height: flowsHeight } },
     { key: 'plugins', position: { x: FLOW.width + PAD.x * 2 + 80, y: flowsY }, size: pluginsSize },
+    {
+      key: 'calendar',
+      position: { x: FLOW.width + PAD.x * 2 + 80 + pluginsSize.width + 80, y: flowsY },
+      size: { width: CALENDAR.width + PAD.x * 2, height: CALENDAR.height },
+    },
   ];
 
   const nodes: WorldNode[] = regions.map(({ key, position, size }) => ({
@@ -177,6 +187,7 @@ export function buildWorld(data: WorldData, saved: Record<string, { x: number; y
   nodes.push(
     { id: ids.composer, type: 'composer', parentId: ids.region('compose'), position: place(ids.composer, { x: PAD.x, y: PAD.top }), data: {}, deletable: false, dragHandle: '.panel-drag', style: { width: 536 } },
     { id: ids.posts, type: 'posts', parentId: ids.region('posts'), position: place(ids.posts, { x: PAD.x, y: PAD.top }), data: {}, deletable: false, dragHandle: '.panel-drag', style: { width: 536 } },
+    { id: ids.calendar, type: 'calendar', parentId: ids.region('calendar'), position: place(ids.calendar, { x: PAD.x, y: PAD.top }), data: {}, deletable: false, dragHandle: '.panel-drag', style: { width: CALENDAR.width } },
     { id: ids.members, type: 'members', parentId: ids.region('team'), position: place(ids.members, { x: PAD.x, y: PAD.top }), data: {}, deletable: false, dragHandle: '.panel-drag', style: { width: 536 } },
     { id: ids.activity, type: 'activity', parentId: ids.region('team'), position: place(ids.activity, { x: PAD.x + 568, y: PAD.top }), data: {}, deletable: false, dragHandle: '.panel-drag', style: { width: 536 } },
   );

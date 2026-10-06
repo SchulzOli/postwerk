@@ -5,6 +5,7 @@
   "type": "module",
   "exports": {
     ".": "./src/index.ts",
+    "./calendar": "./src/calendar.ts",
     "./flow": "./src/flow.ts",
     "./theme": "./src/theme.ts"
   },

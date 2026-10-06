@@ -13,6 +13,8 @@ import { retryPostAction, submitPost } from '@/app/(app)/posts/actions';
 import { chooseThemeAction, installBuiltinPluginAction } from '@/app/(world)/canvas/actions';
 import { useWorld } from './context';
 import { describeActivity, isWarning } from '@/lib/activity';
+import { canEdit, canPostAgain, canRetry, statusLabels } from '@/lib/post-status';
+import { Calendar } from '@/components/calendar';
 import { ids, type WorldNode } from './layout';
 import type { WorldData } from './types';
 
@@ -223,11 +225,12 @@ export function ComposerNode({ selected }: Props<'composer'>) {
             action={submitPost}
             returnTo="/canvas"
             initial={composing}
+            scheduledAt={world.composeTime}
             onSaved={() => {
               world.resetComposer();
               world.focus(ids.posts);
             }}
-            onCancel={composing ? world.resetComposer : undefined}
+            onCancel={composing || world.composeTime ? world.resetComposer : undefined}
           />
         )}
       </div>
@@ -238,9 +241,9 @@ export function ComposerNode({ selected }: Props<'composer'>) {
 function PostActions({ post }: { post: WorldData['posts'][number] }) {
   const world = useWorld();
   const [pending, startTransition] = useTransition();
-  const editable = post.status === 'draft' || post.status === 'scheduled' || post.status === 'failed';
-  const retry = post.status === 'failed' || post.status === 'partial';
-  const again = post.status === 'published' || post.status === 'partial';
+  const editable = canEdit(post.status);
+  const retry = canRetry(post.status);
+  const again = canPostAgain(post.status);
   if (!editable && !retry && !again) return null;
   return (
     <div className="row-tight post-actions">
@@ -262,8 +265,6 @@ function PostActions({ post }: { post: WorldData['posts'][number] }) {
     </div>
   );
 }
-
-const statusLabels = { draft: 'Draft', scheduled: 'Scheduled', publishing: 'Publishing', published: 'Published', partial: 'Partly published', failed: 'Failed' };
 
 export function PostsNode({ selected }: Props<'posts'>) {
   const world = useWorld();
@@ -303,6 +304,20 @@ export function PostsNode({ selected }: Props<'posts'>) {
             </div>
           </article>
         ))}
+      </div>
+    </div>
+  );
+}
+
+export function CalendarNode({ selected }: Props<'calendar'>) {
+  const world = useWorld();
+  return (
+    <div className={`world-panel calendar-panel ${selected ? 'is-selected' : ''}`}>
+      <header className="panel-drag">
+        Calendar <a className="small-link nodrag" href="/calendar">Full page →</a>
+      </header>
+      <div className="nodrag nowheel nopan panel-body">
+        <Calendar seed={world.data.calendar} onEdit={(postId, asCopy) => void world.composeFrom(postId, asCopy)} onCreate={world.composeAt} />
       </div>
     </div>
   );
@@ -405,6 +420,7 @@ export const nodeTypes = {
   step: StepNode,
   composer: ComposerNode,
   posts: PostsNode,
+  calendar: CalendarNode,
   plugin: PluginNode,
   pluginInstall: PluginInstallNode,
   activity: ActivityNode,

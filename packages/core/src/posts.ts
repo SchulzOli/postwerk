@@ -233,11 +233,11 @@ export async function listPosts(db: Database, workspaceId: string) {
 }
 
 /** Posts scheduled within [from, to), oldest first (for the calendar). */
-export async function listPostsBetween(db: Database, workspaceId: string, from: Date, to: Date) {
+export async function listPostsBetween(db: Database, workspaceId: string, from: Date, to: Date, limit = 500) {
   return db.query.posts.findMany({
     where: and(eq(posts.workspaceId, workspaceId), gte(posts.scheduledAt, from), lt(posts.scheduledAt, to)),
-    orderBy: [asc(posts.scheduledAt)],
-    limit: 500,
+    orderBy: [asc(posts.scheduledAt), asc(posts.id)],
+    limit,
     with: { targets: { with: { account: true } } },
   });
 }

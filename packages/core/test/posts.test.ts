@@ -5,7 +5,7 @@ import { runMigrations } from '../../db/src/migrate';
 import { saveAccount } from '../src/accounts';
 import { planPost } from '../src/flow';
 import { createFlow, saveFlow } from '../src/flows';
-import { createPost, getPostForEdit, reschedulePost, retryPost, updatePost } from '../src/posts';
+import { createPost, getPostForEdit, listPostsBetween, reschedulePost, retryPost, updatePost } from '../src/posts';
 import { runPublishCycle } from '../src/publisher';
 
 describe('planPost', () => {
@@ -171,5 +171,17 @@ describe.skipIf(!url)('editing posts (Postgres)', () => {
       accountIds: expect.arrayContaining([one, two]),
       flowId: null,
     });
+  });
+
+  it('lists the posts of a time range for the calendar', async () => {
+    const first = await create({ text: 'Early', scheduledAt: later(60) });
+    const second = await create({ text: 'Late', scheduledAt: later(180) });
+    await create({ text: 'Outside', scheduledAt: later(60 * 24 * 10) });
+    const [other] = await db.insert(workspaces).values({ name: 'Other' }).returning();
+    const inRange = await listPostsBetween(db, workspaceId, later(0), later(60 * 24));
+    expect(inRange.map((post) => post.id)).toEqual([first, second]);
+    expect(inRange[0]!.targets[0]!.account.handle).toBe('@one');
+    expect(await listPostsBetween(db, other!.id, later(0), later(60 * 24))).toEqual([]);
+    expect(await listPostsBetween(db, workspaceId, later(0), later(60 * 24), 1)).toHaveLength(1);
   });
 });

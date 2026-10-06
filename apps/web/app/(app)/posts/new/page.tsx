@@ -8,7 +8,9 @@ export const metadata = { title: 'New post · Postwerk' };
 
 export default async function NewPostPage({ searchParams }: { searchParams: Promise<Record<string, string | undefined>> }) {
   const { workspace } = await requireSession();
-  const { from } = await searchParams;
+  const { from, at } = await searchParams;
+  // Planned from the calendar: start scheduled for that time.
+  const startAt = at && !Number.isNaN(Date.parse(at)) ? new Date(at).toISOString() : undefined;
   const [{ accounts, flows }, initial] = await Promise.all([
     loadComposerChoices(workspace.id),
     // "Post again" starts from an earlier post.
@@ -28,7 +30,7 @@ export default async function NewPostPage({ searchParams }: { searchParams: Prom
   return (
     <div className="stack-lg">
       <h1>New post</h1>
-      <Composer accounts={accounts} flows={flows} action={submitPost} initial={initial} />
+      <Composer accounts={accounts} flows={flows} action={submitPost} initial={initial} scheduledAt={startAt} />
     </div>
   );
 }

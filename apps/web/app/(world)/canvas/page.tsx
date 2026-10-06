@@ -5,6 +5,7 @@ import { getDb, socialAccounts } from '@postwerk/db';
 import { getProvider, providerInfos } from '@postwerk/providers';
 import { World, type WorldData } from '@/components/world/world';
 import { toActivity } from '@/lib/activity-server';
+import { loadCalendarAroundNow } from '@/lib/calendar-server';
 import { getAppearance } from '@/lib/appearance';
 import { requireSession } from '@/lib/session';
 import { loadTeam } from '@/lib/team';
@@ -17,7 +18,7 @@ export default async function CanvasPage({ searchParams }: { searchParams: Promi
   const { connected, error, notice } = await searchParams;
   const db = getDb();
   const canManage = role !== 'editor';
-  const [accounts, flows, posts, positions, appearance, activity, team] = await Promise.all([
+  const [accounts, flows, posts, positions, appearance, activity, team, calendar] = await Promise.all([
     db.query.socialAccounts.findMany({
       where: eq(socialAccounts.workspaceId, workspace.id),
       orderBy: [asc(socialAccounts.provider), asc(socialAccounts.handle)],
@@ -28,6 +29,7 @@ export default async function CanvasPage({ searchParams }: { searchParams: Promi
     getAppearance(),
     canManage ? listWorkspaceAudit(db, workspace.id, { limit: 30 }) : null,
     loadTeam(session),
+    loadCalendarAroundNow(workspace.id),
   ]);
   const installed = new Set(appearance.installed.map((plugin) => plugin.id));
 
@@ -67,6 +69,7 @@ export default async function CanvasPage({ searchParams }: { searchParams: Promi
       media: post.media.slice(0, 4).map(({ url, kind, altText }) => ({ url, kind, altText })),
       targets: post.targets.map((target) => ({ accountId: target.socialAccountId, status: target.status, url: target.remoteUrl, error: target.lastError })),
     })),
+    calendar,
     positions,
     plugins: [
       ...builtinThemes.map((manifest) => ({ manifest, builtin: true, installed: installed.has(manifest.id) })),

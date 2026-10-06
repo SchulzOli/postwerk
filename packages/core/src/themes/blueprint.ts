@@ -5,7 +5,7 @@ export const blueprint: ThemeManifest = {
   kind: 'theme',
   id: 'blueprint',
   name: 'Blueprint',
-  version: '1.0.0',
+  version: '1.1.0',
   author: 'Postwerk',
   description: 'Your publishing plan as a technical drawing: drafting grid, monospace labels, square corners and right-angled connections.',
   base: {
@@ -81,12 +81,14 @@ export const blueprint: ThemeManifest = {
   border-top: 1px solid var(--line); border-left: 1px solid var(--line);
   font: 11px var(--font-mono); letter-spacing: 0.12em; color: var(--muted);
 }
-.region-networks::after { content: "POSTWERK · SHEET 1 / 6"; }
-.region-accounts::after { content: "POSTWERK · SHEET 2 / 6"; }
-.region-compose::after { content: "POSTWERK · SHEET 3 / 6"; }
-.region-posts::after { content: "POSTWERK · SHEET 4 / 6"; }
-.region-flows::after { content: "POSTWERK · SHEET 5 / 6"; }
-.region-plugins::after { content: "POSTWERK · SHEET 6 / 6"; }
+.region-networks::after { content: "POSTWERK · SHEET 1 / 8"; }
+.region-accounts::after { content: "POSTWERK · SHEET 2 / 8"; }
+.region-compose::after { content: "POSTWERK · SHEET 3 / 8"; }
+.region-posts::after { content: "POSTWERK · SHEET 4 / 8"; }
+.region-team::after { content: "POSTWERK · SHEET 5 / 8"; }
+.region-flows::after { content: "POSTWERK · SHEET 6 / 8"; }
+.region-plugins::after { content: "POSTWERK · SHEET 7 / 8"; }
+.region-calendar::after { content: "POSTWERK · SHEET 8 / 8"; }
 .world-card strong, .world-panel > header, .inspector h2, .inspector h3, .flow-name { font-family: var(--font-mono); }
 .world-card strong { font-size: 12.5px; text-transform: uppercase; letter-spacing: 0.06em; }
 button:where(:not(.link)), .button { font-family: var(--font-mono); text-transform: uppercase; letter-spacing: 0.06em; font-size: 0.78rem; }

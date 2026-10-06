@@ -17,6 +17,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
         <nav>
           <Link href="/canvas">Canvas</Link>
           <Link href="/posts">Posts</Link>
+          <Link href="/calendar">Calendar</Link>
           <Link href="/accounts">Accounts</Link>
           <Link href="/team">Team</Link>
           {role !== 'editor' && <Link href="/activity">Activity</Link>}

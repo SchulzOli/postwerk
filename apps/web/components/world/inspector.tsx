@@ -385,7 +385,7 @@ function ThemeEditor() {
 }
 
 export function Inspector({ node, onClose }: { node: WorldNode | undefined; onClose(): void }) {
-  if (!node || node.type === 'step' || node.type === 'composer' || node.type === 'posts' || node.type === 'activity' || node.type === 'members') return null;
+  if (!node || node.type === 'step' || node.type === 'composer' || node.type === 'posts' || node.type === 'calendar' || node.type === 'activity' || node.type === 'members') return null;
   const title =
     node.type === 'network'
       ? node.data.network.info.name
