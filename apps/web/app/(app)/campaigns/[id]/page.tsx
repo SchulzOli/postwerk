@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { formatMoney, getBrandKit, getCampaign, listMembers, pieceChannel, summarizeCampaign, type PieceKind, type PieceStatus } from '@maas/core';
+import { studioSetup } from '@maas/core/studio';
 import { getDb } from '@maas/db';
 import { AddPieceForm, DeleteButton, PieceStatusButtons, PlanForm, ResultForm } from '@/components/campaign-forms';
 import { LocalTime } from '@/components/local-time';
@@ -103,6 +104,11 @@ export default async function CampaignPage({ params }: Params) {
         )}
         {!canManage && <small className="muted">{t.adminsApprove}</small>}
         <AddPieceForm campaignId={campaign.id} />
+        {studioSetup() && (
+          <Link href={`/studio?campaign=${campaign.id}`} className="small-link">
+            {t.draftWithAi}
+          </Link>
+        )}
       </section>
 
       <section className="card stack">

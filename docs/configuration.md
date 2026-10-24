@@ -66,6 +66,14 @@ Network ids: `mastodon`, `bluesky`, `facebook`, `instagram`, `threads`, `linkedi
 | `ENABLE_META_ADS` | `true` turns on [Meta Ads](marketing/ads.md#set-up-meta-ads) (Facebook and Instagram ads), with the Facebook app from `FACEBOOK_CLIENT_ID` / `FACEBOOK_CLIENT_SECRET` |
 | `GOOGLE_ADS_API_URL`, `META_GRAPH_URL` | The platforms' API addresses; only for tests against fake servers |
 
+## AI studio
+
+| Variable | What it does |
+|---|---|
+| `ANTHROPIC_API_KEY` | Turns on the [AI studio](marketing/ai-studio.md): Claude drafts ads, print pieces, spots and post ideas into campaigns, billed to your Anthropic account |
+| `AI_MODEL` | The Claude model the studio uses (default `claude-opus-5-5`) |
+| `ANTHROPIC_BASE_URL` | Anthropic's API address; only for tests against a fake server |
+
 ## Letters by post
 
 | Variable | What it does |

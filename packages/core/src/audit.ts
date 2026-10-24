@@ -42,7 +42,8 @@ export type AuditAction =
   | 'ads.removed'
   | 'ads.launched'
   | 'ads.started'
-  | 'ads.paused';
+  | 'ads.paused'
+  | 'studio.drafted';
 
 export interface AuditInput {
   action: AuditAction;

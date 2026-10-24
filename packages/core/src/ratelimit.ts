@@ -29,6 +29,8 @@ export const limits = {
   emailAddress: { limit: 3, windowMs: 60 * 60_000 },
   /** Email requests per IP address. */
   emailIp: { limit: 20, windowMs: 60 * 60_000 },
+  /** AI studio runs per workspace (each one is billed by Anthropic). */
+  studio: { limit: 20, windowMs: 60 * 60_000 },
 } satisfies Record<string, RateLimit>;
 
 export function rateLimitKey(scope: string, value: string): string {

@@ -74,6 +74,7 @@ export const activityMessages = defineMessages({
       'ads.launched': (p) => `created the paused ad campaign ${p.target}`,
       'ads.started': (p) => `started the ad campaign ${p.target}`,
       'ads.paused': (p) => `paused the ad campaign ${p.target}`,
+      'studio.drafted': (p) => `had the AI studio draft for the campaign ${p.target}`,
     } satisfies Phrases as Phrases,
   },
   de: {
@@ -127,6 +128,7 @@ export const activityMessages = defineMessages({
       'ads.launched': (p) => `hat die pausierte Werbekampagne ${p.target} angelegt`,
       'ads.started': (p) => `hat die Werbekampagne ${p.target} gestartet`,
       'ads.paused': (p) => `hat die Werbekampagne ${p.target} pausiert`,
+      'studio.drafted': (p) => `hat im KI-Studio Entwürfe für die Kampagne ${p.target} erstellen lassen`,
     },
   },
 });

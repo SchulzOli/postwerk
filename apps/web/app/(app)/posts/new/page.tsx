@@ -14,7 +14,7 @@ export async function generateMetadata() {
 
 export default async function NewPostPage({ searchParams }: { searchParams: Promise<Record<string, string | undefined>> }) {
   const { workspace } = await requireSession();
-  const { from, at, campaign } = await searchParams;
+  const { from, at, campaign, text } = await searchParams;
   // Planned from the calendar: start scheduled for that time.
   const startAt = at && !Number.isNaN(Date.parse(at)) ? new Date(at).toISOString() : undefined;
   const [{ accounts, flows, campaigns }, initial, t] = await Promise.all([
@@ -37,7 +37,7 @@ export default async function NewPostPage({ searchParams }: { searchParams: Prom
   return (
     <div className="stack-lg">
       <h1>{t.newPost}</h1>
-      <Composer accounts={accounts} flows={flows} campaigns={campaigns} action={submitPost} initial={initial} campaignId={campaign} scheduledAt={startAt} />
+      <Composer accounts={accounts} flows={flows} campaigns={campaigns} action={submitPost} initial={initial} campaignId={campaign} scheduledAt={startAt} text={text?.slice(0, 5000)} />
     </div>
   );
 }

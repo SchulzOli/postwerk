@@ -58,6 +58,7 @@ export default defineConfig({
           { text: 'Print and letters', link: '/marketing/print' },
           { text: 'Video and radio spots', link: '/marketing/spots' },
           { text: 'Paid ads', link: '/marketing/ads' },
+          { text: 'AI studio', link: '/marketing/ai-studio' },
         ],
       },
       {

@@ -15,6 +15,7 @@ import {
   type CampaignStatus,
   type Channel,
   type Goal,
+  type PieceContent,
   type PieceKind,
   type PieceStatus,
   type PrintContent,
@@ -190,12 +191,12 @@ export async function campaignExists(db: Database, workspaceId: string, campaign
 
 // ------------------------------------------------------------------ pieces
 
-/** Adds an empty ad, print piece or spot to a campaign. */
+/** Adds an ad, print piece or spot to a campaign: empty, or with content already checked by its kind's rules (AI drafts). */
 export async function createPiece(
   db: Database,
   workspaceId: string,
   campaignId: string,
-  input: { kind: PieceKind; format: string; title: string },
+  input: { kind: PieceKind; format: string; title: string; content?: PieceContent },
   source: 'manual' | 'ai' = 'manual',
 ): Promise<Piece> {
   if (!(PIECE_KINDS as readonly string[]).includes(input.kind) || !isPieceFormat(input.kind, input.format)) throw new CampaignError((m) => m.format);
@@ -204,7 +205,7 @@ export async function createPiece(
   if (!(await campaignExists(db, workspaceId, campaignId))) throw new CampaignError((m) => m.notFound);
   const [row] = await db
     .insert(pieces)
-    .values({ workspaceId, campaignId, kind: input.kind, format: input.format, title: title.slice(0, 160), content: emptyContent(input.kind, input.format) as unknown as Record<string, unknown>, source })
+    .values({ workspaceId, campaignId, kind: input.kind, format: input.format, title: title.slice(0, 160), content: (input.content ?? emptyContent(input.kind, input.format)) as unknown as Record<string, unknown>, source })
     .returning();
   return row!;
 }

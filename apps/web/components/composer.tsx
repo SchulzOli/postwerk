@@ -50,6 +50,8 @@ interface Props {
   campaignId?: string;
   /** ISO time a new post is scheduled for at first (planned from the calendar). */
   scheduledAt?: string;
+  /** A new post's text at first (an idea from the AI studio). */
+  text?: string;
   /** Called after a successful save (canvas only; the list view navigates away). */
   onSaved?(): void;
   onCancel?(): void;
@@ -61,13 +63,13 @@ function toLocalInput(iso: string): string {
   return new Date(date.getTime() - date.getTimezoneOffset() * 60_000).toISOString().slice(0, 16);
 }
 
-export function Composer({ accounts, flows = [], campaigns = [], action, returnTo = '/posts', initial, campaignId: startCampaign, scheduledAt: startAt, onSaved, onCancel }: Props) {
+export function Composer({ accounts, flows = [], campaigns = [], action, returnTo = '/posts', initial, campaignId: startCampaign, scheduledAt: startAt, text: startText, onSaved, onCancel }: Props) {
   const [state, formAction, pending] = useActionState(action, {});
   const locale = useLocale();
   const t = useMessages(composerMessages);
   const common = useMessages(commonMessages);
   const editing = Boolean(initial?.postId);
-  const [text, setText] = useState(initial?.text ?? '');
+  const [text, setText] = useState(initial?.text ?? startText ?? '');
   const [attachments, setAttachments] = useState<ComposerMedia[]>(initial?.media ?? []);
   const [options, setOptions] = useState<Options>(initial?.options ?? {});
   const [selected, setSelected] = useState<Set<string>>(

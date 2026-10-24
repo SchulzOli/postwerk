@@ -501,6 +501,44 @@ export const adLaunches = pgTable(
   (t) => [uniqueIndex('ad_launches_piece_idx').on(t.pieceId)],
 );
 
+/** Tokens an AI studio run used (the provider bills these). */
+export interface StudioUsage {
+  inputTokens: number;
+  outputTokens: number;
+  cacheReadTokens: number;
+  cacheWriteTokens: number;
+}
+
+/** A format the AI studio could not draft, and why ("refused", "cut", "failed"). */
+export interface StudioFailure {
+  format: string;
+  reason: string;
+}
+
+/** One request to the AI studio: what it drafted into a campaign (as pieces), its ideas for posts, and the tokens it used. */
+export const studioRuns = pgTable(
+  'studio_runs',
+  {
+    id: id(),
+    workspaceId: uuid('workspace_id').notNull().references(() => workspaces.id, { onDelete: 'cascade' }),
+    campaignId: uuid('campaign_id').notNull().references(() => campaigns.id, { onDelete: 'cascade' }),
+    /** What was asked for: "ad:search", "print:flyer_a6", "spot:radio_30", "posts". */
+    formats: jsonb('formats').$type<string[]>().notNull(),
+    variants: integer('variants').notNull(),
+    language: text('language').notNull(),
+    notes: text('notes').notNull().default(''),
+    model: text('model').notNull(),
+    /** The drafted pieces (they may be deleted since). */
+    pieceIds: jsonb('piece_ids').$type<string[]>().notNull().default([]),
+    postIdeas: jsonb('post_ideas').$type<string[]>().notNull().default([]),
+    failures: jsonb('failures').$type<StudioFailure[]>().notNull().default([]),
+    usage: jsonb('usage').$type<StudioUsage>().notNull(),
+    createdBy: uuid('created_by').references(() => users.id, { onDelete: 'set null' }),
+    createdAt: createdAt(),
+  },
+  (t) => [index('studio_runs_workspace_idx').on(t.workspaceId, t.createdAt)],
+);
+
 /** Positions of canvas nodes the user moved (networks, accounts, panels), per workspace. */
 export const canvasPositions = pgTable(
   'canvas_positions',
@@ -628,6 +666,7 @@ export type Mailing = typeof mailings.$inferSelect;
 export type MailingLetter = typeof mailingLetters.$inferSelect;
 export type AdAccount = typeof adAccounts.$inferSelect;
 export type AdLaunch = typeof adLaunches.$inferSelect;
+export type StudioRun = typeof studioRuns.$inferSelect;
 export type MemberRole = (typeof memberRole.enumValues)[number];
 export type PostStatus = (typeof postStatus.enumValues)[number];
 export type TargetStatus = (typeof targetStatus.enumValues)[number];

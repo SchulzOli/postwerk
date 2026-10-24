@@ -250,6 +250,36 @@ export const campaignMessages = defineMessages({
   },
 });
 
+/** The AI studio (drafts by Claude). Glossary: AI → KI · draft → Entwurf · format → Format · variant → Variante. */
+export const studioMessages = defineMessages({
+  en: {
+    notSetUp: 'The AI studio is not set up on this server. Add an Anthropic API key (ANTHROPIC_API_KEY) to turn it on.',
+    chooseFormats: 'Choose at least one format.',
+    tooManyFormats: (max: number) => `Choose at most ${max} formats at a time.`,
+    variants: (max: number) => `Choose between 1 and ${max} variants.`,
+    language: 'Unknown language.',
+    notesTooLong: (max: number) => `The notes are longer than ${max} characters.`,
+    campaignGone: 'This campaign no longer exists.',
+    badKey: 'Anthropic did not accept the API key. Check ANTHROPIC_API_KEY on the server.',
+    busy: 'Claude is busy right now. Please try again in a minute.',
+    unreachable: 'The server could not reach Anthropic. Please try again later.',
+    nothing: 'Claude could not draft anything this time. Try again, or change the notes.',
+  },
+  de: {
+    notSetUp: 'Das KI-Studio ist auf diesem Server nicht eingerichtet. Hinterlege einen Anthropic-API-Schlüssel (ANTHROPIC_API_KEY), um es einzuschalten.',
+    chooseFormats: 'Wähl mindestens ein Format aus.',
+    tooManyFormats: (max) => `Wähl höchstens ${max} Formate auf einmal.`,
+    variants: (max) => `Wähl zwischen 1 und ${max} Varianten.`,
+    language: 'Unbekannte Sprache.',
+    notesTooLong: (max) => `Die Hinweise sind länger als ${max} Zeichen.`,
+    campaignGone: 'Diese Kampagne gibt es nicht mehr.',
+    badKey: 'Anthropic hat den API-Schlüssel nicht angenommen. Prüf ANTHROPIC_API_KEY auf dem Server.',
+    busy: 'Claude ist gerade ausgelastet. Bitte versuch es in einer Minute noch einmal.',
+    unreachable: 'Der Server hat Anthropic nicht erreicht. Bitte versuch es später noch einmal.',
+    nothing: 'Claude konnte diesmal nichts entwerfen. Versuch es noch einmal oder ändere die Hinweise.',
+  },
+});
+
 /** The production briefing of a spot (a PDF for agencies, studios and speakers). */
 export const briefingMessages = defineMessages({
   en: {

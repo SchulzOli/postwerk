@@ -97,6 +97,21 @@ export function pieceChannel(kind: PieceKind, format: string): Channel {
   return SPOT_FORMATS[format as SpotFormat].channel;
 }
 
+// ------------------------------------------------------------------ AI studio
+
+/** What the AI studio can draft: "ad:search", "print:flyer_a6", "spot:radio_30"…, and "posts" (ideas for social posts). */
+export const STUDIO_FORMATS: readonly string[] = [
+  ...Object.keys(AD_FORMATS).map((format) => `ad:${format}`),
+  ...Object.keys(PRINT_FORMATS).map((format) => `print:${format}`),
+  ...Object.keys(SPOT_FORMATS).map((format) => `spot:${format}`),
+  'posts',
+];
+export const MAX_STUDIO_FORMATS = 6;
+export const MAX_STUDIO_VARIANTS = 3;
+export const MAX_STUDIO_NOTES = 1000;
+/** Social post ideas per draft asked for. */
+export const POST_IDEAS_PER_VARIANT = 3;
+
 // ------------------------------------------------------------------ contents
 
 export interface AdContent {
