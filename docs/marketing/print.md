@@ -2,6 +2,8 @@
 
 Print pieces belong to a campaign. MarketingAsAService lays them out from the brand kit: colors, typeface, logo, contact details and the brand character with its catchphrase. You write the texts, pick a picture and download a print-ready PDF, or send letters by post through Pingen.
 
+![An A5 flyer as the print PDF lays it out: brand colors, logo, the brand character with its catchphrase, and a QR code](../screenshots/marketing-flyer.png)
+
 ## Formats
 
 | Format | Size (trim) | Channel | Notes |

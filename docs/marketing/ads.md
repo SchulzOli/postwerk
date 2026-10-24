@@ -8,6 +8,8 @@ Ad pieces run as paid campaigns on **Google Ads** and **Meta Ads**:
 | YouTube video ad | Google Ads | A Demand Gen campaign showing a [video spot](spots.md) on YouTube only: in-stream, in-feed and Shorts |
 | Facebook / Instagram ad | Meta Ads | A campaign with one ad set and one single-image ad on Facebook and Instagram |
 
+![A search ad: texts with their limits, the preview, and the running campaign](../screenshots/marketing-ad.png)
+
 MarketingAsAService never spends money on its own:
 
 - Every campaign is created **paused**. Nothing runs until an owner or admin presses **Start**.

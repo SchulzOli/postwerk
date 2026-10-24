@@ -11,7 +11,7 @@ const base = process.env.DOCS_BASE ?? '/MarketingAsAService/';
  */
 export default defineConfig({
   title: 'MarketingAsAService',
-  description: 'Self-hosted social media scheduling: write once, publish everywhere.',
+  description: 'Self-hosted marketing: social posts, ads, print, letters and spots in campaigns with one brand.',
   base,
   cleanUrls: true,
   // Broken links never fail the build: scripts/check-links.mjs reports them as warnings.
@@ -55,6 +55,7 @@ export default defineConfig({
       {
         text: 'Marketing',
         items: [
+          { text: 'Brand and campaigns', link: '/marketing/' },
           { text: 'Print and letters', link: '/marketing/print' },
           { text: 'Video and radio spots', link: '/marketing/spots' },
           { text: 'Paid ads', link: '/marketing/ads' },

@@ -1,7 +1,7 @@
 {
   "name": "marketing-as-a-service",
   "private": true,
-  "description": "Self-hosted social media scheduler: write once, publish everywhere.",
+  "description": "Self-hosted marketing: social posts, ads, print, letters and spots in campaigns with one brand.",
   "license": "MIT",
   "repository": {
     "type": "git",

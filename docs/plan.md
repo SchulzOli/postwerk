@@ -1,6 +1,6 @@
 # MarketingAsAService — Product & Technical Plan
 
-MarketingAsAService is a self-hostable social media scheduler. The goal: **anyone can connect their accounts with one click and plan posts for every network — without ever touching a developer console.**
+MarketingAsAService is a self-hostable marketing platform for a business. It started as a social media scheduler; the goals are: **anyone can connect their accounts with one click and plan posts for every network — without ever touching a developer console**, and **a business can run its whole marketing in campaigns — social posts, ads, print, letters and spots — with one brand and one recurring brand character.**
 
 This document is the long-term plan. It is a living document; update it when decisions change.
 
@@ -130,10 +130,21 @@ With a Zernio API key, users can post to Instagram, Facebook, LinkedIn, TikTok, 
 
 Open code tasks: TikTok's required posting screen (only for public services), an optional Meta data deletion callback (the instructions page is enough for Meta), self-service account deletion (now by email).
 
+### Marketing beyond social media ✅
+A business's marketing runs in campaigns across every channel it uses, with one brand. See [the marketing docs](marketing/index.md).
+
+- **Brand kit**: company details, tone of voice, do's and don'ts, colors, a typeface for print, logo, and one **brand character** (look, personality, voice, catchphrase, what it never does, reference pictures) that every piece builds on
+- **Campaigns**: goal, key message, audience, dates, a budget split across channels (social, search/social/video ads, print, mail, radio, TV, cinema, outdoor); pieces in fixed formats with an approval step (draft → approved → live → done); posts belong to campaigns; results per channel with cost per lead and return on ad spend
+- **Print and letters**: print-ready PDFs (3 mm bleed, CMYK, embedded fonts, optional crop marks) for flyers, posters, newspaper ads, postcards and DIN 5008 letters; letters and postcards sent by post through **Pingen**, with a price estimate, a confirmation step, and status and postage booked into the campaign
+- **Spots**: scripts for video, TV, cinema and radio spots checked for length, pace and the brand character; a production briefing PDF; the finished file kept with the piece and uploaded to YouTube
+- **Paid ads**: Google search and YouTube (Demand Gen) video ads on **Google Ads**, image ads on **Meta Ads**; ad accounts connected by owners and admins; campaigns created paused from approved pieces, started and paused here; numbers read back every hour into the campaign's results
+- **AI studio** (optional, `ANTHROPIC_API_KEY`): Claude drafts ads, print texts, spot scripts and post ideas into a campaign in the brand's voice; drafts need the same approval as any piece
+- Next: picture generation for the brand character (consistent across pieces), TikTok and LinkedIn ads, outdoor booking, an export of a campaign's results
+
 ### Phase 4 — Delight
 - Live post previews per network
-- AI assistant (Claude) to draft, shorten and adapt one post per network, suggest hashtags, write alt text
-- Approval workflow (editor drafts → admin approves)
+- AI assistant (Claude) in the composer to shorten and adapt one post per network, suggest hashtags, write alt text (campaign drafts and post ideas come from the AI studio)
+- Approval workflow for posts (editor drafts → admin approves), as campaign pieces already have
 - First comment, link shortener with UTM tags
 - Best-time-to-post suggestions; analytics from each network's insights API
 - Content library / templates, recurring posts

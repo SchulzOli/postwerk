@@ -9,7 +9,7 @@ export async function generateMetadata(): Promise<Metadata> {
   const locale = await getLocale();
   return {
     title: 'MarketingAsAService',
-    description: locale === 'de' ? 'Social-Media-Beiträge an einem Ort planen und veröffentlichen.' : 'Plan and publish social media posts from one place.',
+    description: locale === 'de' ? 'Marketing an einem Ort: Beiträge, Anzeigen, Drucksachen, Briefe und Spots.' : 'Marketing in one place: posts, ads, print, letters and spots.',
   };
 }
 

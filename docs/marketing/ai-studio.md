@@ -4,6 +4,8 @@ The AI studio lets Claude, Anthropic's AI model, write first drafts for a campai
 
 Drafts are never published by the studio. Each one lands in the campaign as a piece marked **AI draft**, with status *draft*. You edit it in the same editor as any other piece, and an owner or admin approves it before it runs.
 
+![A studio run: drafts in the campaign and ideas for posts](../screenshots/marketing-studio-run.png)
+
 ## What it drafts
 
 | Choice | What you get |
