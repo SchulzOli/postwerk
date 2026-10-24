@@ -471,7 +471,7 @@ export const mailMessages = defineMessages({
     invite: {
       subject: (p: { inviter: string; workspace: string }) => `${p.inviter} invited you to ${p.workspace} on MarketingAsAService`,
       body: (p: { inviter: string; workspace: string; role: string }) =>
-        `${p.inviter} invited you to plan and publish social media posts together in “${p.workspace}” as ${p.role}.`,
+        `${p.inviter} invited you to plan and publish marketing together in “${p.workspace}” as ${p.role}.`,
       action: (workspace: string) => `Join ${workspace}`,
       footer: 'The invite works once and expires in 7 days.',
     },
@@ -502,7 +502,7 @@ export const mailMessages = defineMessages({
     },
     invite: {
       subject: (p) => `${p.inviter} hat dich zu ${p.workspace} auf MarketingAsAService eingeladen`,
-      body: (p) => `${p.inviter} hat dich eingeladen, in „${p.workspace}“ gemeinsam Social-Media-Beiträge zu planen und zu veröffentlichen, als ${p.role}.`,
+      body: (p) => `${p.inviter} hat dich eingeladen, in „${p.workspace}“ gemeinsam Marketing zu planen und zu veröffentlichen, als ${p.role}.`,
       action: (workspace) => `${workspace} beitreten`,
       footer: 'Die Einladung funktioniert einmal und läuft nach 7 Tagen ab.',
     },

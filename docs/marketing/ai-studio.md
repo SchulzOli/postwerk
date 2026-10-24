@@ -60,4 +60,4 @@ Claude's safety checks can decline a request, even a harmless one. The studio ha
 
 ## Privacy
 
-The texts listed under [What Claude knows](#what-claude-knows) go to Anthropic. If people other than you use your server, name Anthropic as a processor in your privacy policy. See Anthropic's [commercial terms and privacy policy](https://www.anthropic.com/legal).
+The texts listed under [What Claude knows](#what-claude-knows) go to Anthropic. While the studio is on, the server's [built-in privacy policy](../legal.md) names Anthropic as a service provider; if you link your own policy instead, add it there. See Anthropic's [commercial terms and privacy policy](https://www.anthropic.com/legal).

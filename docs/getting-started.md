@@ -31,6 +31,12 @@ Open `APP_URL`, sign up (you get your own workspace and can invite others), and 
 
 Mastodon, Bluesky, Telegram and Discord work right away. For the others, decide per network: your own developer app, the Zernio bridge, or not at all. [Choose how to offer each network](networks/index.md) explains the options; the canvas shows the same for each network.
 
+## Set up your brand and a first campaign
+
+Fill in **Brand** first: tone of voice, colors, logo and, if you like, a brand character. Every print piece, spot and ad builds on it. Then start a campaign under **Campaigns** with a goal, a key message and a budget per channel, and add posts, ads, print pieces or spots to it. [Brand and campaigns](marketing/index.md) explains each part.
+
+Letters by post, paid ads and the AI studio are optional. Each one turns on with its own settings: see [Configuration](configuration.md).
+
 ## Try it with the sandbox
 
 `ENABLE_SANDBOX=true` adds a fake network called Sandbox. Connect a Sandbox account and schedule a post; put `#fail` or `#flaky` in the text to see how MarketingAsAService handles errors and retries.
