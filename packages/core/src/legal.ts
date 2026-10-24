@@ -1,6 +1,7 @@
 import { providerInfos, type ProviderInfo } from '@maas/providers';
 import { bridgeSetup, networkRoute } from './bridge';
 import { isMailConfigured } from './mail';
+import { pingenConfig } from './pingen';
 
 type Env = Record<string, string | undefined>;
 
@@ -63,7 +64,7 @@ export function legalPages(env: Env = process.env): Record<LegalPage, { href: st
 
 /** A service provider that handles personal data for this server (named on the privacy page). */
 export interface Processor {
-  kind: 'hosting' | 'storage' | 'mail' | 'bridge';
+  kind: 'hosting' | 'storage' | 'mail' | 'bridge' | 'letters' | 'ai';
   name: string;
   privacyUrl?: string;
 }
@@ -76,7 +77,7 @@ const host = (url: string | undefined) => {
   }
 };
 
-/** The service providers this server's settings use: hosting, S3 storage, SMTP, the bridge. */
+/** The service providers this server's settings use: hosting, S3 storage, SMTP, the bridge, the letter service, the AI studio. */
 export function dataProcessors(env: Env = process.env): Processor[] {
   const processors: Processor[] = [];
   const hosting = clean(env.OPERATOR_HOSTING);
@@ -87,6 +88,9 @@ export function dataProcessors(env: Env = process.env): Processor[] {
   if (mail) processors.push({ kind: 'mail', name: mail });
   const bridge = bridgeSetup(env)?.bridge;
   if (bridge) processors.push({ kind: 'bridge', name: `${bridge.name} (${bridge.company})`, privacyUrl: bridge.privacyUrl });
+  if (pingenConfig(env)) processors.push({ kind: 'letters', name: 'Pingen AG, Switzerland' });
+  // The AI studio is on with an Anthropic key (see studio.ts).
+  if (env.ANTHROPIC_API_KEY?.trim()) processors.push({ kind: 'ai', name: 'Anthropic PBC (Claude), USA', privacyUrl: 'https://www.anthropic.com/legal/privacy' });
   return processors;
 }
 

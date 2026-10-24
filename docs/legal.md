@@ -33,7 +33,7 @@ They are linked from the sign-in pages and from the account menu. The canvas lis
 
 They are written from what MarketingAsAService really does, and adapt to your settings:
 
-- **Privacy policy:** who is responsible; what MarketingAsAService stores and why (account, content, connected accounts with encrypted access, sign-in protection, an activity log whose IP addresses are deleted after 90 days, only necessary cookies, emails); the privacy policies of the networks offered on your server; the YouTube API Services wording Google requires, when YouTube is offered; the service providers your settings use (hosting, S3 storage, SMTP, Zernio); how long data is kept; people's rights.
+- **Privacy policy:** who is responsible; what MarketingAsAService stores and why (account, content, connected accounts with encrypted access, sign-in protection, an activity log whose IP addresses are deleted after 90 days, only necessary cookies, emails); the privacy policies of the networks offered on your server; the YouTube API Services wording Google requires, when YouTube is offered; the service providers your settings use (hosting, S3 storage, SMTP, Zernio, Pingen for letters, Anthropic for the AI studio); how long data is kept; people's rights.
 - **Terms:** the service, accounts, content, liability, ending, changes; YouTube's terms when YouTube is offered.
 - **Data deletion:** disconnecting accounts (and that Zernio removes them too), revoking access at the network, deleting everything by email.
 - **About:** who runs the server, what MarketingAsAService does, which networks people can connect and which go through Zernio.
