@@ -3,6 +3,7 @@
 import { useActionState, useState } from 'react';
 import type { BrandCharacter, BrandColors } from '@maas/db/types';
 import { saveBrandKitAction, type BrandState } from '@/app/(app)/brand/actions';
+import { keepValues } from '@/lib/form';
 import { useMessages } from '@/lib/i18n';
 import { brandMessages } from '@/messages/brand';
 import { ImageField, type StoredImage } from './image-field';
@@ -45,7 +46,7 @@ export function BrandForm({ kit, logo, characterImages, canEdit }: { kit: BrandF
   const [hasCharacter, setHasCharacter] = useState(Boolean(kit.character));
   const c = kit.character;
   return (
-    <form action={action} className="stack-lg">
+    <form onSubmit={keepValues(action)} className="stack-lg">
       <fieldset disabled={!canEdit} className="stack-lg">
         <section className="card stack">
           <h2>{t.company}</h2>
