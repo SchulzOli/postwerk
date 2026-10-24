@@ -185,6 +185,10 @@ export const campaignMessages = defineMessages({
     day: 'Please enter the day the results are for.',
     manage: 'Only workspace owners and admins can approve pieces.',
     approveFirst: 'Approve the piece first.',
+    recipients: (max: number) => `Add between 1 and ${max} recipients.`,
+    link: 'The QR code link must start with https:// or http://.',
+    size: 'Enter the ad size in millimetres, between 20 and 1200.',
+    notAnImage: 'Pictures must be uploaded images of this workspace.',
   },
   de: {
     name: 'Bitte gib der Kampagne einen Namen.',
@@ -203,6 +207,10 @@ export const campaignMessages = defineMessages({
     day: 'Bitte gib den Tag an, für den die Ergebnisse gelten.',
     manage: 'Nur Inhaber und Admins des Arbeitsbereichs können Werbemittel freigeben.',
     approveFirst: 'Gib das Werbemittel zuerst frei.',
+    recipients: (max) => `Gib zwischen 1 und ${max} Empfänger an.`,
+    link: 'Der Link für den QR-Code muss mit https:// oder http:// beginnen.',
+    size: 'Gib die Anzeigengröße in Millimetern an, zwischen 20 und 1200.',
+    notAnImage: 'Bilder müssen hochgeladene Bilder dieses Arbeitsbereichs sein.',
   },
 });
 

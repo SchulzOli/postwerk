@@ -5,6 +5,8 @@ export * from './accounts';
 export * from './bluesky';
 export * from './brand';
 export * from './campaigns';
+export * from './mailings';
+export * from './pingen';
 export * from './marketing';
 export * from './bridge';
 export * from './bridge-usage';

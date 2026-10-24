@@ -395,6 +395,56 @@ export const campaignResults = pgTable(
   (t) => [index('campaign_results_campaign_idx').on(t.campaignId, t.day)],
 );
 
+export const mailingStatus = pgEnum('mailing_status', ['sending', 'done']);
+export const letterStatus = pgEnum('letter_status', ['queued', 'uploading', 'submitted', 'sent', 'failed']);
+
+/** A letter piece sent by post to a list of recipients, through a letter service (Pingen). */
+export const mailings = pgTable(
+  'mailings',
+  {
+    id: id(),
+    workspaceId: uuid('workspace_id').notNull().references(() => workspaces.id, { onDelete: 'cascade' }),
+    campaignId: uuid('campaign_id').notNull().references(() => campaigns.id, { onDelete: 'cascade' }),
+    pieceId: uuid('piece_id').notNull().references(() => pieces.id, { onDelete: 'cascade' }),
+    /** The letter service's product: "fast" or "cheap". */
+    deliveryProduct: text('delivery_product').notNull(),
+    color: boolean('color').notNull().default(true),
+    /** Language of the letters' date line and country names. */
+    locale: text('locale').notNull().default('de'),
+    status: mailingStatus('status').notNull().default('sending'),
+    createdBy: uuid('created_by').references(() => users.id, { onDelete: 'set null' }),
+    createdAt: createdAt(),
+    finishedAt: timestamp('finished_at', { withTimezone: true }),
+  },
+  (t) => [index('mailings_piece_idx').on(t.pieceId)],
+);
+
+/** One recipient's letter in a mailing. The address is kept until the mailing is deleted. */
+export const mailingLetters = pgTable(
+  'mailing_letters',
+  {
+    id: id(),
+    mailingId: uuid('mailing_id').notNull().references(() => mailings.id, { onDelete: 'cascade' }),
+    workspaceId: uuid('workspace_id').notNull().references(() => workspaces.id, { onDelete: 'cascade' }),
+    name: text('name').notNull(),
+    /** Street, postcode and town, country. */
+    lines: jsonb('lines').$type<string[]>().notNull(),
+    /** ISO 3166 code, for prices. */
+    country: text('country').notNull(),
+    status: letterStatus('status').notNull().default('queued'),
+    attempts: integer('attempts').notNull().default(0),
+    /** The letter service's id and its own status word ("valid", "sent", "action_required"…). */
+    serviceId: text('service_id'),
+    serviceStatus: text('service_status'),
+    priceCents: integer('price_cents'),
+    priceCurrency: text('price_currency'),
+    error: text('error'),
+    createdAt: createdAt(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [index('mailing_letters_mailing_idx').on(t.mailingId), index('mailing_letters_status_idx').on(t.status, t.updatedAt)],
+);
+
 /** Positions of canvas nodes the user moved (networks, accounts, panels), per workspace. */
 export const canvasPositions = pgTable(
   'canvas_positions',
@@ -518,6 +568,8 @@ export type BrandKit = typeof brandKits.$inferSelect;
 export type Campaign = typeof campaigns.$inferSelect;
 export type Piece = typeof pieces.$inferSelect;
 export type CampaignResult = typeof campaignResults.$inferSelect;
+export type Mailing = typeof mailings.$inferSelect;
+export type MailingLetter = typeof mailingLetters.$inferSelect;
 export type MemberRole = (typeof memberRole.enumValues)[number];
 export type PostStatus = (typeof postStatus.enumValues)[number];
 export type TargetStatus = (typeof targetStatus.enumValues)[number];
@@ -529,6 +581,14 @@ export const campaignsRelations = relations(campaigns, ({ many }) => ({
 
 export const piecesRelations = relations(pieces, ({ one }) => ({
   campaign: one(campaigns, { fields: [pieces.campaignId], references: [campaigns.id] }),
+}));
+
+export const mailingsRelations = relations(mailings, ({ many }) => ({
+  letters: many(mailingLetters),
+}));
+
+export const mailingLettersRelations = relations(mailingLetters, ({ one }) => ({
+  mailing: one(mailings, { fields: [mailingLetters.mailingId], references: [mailings.id] }),
 }));
 
 export const campaignResultsRelations = relations(campaignResults, ({ one }) => ({

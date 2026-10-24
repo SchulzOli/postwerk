@@ -1,6 +1,7 @@
 import { and, asc, count, desc, eq, sql } from 'drizzle-orm';
 import { campaignResults, campaigns, pieces, posts, type Campaign, type CampaignResult, type ChannelBudget, type Database, type Piece } from '@maas/db';
 import { LocalizedError } from './i18n';
+import { findMedia } from './media';
 import {
   CAMPAIGN_STATUSES,
   CHANNELS,
@@ -16,6 +17,7 @@ import {
   type Goal,
   type PieceKind,
   type PieceStatus,
+  type PrintContent,
 } from './marketing';
 import { campaignMessages } from './messages';
 
@@ -328,4 +330,46 @@ export function summarizeCampaign(campaign: Pick<Campaign, 'budgetCents' | 'chan
   const sum = (key: 'plannedCents' | 'spendCents' | 'reach' | 'clicks' | 'leads' | 'sales' | 'revenueCents') => channels.reduce((total, channel) => total + channel[key], 0);
   const total = ratios({ channel: 'total', plannedCents: sum('plannedCents'), spendCents: sum('spendCents'), reach: sum('reach'), clicks: sum('clicks'), leads: sum('leads'), sales: sum('sales'), revenueCents: sum('revenueCents') });
   return { channels, total, budgetCents: campaign.budgetCents, unplannedCents: campaign.budgetCents - total.plannedCents };
+}
+
+// ------------------------------------------------------------------ print pieces
+
+const MAX_PRINT_TEXT = { headline: 160, body: 4000, callToAction: 80 };
+
+/** Checks a print piece's content; throws CampaignError with what to fix. */
+export function cleanPrintContent(format: string, input: PrintContent): PrintContent {
+  const text = (value: string, max: number) => longText(String(value ?? ''), max);
+  const qrUrl = String(input.qrUrl ?? '').trim();
+  if (qrUrl && (!/^https?:\/\/\S+$/i.test(qrUrl) || qrUrl.length > 500)) throw new CampaignError((m) => m.link);
+  const content: PrintContent = {
+    headline: text(input.headline, MAX_PRINT_TEXT.headline),
+    body: text(input.body, MAX_PRINT_TEXT.body),
+    callToAction: text(input.callToAction, MAX_PRINT_TEXT.callToAction),
+    showCharacter: Boolean(input.showCharacter),
+    showLogo: Boolean(input.showLogo),
+    showContact: Boolean(input.showContact),
+    qrUrl,
+    ...(input.imageMediaId && { imageMediaId: input.imageMediaId }),
+  };
+  if (format === 'newspaper') {
+    const size = (value: unknown) => {
+      const mm = Math.round(Number(value));
+      if (!Number.isFinite(mm) || mm < 20 || mm > 1200) throw new CampaignError((m) => m.size);
+      return mm;
+    };
+    content.widthMm = size(input.widthMm);
+    content.heightMm = size(input.heightMm);
+  }
+  return content;
+}
+
+/** Saves a print piece; its picture must be an image uploaded to the workspace. Sends the piece back to draft. */
+export async function savePrintPiece(db: Database, workspaceId: string, pieceId: string, input: { title: string; content: PrintContent }): Promise<Piece> {
+  const piece = await getPiece(db, workspaceId, pieceId);
+  if (!piece || piece.kind !== 'print') throw new CampaignError((m) => m.pieceNotFound);
+  const content = cleanPrintContent(piece.format, input.content);
+  const mediaIds = content.imageMediaId ? [content.imageMediaId] : [];
+  const found = await findMedia(db, workspaceId, mediaIds);
+  if (mediaIds.some((id) => found.get(id)?.kind !== 'image')) throw new CampaignError((m) => m.notAnImage);
+  return savePiece(db, workspaceId, pieceId, { title: input.title, content, mediaIds });
 }

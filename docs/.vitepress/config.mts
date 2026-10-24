@@ -53,6 +53,10 @@ export default defineConfig({
         ],
       },
       {
+        text: 'Marketing',
+        items: [{ text: 'Print and letters', link: '/marketing/print' }],
+      },
+      {
         text: 'Project',
         items: [
           { text: 'Roadmap', link: '/plan' },

@@ -85,7 +85,11 @@ export default async function CampaignPage({ params }: Params) {
             {pieces.map((piece) => (
               <li key={piece.id} className="stack-sm">
                 <div className="row">
-                  <strong className="grow">{piece.title}</strong>
+                  {piece.kind === 'print' ? (
+                    <Link href={`/campaigns/${campaign.id}/pieces/${piece.id}`} className="grow piece-link">{piece.title}</Link>
+                  ) : (
+                    <strong className="grow">{piece.title}</strong>
+                  )}
                   {piece.source === 'ai' && <span className="badge">{t.fromAi}</span>}
                   <span className={`badge piece-${piece.status}`}>{t.pieceStatuses[piece.status]}</span>
                 </div>

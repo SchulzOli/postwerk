@@ -57,6 +57,15 @@ Details: [About and legal pages](legal.md).
 
 Network ids: `mastodon`, `bluesky`, `facebook`, `instagram`, `threads`, `linkedin`, `linkedin_page`, `x`, `tiktok`, `youtube`, `google_business`, `pinterest`, `reddit`, `telegram`, `discord`. Which to pick: [Choose how to offer each network](networks/index.md).
 
+## Letters by post
+
+| Variable | What it does |
+|---|---|
+| `PINGEN_CLIENT_ID`, `PINGEN_CLIENT_SECRET` | Sends letter pieces by post through [Pingen](marketing/print.md#send-letters-with-pingen), billed to your Pingen account |
+| `PINGEN_ORGANISATION_ID` | The Pingen organisation to send from (default: the first one) |
+| `PINGEN_STAGING` | `true` uses Pingen's test environment; letters are checked but never sent |
+| `PINGEN_API_URL` | Pingen's API address; only for tests against a fake server |
+
 ## Tests
 
 | Variable | What it does |

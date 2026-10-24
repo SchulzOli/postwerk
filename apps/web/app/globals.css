@@ -155,6 +155,12 @@ button.danger { color: var(--error); }
 .results-table th { font-size: 0.8rem; vertical-align: bottom; }
 .results-table .total-row td { font-weight: 600; border-bottom: 0; }
 details > summary { cursor: pointer; color: var(--muted); }
+.piece-link { font-weight: 700; color: var(--text); }
+.piece-link:hover { color: var(--accent); }
+.piece-layout { display: grid; gap: 1.5rem; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); align-items: start; }
+@media (max-width: 900px) { .piece-layout { grid-template-columns: minmax(0, 1fr); } }
+.pdf-preview { width: 100%; aspect-ratio: 1 / 1.3; border: 1px solid var(--border); border-radius: var(--radius); background: var(--field); }
+.warn-list { color: var(--warn); padding-left: 1.2rem; list-style: disc; font-size: 0.9rem; display: flex; flex-direction: column; gap: 0.3rem; }
 .campaigns-node { gap: 0.6rem; }
 .campaign-mini { display: flex; flex-direction: column; gap: 0.15rem; padding-bottom: 0.5rem; border-bottom: 1px solid var(--border); }
 .campaign-mini a { color: var(--text); text-decoration: none; }

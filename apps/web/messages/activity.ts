@@ -67,6 +67,8 @@ export const activityMessages = defineMessages({
       'piece.created': (p) => `added ${p.target}`,
       'piece.approved': (p) => `approved ${p.target}`,
       'piece.deleted': (p) => `deleted ${p.target}`,
+      'mailing.sent': (p) => `sent ${p.target} by post`,
+      'mailing.deleted': (p) => `deleted the addresses of a mailing${p.target ? ` of ${p.target}` : ''}`,
     } satisfies Phrases as Phrases,
   },
   de: {
@@ -113,6 +115,8 @@ export const activityMessages = defineMessages({
       'piece.created': (p) => `hat ${p.target} hinzugefügt`,
       'piece.approved': (p) => `hat ${p.target} freigegeben`,
       'piece.deleted': (p) => `hat ${p.target} gelöscht`,
+      'mailing.sent': (p) => `hat ${p.target} per Post verschickt`,
+      'mailing.deleted': (p) => `hat die Adressen eines Mailings${p.target ? ` von ${p.target}` : ''} gelöscht`,
     },
   },
 });
