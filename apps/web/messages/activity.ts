@@ -60,6 +60,7 @@ export const activityMessages = defineMessages({
       'post.retried': (p) => `retried “${p.target}”`,
       'plugin.installed': (p) => `installed the ${p.target} theme`,
       'plugin.uninstalled': (p) => `uninstalled the ${p.target} theme`,
+      'brand.updated': () => 'updated the brand kit',
     } satisfies Phrases as Phrases,
   },
   de: {
@@ -99,6 +100,7 @@ export const activityMessages = defineMessages({
       'post.retried': (p) => `hat „${p.target}“ erneut versucht`,
       'plugin.installed': (p) => `hat das Design ${p.target} installiert`,
       'plugin.uninstalled': (p) => `hat das Design ${p.target} deinstalliert`,
+      'brand.updated': () => 'hat das Marken-Kit geändert',
     },
   },
 });

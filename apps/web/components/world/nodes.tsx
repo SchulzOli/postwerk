@@ -18,6 +18,7 @@ import { intlLocale } from '@/lib/locale';
 import { canEdit, canPostAgain, canRetry } from '@/lib/post-status';
 import { Calendar } from '@/components/calendar';
 import { canvasMessages, formatMinutes } from '@/messages/canvas';
+import { brandMessages } from '@/messages/brand';
 import { commonMessages } from '@/messages/common';
 import { mediaSummary, networksMessages, usageCost } from '@/messages/networks';
 import { themesMessages } from '@/messages/themes';
@@ -97,6 +98,42 @@ export function BridgeUsageNode({ selected }: Props<'bridgeUsage'>) {
         {t.usageThisMonth(month.peakAccounts)}
         {usage.price && ` · ${t.usageCost(usageCost(month.peakAccounts, usage.price, locale))}`}
       </small>
+    </div>
+  );
+}
+
+export function BrandNode({ selected }: Props<'brand'>) {
+  const t = useMessages(brandMessages);
+  const brand = useWorld().data.brand;
+  return (
+    <div className={`world-card brand-node ${selected ? 'is-selected' : ''}`}>
+      <div className="row-tight">
+        {brand.logoUrl ? <img src={brand.logoUrl} alt="" className="brand-logo" /> : null}
+        <div className="grow clip">
+          <strong className="clip">{brand.companyName}</strong>
+          {brand.tagline && <small className="muted clip">{brand.tagline}</small>}
+        </div>
+      </div>
+      <div className="brand-swatches" aria-hidden>
+        {([brand.colors.primary, brand.colors.secondary, brand.colors.accent, brand.colors.text, brand.colors.background]).map((color, index) => (
+          <span key={index} style={{ background: color }} />
+        ))}
+      </div>
+      {brand.character ? (
+        <div className="row-tight brand-character">
+          {brand.character.imageUrl ? <img src={brand.character.imageUrl} alt="" /> : <span className="avatar-sm" />}
+          <div className="grow">
+            <strong>{brand.character.name}</strong>
+            {brand.character.role && <small className="muted"> · {brand.character.role}</small>}
+            {brand.character.catchphrase && <p className="muted">„{brand.character.catchphrase}“</p>}
+          </div>
+        </div>
+      ) : (
+        <small className="muted">{t.noCharacter}</small>
+      )}
+      <a className="small-link nodrag" href="/brand">
+        {t.edit}
+      </a>
     </div>
   );
 }
@@ -460,4 +497,5 @@ export const nodeTypes = {
   activity: ActivityNode,
   members: MembersNode,
   bridgeUsage: BridgeUsageNode,
+  brand: BrandNode,
 };

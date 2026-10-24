@@ -73,6 +73,15 @@ export interface BridgeUsageData {
   price: { amount: number; currency: string } | null;
 }
 
+/** The brand kit, as the canvas shows it. */
+export interface BrandData {
+  companyName: string;
+  tagline: string;
+  colors: { primary: string; secondary: string; accent: string; text: string; background: string };
+  logoUrl: string | null;
+  character: { name: string; role: string; catchphrase: string; imageUrl: string | null } | null;
+}
+
 export interface WorldData {
   user: { name: string; email: string };
   /** Show the "confirm your email" reminder. */
@@ -95,6 +104,7 @@ export interface WorldData {
   /** Latest workspace activity; null for members who may not see it (editors). */
   activity: ActivityItem[] | null;
   bridgeUsage: BridgeUsageData | null;
+  brand: BrandData;
   /** The server's about and legal pages that are set up. */
   legal: { page: 'about' | 'privacy' | 'terms' | 'imprint' | 'data-deletion'; href: string }[];
   /** This server's public address (APP_URL). */

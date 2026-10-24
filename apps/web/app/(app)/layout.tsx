@@ -22,6 +22,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
           <Link href="/posts">{t.nav.posts}</Link>
           <Link href="/calendar">{t.nav.calendar}</Link>
           <Link href="/accounts">{t.nav.accounts}</Link>
+          <Link href="/brand">{t.nav.brand}</Link>
           <Link href="/team">{t.nav.team}</Link>
           {role !== 'editor' && <Link href="/activity">{t.nav.activity}</Link>}
         </nav>

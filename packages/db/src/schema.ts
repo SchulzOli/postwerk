@@ -260,6 +260,55 @@ export const media = pgTable(
   (t) => [uniqueIndex('media_key_idx').on(t.key), index('media_workspace_idx').on(t.workspaceId, t.createdAt)],
 );
 
+export interface BrandColors {
+  primary: string;
+  secondary: string;
+  accent: string;
+  text: string;
+  background: string;
+}
+
+/** The company's recurring brand character (a mascot or a face of the brand) that appears in every spot, ad and print piece. */
+export interface BrandCharacter {
+  name: string;
+  /** What the character is, e.g. "mascot", "a physiotherapist", "a talking kettle". */
+  role: string;
+  /** How it looks: enough for an illustrator, a casting or an image generator to get it right every time. */
+  look: string;
+  personality: string;
+  /** How it speaks. */
+  voice: string;
+  catchphrase: string;
+  /** What it never does or says. */
+  rules: string;
+  /** Reference pictures (uploaded images); the first is the main one. */
+  imageMediaIds: string[];
+}
+
+/** A workspace's brand: who the company is, how it sounds and looks, and its brand character. Every channel builds on it. */
+export const brandKits = pgTable('brand_kits', {
+  workspaceId: uuid('workspace_id').primaryKey().references(() => workspaces.id, { onDelete: 'cascade' }),
+  companyName: text('company_name').notNull().default(''),
+  tagline: text('tagline').notNull().default(''),
+  description: text('description').notNull().default(''),
+  audience: text('audience').notNull().default(''),
+  tone: text('tone').notNull().default(''),
+  dos: text('dos').notNull().default(''),
+  donts: text('donts').notNull().default(''),
+  colors: jsonb('colors').$type<BrandColors>().notNull(),
+  /** "sans" or "serif", for print pieces and briefings. */
+  font: text('font').notNull().default('sans'),
+  logoMediaId: uuid('logo_media_id').references(() => media.id, { onDelete: 'set null' }),
+  website: text('website').notNull().default(''),
+  email: text('email').notNull().default(''),
+  phone: text('phone').notNull().default(''),
+  address: text('address').notNull().default(''),
+  character: jsonb('character').$type<BrandCharacter>(),
+  /** Every upload the kit uses (logo, character pictures), so media cleanup keeps them. */
+  mediaIds: uuid('media_ids').array().notNull().default(sql`'{}'::uuid[]`),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+});
+
 /** Positions of canvas nodes the user moved (networks, accounts, panels), per workspace. */
 export const canvasPositions = pgTable(
   'canvas_positions',
@@ -377,6 +426,7 @@ export type Plugin = typeof plugins.$inferSelect;
 export type AuditEntry = typeof auditLog.$inferSelect;
 export type Invite = typeof invites.$inferSelect;
 export type Media = typeof media.$inferSelect;
+export type BrandKit = typeof brandKits.$inferSelect;
 export type MemberRole = (typeof memberRole.enumValues)[number];
 export type PostStatus = (typeof postStatus.enumValues)[number];
 export type TargetStatus = (typeof targetStatus.enumValues)[number];

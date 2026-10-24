@@ -114,6 +114,18 @@ ul { margin: 0; padding: 0; list-style: none; }
 .page { max-width: 960px; margin: 0 auto; padding: 2rem 1rem 4rem; }
 .auth { min-height: 100vh; display: grid; place-content: center; gap: 1rem; padding: 1rem; justify-items: center; }
 .auth-card { width: min(380px, calc(100vw - 2rem)); }
+.color-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 0.75rem; }
+.color-grid input[type='color'] { width: 100%; height: 2.4rem; padding: 0.15rem !important; cursor: pointer; }
+.brand-node { gap: 0.6rem; }
+.brand-logo { width: 40px; height: 40px; object-fit: contain; border-radius: var(--radius); flex-shrink: 0; }
+.brand-swatches { display: flex; gap: 0.3rem; }
+.brand-swatches span { flex: 1; height: 18px; border-radius: 4px; border: 1px solid var(--border); }
+.brand-character { align-items: flex-start; border-top: 1px solid var(--border); padding-top: 0.6rem; }
+.brand-character img { width: 56px; height: 56px; object-fit: contain; border-radius: var(--radius); flex-shrink: 0; }
+.brand-character p { margin: 0.2rem 0 0; font-size: 0.85rem; }
+.image-field { display: flex; flex-wrap: wrap; gap: 0.75rem; }
+.image-field figure { margin: 0; display: flex; flex-direction: column; gap: 0.25rem; align-items: flex-start; }
+.image-field img { width: 96px; height: 96px; object-fit: contain; border: 1px solid var(--border); border-radius: var(--radius); background: var(--field); }
 .legal { max-width: 46rem; margin: 0 auto; padding: 1.5rem 1rem 3rem; display: flex; flex-direction: column; gap: 1.5rem; min-height: 100vh; }
 .legal-page { flex: 1; line-height: 1.6; }
 .legal-page ul { list-style: disc; margin: 0; padding-left: 1.2rem; display: flex; flex-direction: column; gap: 0.4rem; }
@@ -248,6 +260,7 @@ code { font-family: var(--font-mono); font-size: 0.85em; background: var(--field
 .region-posts { border-color: color-mix(in srgb, var(--tint-posts) 45%, var(--border)); }
 .region-plugins { border-color: color-mix(in srgb, var(--tint-plugin) 45%, var(--border)); }
 .region-team { border-color: color-mix(in srgb, var(--tint-account) 45%, var(--border)); }
+.region-brand { border-color: color-mix(in srgb, var(--tint-plugin) 45%, var(--border)); }
 .region-calendar { border-color: color-mix(in srgb, var(--tint-posts) 45%, var(--border)); }
 
 .world-card {
@@ -311,10 +324,13 @@ button.small { padding: 0.25rem 0.6rem; font-size: 0.82rem; }
   background: color-mix(in srgb, var(--surface) 92%, transparent); border: 1px solid var(--border);
   border-radius: var(--radius-card); padding: 0.45rem 0.75rem; box-shadow: var(--shadow-lg); backdrop-filter: blur(6px);
 }
-.world-toolbar nav { display: flex; gap: 0.6rem; }
+/* Leaves room for the account panel on the right; the region links scroll when there are many. */
+.world-toolbar { max-width: calc(100vw - 480px); flex-wrap: nowrap; }
+.world-toolbar nav { display: flex; gap: 0.6rem; overflow-x: auto; min-width: 0; flex: 1 1 auto; white-space: nowrap; scrollbar-width: thin; }
 .world-toolbar nav a { color: var(--text); text-decoration: none; font-weight: 500; font-size: 0.9rem; }
 .world-toolbar nav a:hover { color: var(--accent); }
 .world-toolbar .jump { width: 170px !important; padding: 0.3rem 0.55rem !important; font-size: 0.9rem; }
+.world-toolbar > :not(nav) { flex-shrink: 0; white-space: nowrap; }
 .world-notice.success { color: var(--success); }
 .world-notice.error { color: var(--error); }
 .inspector {

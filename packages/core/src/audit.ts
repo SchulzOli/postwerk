@@ -28,7 +28,8 @@ export type AuditAction =
   | 'post.deleted'
   | 'post.retried'
   | 'plugin.installed'
-  | 'plugin.uninstalled';
+  | 'plugin.uninstalled'
+  | 'brand.updated';
 
 export interface AuditInput {
   action: AuditAction;

@@ -28,7 +28,7 @@ export function mediaField(items: ComposerMedia[]): string {
   return JSON.stringify(items.filter(isReady).map((item): ComposerMediaInput => (item.id ? { id: item.id, altText: item.altText } : { url: item.url, altText: item.altText })));
 }
 
-interface Uploaded {
+export interface Uploaded {
   id: string;
   url: string;
   kind: 'image' | 'video';
@@ -36,7 +36,8 @@ interface Uploaded {
   size: number;
 }
 
-function upload(file: File, onProgress: (share: number) => void, t: (typeof uploadMessages)['en']): Promise<Uploaded> {
+/** Uploads one file to /api/media, reporting progress (0–1). */
+export function uploadFile(file: File, onProgress: (share: number) => void, t: (typeof uploadMessages)['en']): Promise<Uploaded> {
   // XMLHttpRequest, because fetch cannot report upload progress.
   return new Promise((resolve, reject) => {
     const request = new XMLHttpRequest();
@@ -90,7 +91,7 @@ export function MediaPicker({ items, setItems }: Props) {
       else if (kind === 'image' && file.size > MAX_IMAGE_BYTES) item.error = t.imageTooBig(file.name, formatBytes(MAX_IMAGE_BYTES));
       setItems((current) => [...current, item]);
       if (item.error) continue;
-      upload(file, (progress) => update(localId, { progress }), t)
+      uploadFile(file, (progress) => update(localId, { progress }), t)
         .then((uploaded) => {
           // Keep showing the local preview until the browser has the stored file.
           update(localId, { id: uploaded.id, url: uploaded.url, kind: uploaded.kind, size: uploaded.size, mimeType: uploaded.mimeType, progress: undefined });

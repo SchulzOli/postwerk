@@ -1,5 +1,5 @@
 import { asc, eq } from 'drizzle-orm';
-import { bridgeFor, bridgeSetup, bridgeUsageSummary, isBlueskyOAuthAvailable, isProviderAvailable, listFlows, listPosts, listWorkspaceAudit, loadCanvasPositions, needsEmailVerification, networkRoute } from '@maas/core';
+import { bridgeFor, bridgeSetup, bridgeUsageSummary, findMedia, getBrandKit, isBlueskyOAuthAvailable, isProviderAvailable, listFlows, listPosts, listWorkspaceAudit, loadCanvasPositions, needsEmailVerification, networkRoute } from '@maas/core';
 import { builtinThemes, defaultCanvas } from '@maas/core/theme';
 import { getDb, socialAccounts } from '@maas/db';
 import { bridges, getProvider, isBridgeId, localizeFields, localizeInfo, providerInfos } from '@maas/providers';
@@ -29,7 +29,7 @@ export default async function CanvasPage({ searchParams }: { searchParams: Promi
   const [t, networksText] = await Promise.all([getMessages(canvasMessages), getMessages(networksMessages)]);
   const db = getDb();
   const canManage = role !== 'editor';
-  const [accounts, flows, posts, positions, appearance, activity, team, calendar, usage] = await Promise.all([
+  const [accounts, flows, posts, positions, appearance, activity, team, calendar, usage, brandKit] = await Promise.all([
     db.query.socialAccounts.findMany({
       where: eq(socialAccounts.workspaceId, workspace.id),
       orderBy: [asc(socialAccounts.provider), asc(socialAccounts.handle)],
@@ -42,7 +42,13 @@ export default async function CanvasPage({ searchParams }: { searchParams: Promi
     loadTeam(session),
     loadCalendarAroundNow(workspace.id),
     canManage ? bridgeUsageSummary(db, workspace.id) : null,
+    getBrandKit(db, workspace),
   ]);
+  const brandUploads = await findMedia(db, workspace.id, brandKit.mediaIds);
+  const uploadUrl = (id: string | null | undefined) => {
+    const row = id ? brandUploads.get(id) : undefined;
+    return row ? `/media/${row.key}` : null;
+  };
   const installed = new Set(appearance.installed.map((plugin) => plugin.id));
 
   const data: WorldData = {
@@ -102,6 +108,18 @@ export default async function CanvasPage({ searchParams }: { searchParams: Promi
     ],
     activity: activity?.map(toActivity) ?? null,
     legal: legalLinks(),
+    brand: {
+      companyName: brandKit.companyName,
+      tagline: brandKit.tagline,
+      colors: brandKit.colors,
+      logoUrl: uploadUrl(brandKit.logoMediaId),
+      character: brandKit.character && {
+        name: brandKit.character.name,
+        role: brandKit.character.role,
+        catchphrase: brandKit.character.catchphrase,
+        imageUrl: uploadUrl(brandKit.character.imageMediaIds[0]),
+      },
+    },
     serverUrl: appUrl,
     bridgeUsage: usage && { name: usage.name, accounts: usage.accounts, profiles: usage.profiles, months: usage.months, price: usage.price },
     appearance: { mode: appearance.mode, themeId: appearance.theme?.id ?? null, canvas: appearance.theme?.canvas ?? defaultCanvas },

@@ -141,7 +141,7 @@ export async function mediaForPublishing(
   };
 }
 
-/** Deletes uploads that no post uses and that are older than `olderThanMs` (default one day). */
+/** Deletes uploads that no post and no brand kit uses and that are older than `olderThanMs` (default one day). */
 export async function cleanupUnusedMedia(db: Database, storage: MediaStorage = getMediaStorage(), olderThanMs = 24 * 60 * 60_000): Promise<number> {
   const cutoff = new Date(Date.now() - olderThanMs).toISOString();
   const deleted = await db.execute<{ key: string }>(sql`
@@ -150,6 +150,7 @@ export async function cleanupUnusedMedia(db: Database, storage: MediaStorage = g
       AND NOT EXISTS (
         SELECT 1 FROM posts p WHERE p.media @> jsonb_build_array(jsonb_build_object('mediaId', m.id::text))
       )
+      AND NOT EXISTS (SELECT 1 FROM brand_kits b WHERE m.id = ANY(b.media_ids))
     RETURNING m.key
   `);
   for (const { key } of deleted) await storage.delete(key).catch((error: unknown) => console.error('could not delete media file', key, error));

@@ -81,14 +81,15 @@ export const blueprint: ThemeManifest = {
   border-top: 1px solid var(--line); border-left: 1px solid var(--line);
   font: 11px var(--font-mono); letter-spacing: 0.12em; color: var(--muted);
 }
-.region-networks::after { content: "MAAS · SHEET 1 / 8"; }
-.region-accounts::after { content: "MAAS · SHEET 2 / 8"; }
-.region-compose::after { content: "MAAS · SHEET 3 / 8"; }
-.region-posts::after { content: "MAAS · SHEET 4 / 8"; }
-.region-team::after { content: "MAAS · SHEET 5 / 8"; }
-.region-flows::after { content: "MAAS · SHEET 6 / 8"; }
-.region-plugins::after { content: "MAAS · SHEET 7 / 8"; }
-.region-calendar::after { content: "MAAS · SHEET 8 / 8"; }
+.region-networks::after { content: "MAAS · SHEET 1 / 9"; }
+.region-accounts::after { content: "MAAS · SHEET 2 / 9"; }
+.region-compose::after { content: "MAAS · SHEET 3 / 9"; }
+.region-posts::after { content: "MAAS · SHEET 4 / 9"; }
+.region-team::after { content: "MAAS · SHEET 5 / 9"; }
+.region-brand::after { content: "MAAS · SHEET 6 / 9"; }
+.region-flows::after { content: "MAAS · SHEET 7 / 9"; }
+.region-plugins::after { content: "MAAS · SHEET 8 / 9"; }
+.region-calendar::after { content: "MAAS · SHEET 9 / 9"; }
 .world-card strong, .world-panel > header, .inspector h2, .inspector h3, .flow-name { font-family: var(--font-mono); }
 .world-card strong { font-size: 12.5px; text-transform: uppercase; letter-spacing: 0.06em; }
 button:where(:not(.link)), .button { font-family: var(--font-mono); text-transform: uppercase; letter-spacing: 0.06em; font-size: 0.78rem; }

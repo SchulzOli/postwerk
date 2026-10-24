@@ -3,6 +3,7 @@ export * from './password';
 export * from './status';
 export * from './accounts';
 export * from './bluesky';
+export * from './brand';
 export * from './bridge';
 export * from './bridge-usage';
 export * from './posts';
