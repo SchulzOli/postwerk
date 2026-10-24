@@ -2,7 +2,7 @@
  * Everything core says to people, in every language. Browser-safe (the flow
  * planner and theme validation run in the browser too).
  */
-import { defineMessages } from '@postwerk/providers/i18n';
+import { defineMessages } from '@maas/providers/i18n';
 
 export const flowMessages = defineMessages({
   en: {
@@ -151,7 +151,7 @@ export const themeMessages = defineMessages({
     idFormat: '“id” may only use lowercase letters, digits and dashes, like "my-theme".',
     missing: (p: { mode: string; names: string }) => `“${p.mode}” is missing ${p.names}.`,
     unmatched: (p: { mode: string; name: string; other: string }) => `“${p.mode}.${p.name}” has no ${p.other} value. Set it in “${p.other}” too, or move it to “base”.`,
-    notBuiltin: 'This plugin does not ship with Postwerk.',
+    notBuiltin: 'This plugin does not ship with MarketingAsAService.',
     builtinId: (id: string) => `“${id}” is the id of a built-in theme. Give your theme its own id, like "${id}-custom".`,
   },
   de: {
@@ -187,7 +187,7 @@ export const themeMessages = defineMessages({
     idFormat: '„id“ darf nur Kleinbuchstaben, Ziffern und Bindestriche enthalten, z. B. "mein-design".',
     missing: (p) => `In „${p.mode}“ fehlt ${p.names}.`,
     unmatched: (p) => `„${p.mode}.${p.name}“ hat keinen Wert für ${p.other}. Setze ihn auch in „${p.other}“ oder verschiebe ihn nach „base“.`,
-    notBuiltin: 'Dieses Plugin gehört nicht zu Postwerk.',
+    notBuiltin: 'Dieses Plugin gehört nicht zu MarketingAsAService.',
     builtinId: (id) => `„${id}“ ist die ID eines eingebauten Designs. Gib deinem Design eine eigene ID, z. B. "${id}-eigenes".`,
   },
 });
@@ -198,18 +198,18 @@ export const mailMessages = defineMessages({
     greeting: (name: string) => `Hi ${name},`,
     verify: {
       subject: 'Confirm your email address',
-      body: 'please confirm that this is your email address, so Postwerk can reach you about failed posts and password resets.',
+      body: 'please confirm that this is your email address, so MarketingAsAService can reach you about failed posts and password resets.',
       action: 'Confirm email address',
-      footer: 'The link works for 3 days. If you did not sign up for Postwerk, ignore this email.',
+      footer: 'The link works for 3 days. If you did not sign up for MarketingAsAService, ignore this email.',
     },
     reset: {
-      subject: 'Reset your Postwerk password',
-      body: 'someone (hopefully you) asked to reset your Postwerk password. Choose a new one here:',
+      subject: 'Reset your MarketingAsAService password',
+      body: 'someone (hopefully you) asked to reset your MarketingAsAService password. Choose a new one here:',
       action: 'Choose a new password',
       footer: 'The link works for one hour and only once. If you did not ask for it, ignore this email — your password stays the same.',
     },
     invite: {
-      subject: (p: { inviter: string; workspace: string }) => `${p.inviter} invited you to ${p.workspace} on Postwerk`,
+      subject: (p: { inviter: string; workspace: string }) => `${p.inviter} invited you to ${p.workspace} on MarketingAsAService`,
       body: (p: { inviter: string; workspace: string; role: string }) =>
         `${p.inviter} invited you to plan and publish social media posts together in “${p.workspace}” as ${p.role}.`,
       action: (workspace: string) => `Join ${workspace}`,
@@ -230,18 +230,18 @@ export const mailMessages = defineMessages({
     greeting: (name) => `Hallo ${name},`,
     verify: {
       subject: 'Bestätige deine E-Mail-Adresse',
-      body: 'bitte bestätige, dass das deine E-Mail-Adresse ist, damit Postwerk dich bei fehlgeschlagenen Beiträgen und zum Zurücksetzen des Passworts erreicht.',
+      body: 'bitte bestätige, dass das deine E-Mail-Adresse ist, damit MarketingAsAService dich bei fehlgeschlagenen Beiträgen und zum Zurücksetzen des Passworts erreicht.',
       action: 'E-Mail-Adresse bestätigen',
-      footer: 'Der Link gilt 3 Tage. Wenn du dich nicht bei Postwerk registriert hast, ignoriere diese E-Mail.',
+      footer: 'Der Link gilt 3 Tage. Wenn du dich nicht bei MarketingAsAService registriert hast, ignoriere diese E-Mail.',
     },
     reset: {
-      subject: 'Setze dein Postwerk-Passwort zurück',
-      body: 'jemand (hoffentlich du) möchte dein Postwerk-Passwort zurücksetzen. Wähle hier ein neues:',
+      subject: 'Setze dein Passwort für MarketingAsAService zurück',
+      body: 'jemand (hoffentlich du) möchte dein Passwort für MarketingAsAService zurücksetzen. Wähle hier ein neues:',
       action: 'Neues Passwort wählen',
       footer: 'Der Link gilt eine Stunde und nur einmal. Wenn du das nicht warst, ignoriere diese E-Mail – dein Passwort bleibt unverändert.',
     },
     invite: {
-      subject: (p) => `${p.inviter} hat dich zu ${p.workspace} auf Postwerk eingeladen`,
+      subject: (p) => `${p.inviter} hat dich zu ${p.workspace} auf MarketingAsAService eingeladen`,
       body: (p) => `${p.inviter} hat dich eingeladen, in „${p.workspace}“ gemeinsam Social-Media-Beiträge zu planen und zu veröffentlichen, als ${p.role}.`,
       action: (workspace) => `${workspace} beitreten`,
       footer: 'Die Einladung funktioniert einmal und läuft nach 7 Tagen ab.',

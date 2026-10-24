@@ -12,13 +12,13 @@
  * .vitepress/link-report.md.
  *
  * Usage: node scripts/check-links.mjs .vitepress/dist
- * Env: SITE_BASE (default /postwerk/), CHECK_EXTERNAL=false to skip external links.
+ * Env: DOCS_BASE (the site's path, default /MarketingAsAService/), CHECK_EXTERNAL=false to skip external links.
  */
 import { appendFileSync, existsSync, readdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
 import { dirname, join, relative, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
-const BROWSER = 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0 Safari/537.36 postwerk-link-check';
+const BROWSER = 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0 Safari/537.36 maas-link-check';
 
 const decode = (value) => {
   try {
@@ -125,7 +125,7 @@ const escapeData = (value) => String(value).replace(/%/g, '%25').replace(/\r/g, 
 const escapeProperty = (value) => escapeData(value).replace(/:/g, '%3A').replace(/,/g, '%2C');
 
 /** Checks the site in `dist`; returns the problems found. */
-export async function checkSite(dist, { base = '/postwerk/', external = true, repoRoot, sourceDir } = {}) {
+export async function checkSite(dist, { base = '/MarketingAsAService/', external = true, repoRoot, sourceDir } = {}) {
   dist = resolve(dist);
   const pages = filesWith(dist, '.html');
   const parsed = new Map(pages.map((page) => [page, parseHtml(readFileSync(page, 'utf8'))]));
@@ -201,7 +201,7 @@ async function main() {
   const docsDir = resolve(dirname(fileURLToPath(import.meta.url)), '..');
   const repoRoot = resolve(docsDir, '..');
   const external = process.env.CHECK_EXTERNAL !== 'false';
-  const result = await checkSite(dist, { base: process.env.SITE_BASE ?? '/postwerk/', external, repoRoot, sourceDir: docsDir });
+  const result = await checkSite(dist, { base: process.env.DOCS_BASE ?? '/MarketingAsAService/', external, repoRoot, sourceDir: docsDir });
 
   for (const problem of result.problems) {
     const level = problem.kind === 'missing' ? 'warning' : 'notice';

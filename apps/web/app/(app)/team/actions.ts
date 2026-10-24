@@ -17,8 +17,8 @@ import {
   roles,
   sendMail,
   switchSessionWorkspace,
-} from '@postwerk/core';
-import { getDb, type MemberRole } from '@postwerk/db';
+} from '@maas/core';
+import { getDb, type MemberRole } from '@maas/db';
 import { record } from '@/lib/audit';
 import { appUrl } from '@/lib/env';
 import { getLocale, getMessages, localizedError } from '@/lib/i18n-server';

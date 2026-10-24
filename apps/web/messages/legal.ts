@@ -1,8 +1,8 @@
-import { defineMessages } from '@postwerk/core/i18n';
+import { defineMessages } from '@maas/core/i18n';
 
 /**
  * The server's public pages: about, privacy policy, terms, imprint and data
- * deletion. They describe what Postwerk really stores (see docs/legal.md);
+ * deletion. They describe what MarketingAsAService really stores (see docs/legal.md);
  * the operator's details come from OPERATOR_*. They are templates: operators
  * should have them checked for their own situation.
  */
@@ -21,8 +21,8 @@ export const legalMessages = defineMessages({
 
     about: {
       intro: (p: { site: string; operator: string }) =>
-        `${p.site} is run by ${p.operator}. It uses Postwerk, an open-source tool to plan posts and publish them to social networks.`,
-      how: 'People with an account here connect their own social media accounts, write posts and choose when they go out. Postwerk publishes only what they schedule, and only to the accounts they connected.',
+        `${p.site} is run by ${p.operator}. It uses MarketingAsAService, an open-source tool to plan posts and publish them to social networks.`,
+      how: 'People with an account here connect their own social media accounts, write posts and choose when they go out. MarketingAsAService publishes only what they schedule, and only to the accounts they connected.',
       networks: 'Networks you can connect here',
       viaBridge: (bridge: string) => `through ${bridge}`,
       noNetworks: 'None yet.',
@@ -38,7 +38,7 @@ export const legalMessages = defineMessages({
       content:
         'What you create: posts, uploaded images and videos, flows, schedules, and your workspaces with their members and invitations. We need them to plan and publish your posts (Art. 6(1)(b) GDPR).',
       accounts:
-        'Social media accounts you connect: name, handle, profile picture and the access the network grants, stored encrypted. Postwerk uses this access only to publish the posts you schedule and to show which account is which (Art. 6(1)(b) GDPR).',
+        'Social media accounts you connect: name, handle, profile picture and the access the network grants, stored encrypted. MarketingAsAService uses this access only to publish the posts you schedule and to show which account is which (Art. 6(1)(b) GDPR).',
       security: (days: number) =>
         `Security: sign-in attempts are counted per email address and IP address for up to an hour to stop password guessing. Sign-ins and changes are recorded in an activity log with the IP address; IP addresses are removed after ${days} days. Our legitimate interest is keeping accounts safe (Art. 6(1)(f) GDPR).`,
       cookies: 'Cookies: only the ones the service needs: your sign-in (30 days), your language, and light or dark mode. No tracking, analytics or advertising.',
@@ -73,7 +73,7 @@ export const legalMessages = defineMessages({
       intro: (p: { site: string; operator: string }) => `These terms apply when you use ${p.site}, run by ${p.operator}.`,
       service: 'The service',
       serviceText:
-        'Postwerk lets you plan posts and publish them to the social media accounts you connect. It is provided as it is: we keep it running as well as we can, but cannot promise that every post goes out on time.',
+        'MarketingAsAService lets you plan posts and publish them to the social media accounts you connect. It is provided as it is: we keep it running as well as we can, but cannot promise that every post goes out on time.',
       account: 'Your account',
       accountText: 'Keep your password safe. You are responsible for what is published from your account and your workspaces.',
       content: 'Your content',
@@ -100,7 +100,7 @@ export const legalMessages = defineMessages({
       intro: 'You decide what happens to your data. This is how to delete it.',
       disconnect: 'Disconnect a social media account',
       disconnectText:
-        'On the canvas, click the account and choose Disconnect (or use the accounts page). Postwerk deletes its access right away; posts planned only for that account are removed.',
+        'On the canvas, click the account and choose Disconnect (or use the accounts page). MarketingAsAService deletes its access right away; posts planned only for that account are removed.',
       bridge: (bridge: string) => `Accounts connected through ${bridge} are removed there too.`,
       atNetwork: 'Remove the access at the network too',
       atNetworkText: 'In the network’s settings for connected apps, remove the app this server uses.',
@@ -121,8 +121,8 @@ export const legalMessages = defineMessages({
     sourceCode: 'Quellcode',
 
     about: {
-      intro: (p) => `${p.site} wird von ${p.operator} betrieben. Es nutzt Postwerk, ein Open-Source-Werkzeug, um Beiträge zu planen und in sozialen Netzwerken zu veröffentlichen.`,
-      how: 'Wer hier ein Konto hat, verbindet eigene Social-Media-Konten, schreibt Beiträge und legt fest, wann sie erscheinen. Postwerk veröffentlicht nur, was geplant wurde, und nur in den verbundenen Konten.',
+      intro: (p) => `${p.site} wird von ${p.operator} betrieben. Es nutzt MarketingAsAService, ein Open-Source-Werkzeug, um Beiträge zu planen und in sozialen Netzwerken zu veröffentlichen.`,
+      how: 'Wer hier ein Konto hat, verbindet eigene Social-Media-Konten, schreibt Beiträge und legt fest, wann sie erscheinen. MarketingAsAService veröffentlicht nur, was geplant wurde, und nur in den verbundenen Konten.',
       networks: 'Netzwerke, die du hier verbinden kannst',
       viaBridge: (bridge) => `über ${bridge}`,
       noNetworks: 'Noch keine.',
@@ -138,7 +138,7 @@ export const legalMessages = defineMessages({
       content:
         'Was du erstellst: Beiträge, hochgeladene Bilder und Videos, Flows, Zeitpläne sowie deine Arbeitsbereiche mit Mitgliedern und Einladungen. Wir brauchen sie, um deine Beiträge zu planen und zu veröffentlichen (Art. 6 Abs. 1 lit. b DSGVO).',
       accounts:
-        'Social-Media-Konten, die du verbindest: Name, Handle, Profilbild und der Zugriff, den das Netzwerk gewährt, verschlüsselt gespeichert. Postwerk nutzt diesen Zugriff nur, um deine geplanten Beiträge zu veröffentlichen und anzuzeigen, welches Konto welches ist (Art. 6 Abs. 1 lit. b DSGVO).',
+        'Social-Media-Konten, die du verbindest: Name, Handle, Profilbild und der Zugriff, den das Netzwerk gewährt, verschlüsselt gespeichert. MarketingAsAService nutzt diesen Zugriff nur, um deine geplanten Beiträge zu veröffentlichen und anzuzeigen, welches Konto welches ist (Art. 6 Abs. 1 lit. b DSGVO).',
       security: (days) =>
         `Sicherheit: Anmeldeversuche werden pro E-Mail-Adresse und IP-Adresse bis zu einer Stunde gezählt, um das Erraten von Passwörtern zu verhindern. Anmeldungen und Änderungen werden mit IP-Adresse in einem Aktivitätsprotokoll festgehalten; die IP-Adressen werden nach ${days} Tagen entfernt. Unser berechtigtes Interesse ist die Sicherheit der Konten (Art. 6 Abs. 1 lit. f DSGVO).`,
       cookies: 'Cookies: nur die nötigen – deine Anmeldung (30 Tage), deine Sprache und heller oder dunkler Modus. Kein Tracking, keine Analyse, keine Werbung.',
@@ -173,7 +173,7 @@ export const legalMessages = defineMessages({
       intro: (p) => `Diese Bedingungen gelten, wenn du ${p.site} nutzt, betrieben von ${p.operator}.`,
       service: 'Der Dienst',
       serviceText:
-        'Mit Postwerk planst du Beiträge und veröffentlichst sie in den Social-Media-Konten, die du verbindest. Wir stellen den Dienst so bereit, wie er ist: Wir halten ihn so gut wie möglich am Laufen, können aber nicht versprechen, dass jeder Beitrag pünktlich erscheint.',
+        'Mit MarketingAsAService planst du Beiträge und veröffentlichst sie in den Social-Media-Konten, die du verbindest. Wir stellen den Dienst so bereit, wie er ist: Wir halten ihn so gut wie möglich am Laufen, können aber nicht versprechen, dass jeder Beitrag pünktlich erscheint.',
       account: 'Dein Konto',
       accountText: 'Halte dein Passwort geheim. Du bist verantwortlich für das, was aus deinem Konto und deinen Arbeitsbereichen veröffentlicht wird.',
       content: 'Deine Inhalte',
@@ -200,7 +200,7 @@ export const legalMessages = defineMessages({
       intro: 'Du entscheidest, was mit deinen Daten passiert. So löschst du sie.',
       disconnect: 'Ein Social-Media-Konto trennen',
       disconnectText:
-        'Klicke auf dem Canvas auf das Konto und wähle „Trennen“ (oder nutze die Kontenseite). Postwerk löscht den Zugriff sofort; Beiträge, die nur für dieses Konto geplant waren, werden entfernt.',
+        'Klicke auf dem Canvas auf das Konto und wähle „Trennen“ (oder nutze die Kontenseite). MarketingAsAService löscht den Zugriff sofort; Beiträge, die nur für dieses Konto geplant waren, werden entfernt.',
       bridge: (bridge) => `Konten, die über ${bridge} verbunden sind, werden auch dort entfernt.`,
       atNetwork: 'Den Zugriff auch beim Netzwerk entfernen',
       atNetworkText: 'Entferne in den Einstellungen des Netzwerks für verbundene Apps die App, die dieser Server nutzt.',

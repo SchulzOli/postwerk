@@ -1,4 +1,4 @@
-import { defineMessages } from '@postwerk/core/i18n';
+import { defineMessages } from '@maas/core/i18n';
 
 /** Connecting networks and accounts: the accounts page, connect forms, OAuth callbacks and network facts (canvas too). */
 export const networksMessages = defineMessages({
@@ -46,22 +46,22 @@ export const networksMessages = defineMessages({
     offNote: 'The server admin switched this network off (HIDE_NETWORKS), so it is not offered for connecting. Accounts already connected stay.',
     // Bluesky
     bluesky: {
-      handleHint: 'You sign in on your Bluesky server; Postwerk never sees your password.',
+      handleHint: 'You sign in on your Bluesky server; MarketingAsAService never sees your password.',
       placeholder: 'you.bsky.social',
       appPassword: 'Use an app password instead',
       connectWithAppPassword: 'Connect with app password',
-      needsHttps: 'Signing in on Bluesky itself needs Postwerk on an https address (APP_URL).',
+      needsHttps: 'Signing in on Bluesky itself needs MarketingAsAService on an https address (APP_URL).',
     },
     // Bridge (aggregator API)
     statusReadyVia: (bridge: string) => `Ready to connect · via ${bridge}`,
     via: (bridge: string) => `via ${bridge}`,
     setupBridge: (bridge: string) => `Through ${bridge}, no developer app needed`,
     bridgeNote: (p: { network: string; bridge: string }) =>
-      `${p.network} connects through ${p.bridge}, a social media API from the EU. ${p.bridge} keeps the access to the account; Postwerk only stores which account it is.`,
+      `${p.network} connects through ${p.bridge}, a social media API from the EU. ${p.bridge} keeps the access to the account; MarketingAsAService only stores which account it is.`,
     orBridge: (bridge: string) => ({ before: 'Or set ', after: ` to connect it through ${bridge}, without a developer app.` }),
     // How a network is offered on this server (the server admin decides)
     setupOnServer: 'Setup on this server',
-    setupChoose: 'The server admin decides how to offer it. Every Postwerk server uses its own developer apps; the Postwerk project runs none for others.',
+    setupChoose: 'The server admin decides how to offer it. Every MarketingAsAService server uses its own developer apps; the MarketingAsAService project runs none for others.',
     optionOwnApp: 'Your own developer app',
     ownAccountsOnly: 'Only your own accounts',
     othersToo: 'Other people’s accounts too',
@@ -74,7 +74,7 @@ export const networksMessages = defineMessages({
     optionOffText: { before: 'Add ', middle: ' to ', after: ' to hide it.' },
     guideLink: 'Step-by-step guide →',
     bridgeAbout: (bridge: string) =>
-      `Networks marked “via ${bridge}” connect through ${bridge}, a social media API from the EU. ${bridge} keeps the access to the accounts; Postwerk only stores which accounts they are.`,
+      `Networks marked “via ${bridge}” connect through ${bridge}, a social media API from the EU. ${bridge} keeps the access to the accounts; MarketingAsAService only stores which accounts they are.`,
     reconnect: 'Reconnect',
     bridgeExpired: 'Access to this account expired or was revoked. Reconnect it; posts resume afterwards.',
     bridgeCancelled: (network: string) => `Connecting ${network} was cancelled.`,
@@ -86,7 +86,7 @@ export const networksMessages = defineMessages({
     usageThisMonth: (accounts: number) => `This month: up to ${accounts} at once`,
     usageCost: (cost: string) => `about ${cost}`,
     usageAbout: (bridge: string) =>
-      `${bridge} bills this server for each connected account. Postwerk notes the most accounts this workspace had connected at once each month, so estimates rather run high.`,
+      `${bridge} bills this server for each connected account. MarketingAsAService notes the most accounts this workspace had connected at once each month, so estimates rather run high.`,
     usageSetPrice: { before: 'Set ', after: ' to the monthly price per account to see estimates.' },
     usageMonth: 'Month',
     usageAccounts: 'Accounts',
@@ -143,20 +143,20 @@ export const networksMessages = defineMessages({
     statusOff: 'Ausgeschaltet',
     offNote: 'Die Server-Admins haben dieses Netzwerk ausgeschaltet (HIDE_NETWORKS), deshalb wird es nicht zum Verbinden angeboten. Schon verbundene Konten bleiben.',
     bluesky: {
-      handleHint: 'Du meldest dich auf deinem Bluesky-Server an; Postwerk sieht dein Passwort nie.',
+      handleHint: 'Du meldest dich auf deinem Bluesky-Server an; MarketingAsAService sieht dein Passwort nie.',
       placeholder: 'du.bsky.social',
       appPassword: 'Stattdessen ein App-Passwort verwenden',
       connectWithAppPassword: 'Mit App-Passwort verbinden',
-      needsHttps: 'Die Anmeldung direkt bei Bluesky braucht Postwerk unter einer https-Adresse (APP_URL).',
+      needsHttps: 'Die Anmeldung direkt bei Bluesky braucht MarketingAsAService unter einer https-Adresse (APP_URL).',
     },
     statusReadyVia: (bridge) => `Bereit zum Verbinden · über ${bridge}`,
     via: (bridge) => `über ${bridge}`,
     setupBridge: (bridge) => `Über ${bridge}, keine Entwickler-App nötig`,
     bridgeNote: (p) =>
-      `${p.network} wird über ${p.bridge} verbunden, eine Social-Media-API aus der EU. ${p.bridge} verwaltet den Zugriff auf das Konto; Postwerk speichert nur, um welches Konto es geht.`,
+      `${p.network} wird über ${p.bridge} verbunden, eine Social-Media-API aus der EU. ${p.bridge} verwaltet den Zugriff auf das Konto; MarketingAsAService speichert nur, um welches Konto es geht.`,
     orBridge: (bridge) => ({ before: 'Oder setze ', after: `, um es ohne Entwickler-App über ${bridge} zu verbinden.` }),
     setupOnServer: 'Einrichtung auf diesem Server',
-    setupChoose: 'Die Server-Admins entscheiden, wie es angeboten wird. Jeder Postwerk-Server nutzt eigene Entwickler-Apps; das Postwerk-Projekt betreibt keine für andere.',
+    setupChoose: 'Die Server-Admins entscheiden, wie es angeboten wird. Jeder MarketingAsAService-Server nutzt eigene Entwickler-Apps; das MarketingAsAService-Projekt betreibt keine für andere.',
     optionOwnApp: 'Eigene Entwickler-App',
     ownAccountsOnly: 'Nur eigene Konten',
     othersToo: 'Auch Konten anderer Leute',
@@ -169,7 +169,7 @@ export const networksMessages = defineMessages({
     optionOffText: { before: 'Trage ', middle: ' in ', after: ' ein, um es auszublenden.' },
     guideLink: 'Schritt-für-Schritt-Anleitung →',
     bridgeAbout: (bridge) =>
-      `Netzwerke mit „über ${bridge}“ werden über ${bridge} verbunden, eine Social-Media-API aus der EU. ${bridge} verwaltet den Zugriff auf die Konten; Postwerk speichert nur, um welche Konten es geht.`,
+      `Netzwerke mit „über ${bridge}“ werden über ${bridge} verbunden, eine Social-Media-API aus der EU. ${bridge} verwaltet den Zugriff auf die Konten; MarketingAsAService speichert nur, um welche Konten es geht.`,
     reconnect: 'Neu verbinden',
     bridgeExpired: 'Der Zugriff auf dieses Konto ist abgelaufen oder wurde widerrufen. Verbinde es neu; danach gehen die Beiträge weiter.',
     bridgeCancelled: (network) => `Das Verbinden von ${network} wurde abgebrochen.`,
@@ -179,7 +179,7 @@ export const networksMessages = defineMessages({
     usageThisMonth: (accounts) => `Diesen Monat: bis zu ${accounts} gleichzeitig`,
     usageCost: (cost) => `etwa ${cost}`,
     usageAbout: (bridge) =>
-      `${bridge} berechnet diesem Server jedes verbundene Konto. Postwerk notiert pro Monat, wie viele Konten dieser Arbeitsbereich höchstens gleichzeitig verbunden hatte; Schätzungen liegen also eher zu hoch.`,
+      `${bridge} berechnet diesem Server jedes verbundene Konto. MarketingAsAService notiert pro Monat, wie viele Konten dieser Arbeitsbereich höchstens gleichzeitig verbunden hatte; Schätzungen liegen also eher zu hoch.`,
     usageSetPrice: { before: 'Setze ', after: ' auf den Monatspreis pro Konto, um Schätzungen zu sehen.' },
     usageMonth: 'Monat',
     usageAccounts: 'Konten',

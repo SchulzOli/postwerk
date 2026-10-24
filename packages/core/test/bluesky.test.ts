@@ -1,24 +1,24 @@
 import { eq, sql } from 'drizzle-orm';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
-import { createDb, serverSecrets, type Database } from '@postwerk/db';
+import { createDb, serverSecrets, type Database } from '@maas/db';
 import { runMigrations } from '../../db/src/migrate';
 import { blueskyClientIds, blueskyClientMetadata, blueskyJwks, blueskyKeyset, finishBlueskyLogin } from '../src/bluesky';
 import { decryptJson, encrypt } from '../src/crypto';
 
 describe('Bluesky OAuth client', () => {
   it('is a confidential client on https', () => {
-    expect(blueskyClientIds('https://postwerk.example/')).toEqual({
-      clientId: 'https://postwerk.example/oauth/bluesky/client-metadata.json',
-      redirectUri: 'https://postwerk.example/api/connect/bluesky/callback',
+    expect(blueskyClientIds('https://maas.example/')).toEqual({
+      clientId: 'https://maas.example/oauth/bluesky/client-metadata.json',
+      redirectUri: 'https://maas.example/api/connect/bluesky/callback',
       confidential: true,
     });
-    expect(blueskyClientMetadata('https://postwerk.example')).toMatchObject({
-      client_id: 'https://postwerk.example/oauth/bluesky/client-metadata.json',
-      redirect_uris: ['https://postwerk.example/api/connect/bluesky/callback'],
+    expect(blueskyClientMetadata('https://maas.example')).toMatchObject({
+      client_id: 'https://maas.example/oauth/bluesky/client-metadata.json',
+      redirect_uris: ['https://maas.example/api/connect/bluesky/callback'],
       scope: 'atproto transition:generic',
       token_endpoint_auth_method: 'private_key_jwt',
       token_endpoint_auth_signing_alg: 'ES256',
-      jwks_uri: 'https://postwerk.example/oauth/bluesky/jwks.json',
+      jwks_uri: 'https://maas.example/oauth/bluesky/jwks.json',
       dpop_bound_access_tokens: true,
     });
   });

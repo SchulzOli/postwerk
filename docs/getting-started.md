@@ -5,8 +5,8 @@
 Requirements: Docker with Compose, a domain, and a reverse proxy with https (for example Caddy or Traefik).
 
 ```bash
-git clone https://github.com/SchulzOli/postwerk.git
-cd postwerk
+git clone https://github.com/SchulzOli/MarketingAsAService.git
+cd maas
 cp .env.example .env
 ```
 
@@ -14,7 +14,7 @@ In `.env`, set at least:
 
 - `ENCRYPTION_KEY`: `openssl rand -base64 32`. It encrypts the stored access to social accounts; never change it later, or every account must reconnect.
 - `POSTGRES_PASSWORD`: a password for the bundled database.
-- `APP_URL`: your public address, for example `https://postwerk.example.com`, without a trailing slash.
+- `APP_URL`: your public address, for example `https://maas.example.com`, without a trailing slash.
 - `OPERATOR_NAME` and `OPERATOR_EMAIL`: who runs the server. They turn on the [about and legal pages](legal.md) the networks ask for.
 
 Then start everything:
@@ -33,9 +33,9 @@ Mastodon, Bluesky, Telegram and Discord work right away. For the others, decide 
 
 ## Try it with the sandbox
 
-`ENABLE_SANDBOX=true` adds a fake network called Sandbox. Connect a Sandbox account and schedule a post; put `#fail` or `#flaky` in the text to see how Postwerk handles errors and retries.
+`ENABLE_SANDBOX=true` adds a fake network called Sandbox. Connect a Sandbox account and schedule a post; put `#fail` or `#flaky` in the text to see how MarketingAsAService handles errors and retries.
 
-## Develop Postwerk
+## Develop MarketingAsAService
 
 Requirements: Node 22 or newer, Docker.
 
@@ -44,11 +44,11 @@ npm install
 cp .env.example .env
 sed -i "s|^ENCRYPTION_KEY=.*|ENCRYPTION_KEY=$(openssl rand -base64 32)|" .env
 npm run services:up        # Postgres on localhost:5432
-docker compose exec postgres psql -U postwerk -c "CREATE DATABASE postwerk_test"   # for tests
+docker compose exec postgres psql -U maas -c "CREATE DATABASE maas_test"   # for tests
 npm run db:migrate
 npm run dev                # web on http://localhost:3000 + worker
 ```
 
-Before a pull request, run `npm run typecheck && npm test && npm run build`. See [CONTRIBUTING.md](https://github.com/SchulzOli/postwerk/blob/main/CONTRIBUTING.md).
+Before a pull request, run `npm run typecheck && npm test && npm run build`. See [CONTRIBUTING.md](https://github.com/SchulzOli/MarketingAsAService/blob/main/CONTRIBUTING.md).
 
 The documentation website lives in `docs/`: `cd docs && npm install && npm run dev`.

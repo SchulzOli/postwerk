@@ -1,6 +1,6 @@
 import { and, count, desc, eq, isNotNull, sql } from 'drizzle-orm';
-import { bridgeProfiles, bridgeUsage, socialAccounts, type Database } from '@postwerk/db';
-import { getBridge, type BridgeId } from '@postwerk/providers';
+import { bridgeProfiles, bridgeUsage, socialAccounts, type Database } from '@maas/db';
+import { getBridge, type BridgeId } from '@maas/providers';
 
 type Env = Record<string, string | undefined>;
 

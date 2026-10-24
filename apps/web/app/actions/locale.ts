@@ -2,9 +2,9 @@
 
 import { revalidatePath } from 'next/cache';
 import { cookies } from 'next/headers';
-import { updateProfile } from '@postwerk/core';
-import { isLocale, type Locale } from '@postwerk/core/i18n';
-import { getDb } from '@postwerk/db';
+import { updateProfile } from '@maas/core';
+import { isLocale, type Locale } from '@maas/core/i18n';
+import { getDb } from '@maas/db';
 import { secureCookies } from '@/lib/env';
 import { LOCALE_COOKIE } from '@/lib/locale';
 import { getSession } from '@/lib/session';

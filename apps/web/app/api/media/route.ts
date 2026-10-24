@@ -1,6 +1,6 @@
 import { NextResponse, type NextRequest } from 'next/server';
-import { hitRateLimit, MediaError, rateLimitKey, retryIn, storeUpload } from '@postwerk/core';
-import { getDb } from '@postwerk/db';
+import { hitRateLimit, MediaError, rateLimitKey, retryIn, storeUpload } from '@maas/core';
+import { getDb } from '@maas/db';
 import { getLocale, localizedError } from '@/lib/i18n-server';
 import { getSession } from '@/lib/session';
 import { uploadMessages } from '@/messages/upload';

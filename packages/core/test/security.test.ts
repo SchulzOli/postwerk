@@ -1,6 +1,6 @@
 import { sql } from 'drizzle-orm';
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import { auditLog, createDb, oauthStates, rateLimits, sessions, users, workspaces, type Database } from '@postwerk/db';
+import { auditLog, createDb, oauthStates, rateLimits, sessions, users, workspaces, type Database } from '@maas/db';
 import { runMigrations } from '../../db/src/migrate';
 import { audit, listUserSecurityAudit, listWorkspaceAudit } from '../src/audit';
 import { runHousekeeping } from '../src/housekeeping';

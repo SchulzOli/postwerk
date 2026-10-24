@@ -1,5 +1,5 @@
 {
-  "name": "@postwerk/core",
+  "name": "@maas/core",
   "version": "0.1.0",
   "license": "MIT",
   "private": true,
@@ -15,8 +15,8 @@
     "typecheck": "tsc -p tsconfig.json"
   },
   "dependencies": {
-    "@postwerk/db": "*",
-    "@postwerk/providers": "*",
+    "@maas/db": "*",
+    "@maas/providers": "*",
     "drizzle-orm": "^0.45.3",
     "nodemailer": "^10.0.15"
   },

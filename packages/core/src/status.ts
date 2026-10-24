@@ -1,4 +1,4 @@
-import type { PostStatus, TargetStatus } from '@postwerk/db';
+import type { PostStatus, TargetStatus } from '@maas/db';
 
 export const MAX_ATTEMPTS = 5;
 

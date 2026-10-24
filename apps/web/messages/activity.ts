@@ -1,5 +1,5 @@
-import type { AuditAction } from '@postwerk/core';
-import { defineMessages } from '@postwerk/core/i18n';
+import type { AuditAction } from '@maas/core';
+import { defineMessages } from '@maas/core/i18n';
 
 /** What an activity phrase can mention. */
 export interface ActivityParams {

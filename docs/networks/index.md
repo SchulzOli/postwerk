@@ -1,14 +1,14 @@
 # Choose how to offer each network
 
-Mastodon, Bluesky, Telegram and Discord work on every Postwerk server right away. The other networks only accept posts from a **developer app** they know. Whoever runs a Postwerk server decides, per network, how to provide one.
+Mastodon, Bluesky, Telegram and Discord work on every MarketingAsAService server right away. The other networks only accept posts from a **developer app** they know. Whoever runs a MarketingAsAService server decides, per network, how to provide one.
 
 ::: info Every server brings its own apps
-A developer app belongs to one server: it is registered with that server's address, and its secret must stay on that server. That is why **the Postwerk project does not register apps or apply for reviews on behalf of the people who use it**. Each operator does that for their own server, as far as they need it. The author does the same for the server he runs for his own work.
+A developer app belongs to one server: it is registered with that server's address, and its secret must stay on that server. That is why **the MarketingAsAService project does not register apps or apply for reviews on behalf of the people who use it**. Each operator does that for their own server, as far as they need it. The author does the same for the server he runs for his own work.
 :::
 
 ## Three ways per network
 
-1. **Your own developer app.** You register an app with the network and put its id and secret into Postwerk's settings.
+1. **Your own developer app.** You register an app with the network and put its id and secret into MarketingAsAService's settings.
    - *Only your own accounts:* many networks let an app serve the accounts of the people who manage it without a review. For one person or a small team, this is often all you need.
    - *Other people's accounts too:* as soon as people outside your team should connect their accounts, most networks review the app first.
 2. **The Zernio bridge.** Set `ZERNIO_API_KEY` and every network without its own app connects through [Zernio](../bridge.md), which has passed the reviews already. No developer app, no review; Zernio bills per connected account.
@@ -35,13 +35,13 @@ You can mix them: for example LinkedIn and Meta with your own apps, TikTok and Y
 
 Every network that needs an app can also go through [Zernio](../bridge.md).
 
-Postwerk shows the same overview on the canvas: click a network to see what it needs, the exact callback URL to register, and the addresses of your legal pages to paste into the developer console.
+MarketingAsAService shows the same overview on the canvas: click a network to see what it needs, the exact callback URL to register, and the addresses of your legal pages to paste into the developer console.
 
 ![A network's setup on the canvas: own app, Zernio or off](../screenshots/setup-choice.png)
 
-## How Postwerk picks the route
+## How MarketingAsAService picks the route
 
-For each network, Postwerk uses the first that works:
+For each network, MarketingAsAService uses the first that works:
 
 ```
 own developer app  →  Zernio  →  "needs setup"
@@ -56,8 +56,8 @@ All settings are listed in [Configuration](../configuration.md).
 
 ## Before you register any app
 
-- **A public https address.** Set `APP_URL` to it. Networks send people back to `${APP_URL}/api/connect/<network>/callback`, and Instagram, Threads, TikTok and Pinterest download images and videos from Postwerk, so the server must be reachable from the internet (or use S3 storage with `S3_PUBLIC_URL`).
-- **Your legal pages.** Set `OPERATOR_NAME` and `OPERATOR_EMAIL` (and `OPERATOR_ADDRESS` for an imprint). Postwerk then serves the website, privacy policy, terms and data deletion page the developer consoles ask for. See [About and legal pages](../legal.md).
+- **A public https address.** Set `APP_URL` to it. Networks send people back to `${APP_URL}/api/connect/<network>/callback`, and Instagram, Threads, TikTok and Pinterest download images and videos from MarketingAsAService, so the server must be reachable from the internet (or use S3 storage with `S3_PUBLIC_URL`).
+- **Your legal pages.** Set `OPERATOR_NAME` and `OPERATOR_EMAIL` (and `OPERATOR_ADDRESS` for an imprint). MarketingAsAService then serves the website, privacy policy, terms and data deletion page the developer consoles ask for. See [About and legal pages](../legal.md).
 - **The review kit**, if a review is coming: [App reviews](reviews.md).
 
 ## Suggested setup for one person or a small team

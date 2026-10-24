@@ -20,8 +20,8 @@ before(async () => {
 after(() => server.close());
 
 test('reads links and anchors from HTML', () => {
-  const { links, ids } = parseHtml('<h2 id="set-it-up">Set it up</h2><a class="x" href="/postwerk/guide?a=1&amp;b=2#top">x</a><img alt="" src="./a.png">');
-  assert.deepEqual(links, ['/postwerk/guide?a=1&b=2#top', './a.png']);
+  const { links, ids } = parseHtml('<h2 id="set-it-up">Set it up</h2><a class="x" href="/maas/guide?a=1&amp;b=2#top">x</a><img alt="" src="./a.png">');
+  assert.deepEqual(links, ['/maas/guide?a=1&b=2#top', './a.png']);
   assert.ok(ids.has('set-it-up'));
 });
 
@@ -30,13 +30,13 @@ test('resolves clean URLs below the base path', () => {
   mkdirSync(join(dist, 'networks'));
   for (const file of ['index.html', 'guide.html', 'networks/index.html', 'networks/meta.html']) writeFileSync(join(dist, file), '');
   const page = join(dist, 'networks', 'meta.html');
-  const file = (href) => resolveInternal(dist, '/postwerk/', page, href).file?.slice(dist.length + 1) ?? null;
-  assert.equal(file('/postwerk/'), 'index.html');
-  assert.equal(file('/postwerk/guide'), 'guide.html');
-  assert.equal(file('/postwerk/networks/'), 'networks/index.html');
+  const file = (href) => resolveInternal(dist, '/maas/', page, href).file?.slice(dist.length + 1) ?? null;
+  assert.equal(file('/maas/'), 'index.html');
+  assert.equal(file('/maas/guide'), 'guide.html');
+  assert.equal(file('/maas/networks/'), 'networks/index.html');
   assert.equal(file('#instagram'), 'networks/meta.html');
   assert.equal(file('../guide'), 'guide.html');
-  assert.equal(file('/postwerk/nope'), null);
+  assert.equal(file('/maas/nope'), null);
   assert.equal(file('/elsewhere/'), null);
 });
 
@@ -54,15 +54,15 @@ test('reports links without a target with their Markdown source, and never throw
   mkdirSync(dist);
   writeFileSync(join(root, 'index.md'), '# Home\n\nSee [the guide](guide.md#setup) and [gone](' + origin + '/gone).\n');
   writeFileSync(join(root, 'guide.md'), '# Guide\n\n## Set it up\n');
-  writeFileSync(join(dist, 'index.html'), `<a href="/postwerk/guide#setup">guide</a><a href="${origin}/gone">gone</a><a href="${origin}/ok">ok</a><a href="mailto:a@b.c">mail</a>`);
-  writeFileSync(join(dist, 'guide.html'), '<h2 id="set-it-up">Set it up</h2><a href="/postwerk/missing">x</a>');
-  const result = await checkSite(dist, { base: '/postwerk/', repoRoot: root, sourceDir: root });
+  writeFileSync(join(dist, 'index.html'), `<a href="/maas/guide#setup">guide</a><a href="${origin}/gone">gone</a><a href="${origin}/ok">ok</a><a href="mailto:a@b.c">mail</a>`);
+  writeFileSync(join(dist, 'guide.html'), '<h2 id="set-it-up">Set it up</h2><a href="/maas/missing">x</a>');
+  const result = await checkSite(dist, { base: '/maas/', repoRoot: root, sourceDir: root });
   assert.equal(result.pages, 2);
   assert.equal(result.external, 2);
   const byHref = Object.fromEntries(result.problems.map((problem) => [problem.href, problem]));
-  assert.equal(byHref['/postwerk/guide#setup'].reason, 'no anchor #setup');
-  assert.deepEqual(byHref['/postwerk/guide#setup'].source, { file: 'index.md', line: 3 });
-  assert.equal(byHref['/postwerk/missing'].reason, 'no such page or file');
+  assert.equal(byHref['/maas/guide#setup'].reason, 'no anchor #setup');
+  assert.deepEqual(byHref['/maas/guide#setup'].source, { file: 'index.md', line: 3 });
+  assert.equal(byHref['/maas/missing'].reason, 'no such page or file');
   assert.deepEqual(byHref[`${origin}/gone`].source, { file: 'index.md', line: 3 });
   assert.equal(result.problems.length, 3);
 });

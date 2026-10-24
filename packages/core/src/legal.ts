@@ -1,11 +1,11 @@
-import { providerInfos, type ProviderInfo } from '@postwerk/providers';
+import { providerInfos, type ProviderInfo } from '@maas/providers';
 import { bridgeSetup, networkRoute } from './bridge';
 import { isMailConfigured } from './mail';
 
 type Env = Record<string, string | undefined>;
 
 /**
- * Who runs this server (OPERATOR_*), for its legal pages. Every Postwerk
+ * Who runs this server (OPERATOR_*), for its legal pages. Every MarketingAsAService
  * server is run by someone; the networks' app reviews and EU law ask for
  * their name and a way to reach them.
  */
@@ -46,7 +46,7 @@ const OVERRIDES: Record<LegalPage, string> = {
 export const isLegalPage = (value: string): value is LegalPage => (LEGAL_PAGES as readonly string[]).includes(value);
 
 /**
- * Where each legal page is: the operator's own page (LEGAL_*_URL), Postwerk's
+ * Where each legal page is: the operator's own page (LEGAL_*_URL), MarketingAsAService's
  * built-in page (/legal/…), or nowhere yet (null). Built-in pages need the
  * operator's name and email; the imprint also needs an address.
  */

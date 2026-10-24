@@ -1,4 +1,4 @@
-import { defineMessages } from '@postwerk/core/i18n';
+import { defineMessages } from '@maas/core/i18n';
 
 /**
  * Words used all over the app. Each area has its own catalog next to this one
@@ -12,7 +12,7 @@ import { defineMessages } from '@postwerk/core/i18n';
 export const commonMessages = defineMessages({
   en: {
     /** Browser tab titles. */
-    title: (page: string) => `${page} · Postwerk`,
+    title: (page: string) => `${page} · MarketingAsAService`,
     nav: {
       canvas: 'Canvas',
       posts: 'Posts',
@@ -43,7 +43,7 @@ export const commonMessages = defineMessages({
     language: { label: 'Language', automatic: 'Same as browser' },
   },
   de: {
-    title: (page) => `${page} · Postwerk`,
+    title: (page) => `${page} · MarketingAsAService`,
     nav: {
       canvas: 'Canvas',
       posts: 'Beiträge',

@@ -1,8 +1,8 @@
 import { asc, eq } from 'drizzle-orm';
-import { bridgeFor, bridgeSetup, bridgeUsageSummary, isBlueskyOAuthAvailable, isProviderAvailable, listFlows, listPosts, listWorkspaceAudit, loadCanvasPositions, needsEmailVerification, networkRoute } from '@postwerk/core';
-import { builtinThemes, defaultCanvas } from '@postwerk/core/theme';
-import { getDb, socialAccounts } from '@postwerk/db';
-import { bridges, getProvider, isBridgeId, localizeFields, localizeInfo, providerInfos } from '@postwerk/providers';
+import { bridgeFor, bridgeSetup, bridgeUsageSummary, isBlueskyOAuthAvailable, isProviderAvailable, listFlows, listPosts, listWorkspaceAudit, loadCanvasPositions, needsEmailVerification, networkRoute } from '@maas/core';
+import { builtinThemes, defaultCanvas } from '@maas/core/theme';
+import { getDb, socialAccounts } from '@maas/db';
+import { bridges, getProvider, isBridgeId, localizeFields, localizeInfo, providerInfos } from '@maas/providers';
 import { World, type WorldData } from '@/components/world/world';
 import { toActivity } from '@/lib/activity-server';
 import { loadCalendarAroundNow } from '@/lib/calendar-server';

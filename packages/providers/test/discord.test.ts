@@ -40,14 +40,14 @@ describe('normalizeWebhookUrl', () => {
 describe('discord connect', () => {
   it('reads the webhook and stores channel and guild ids', async () => {
     const calls = mockFetch([
-      [`GET ${WEBHOOK}`, () => ({ type: 1, id: '1111', name: 'Postwerk', channel_id: '2222', guild_id: '3333', avatar: 'abc', token: TOKEN })],
+      [`GET ${WEBHOOK}`, () => ({ type: 1, id: '1111', name: 'MarketingAsAService', channel_id: '2222', guild_id: '3333', avatar: 'abc', token: TOKEN })],
     ]);
     const [account] = await connector.connect({ webhookUrl: `https://discordapp.com/api/webhooks/1111/${TOKEN}` });
     expect(calls[0]!.url).toBe(WEBHOOK);
     expect(account!.profile).toEqual({
       externalId: '1111',
-      handle: 'Postwerk',
-      displayName: 'Postwerk',
+      handle: 'MarketingAsAService',
+      displayName: 'MarketingAsAService',
       avatarUrl: 'https://cdn.discordapp.com/avatars/1111/abc.png',
     });
     expect(account!.credentials).toEqual(credentials);

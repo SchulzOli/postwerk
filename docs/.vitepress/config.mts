@@ -1,21 +1,23 @@
 import { defineConfig } from 'vitepress';
 
-const repo = 'https://github.com/SchulzOli/postwerk';
+const repo = 'https://github.com/SchulzOli/MarketingAsAService';
+/** The site's path on GitHub Pages: the repository's name (the workflow sets DOCS_BASE). */
+const base = process.env.DOCS_BASE ?? '/MarketingAsAService/';
 
 /**
- * Postwerk's documentation website, published to GitHub Pages
- * (https://schulzoli.github.io/postwerk/). The pages are the Markdown files in
+ * MarketingAsAService's documentation website, published to GitHub Pages
+ * (https://schulzoli.github.io/MarketingAsAService/). The pages are the Markdown files in
  * docs/, so they read the same on GitHub.
  */
 export default defineConfig({
-  title: 'Postwerk',
+  title: 'MarketingAsAService',
   description: 'Self-hosted social media scheduling: write once, publish everywhere.',
-  base: '/postwerk/',
+  base,
   cleanUrls: true,
   // Broken links never fail the build: scripts/check-links.mjs reports them as warnings.
   ignoreDeadLinks: true,
   srcExclude: ['scripts/**', 'node_modules/**'],
-  head: [['link', { rel: 'icon', type: 'image/svg+xml', href: '/postwerk/icon.svg' }]],
+  head: [['link', { rel: 'icon', type: 'image/svg+xml', href: `${base}icon.svg` }]],
   themeConfig: {
     logo: '/icon.svg',
     nav: [
@@ -63,6 +65,6 @@ export default defineConfig({
     editLink: { pattern: `${repo}/edit/main/docs/:path`, text: 'Edit this page on GitHub' },
     search: { provider: 'local' },
     outline: { level: [2, 3] },
-    footer: { message: 'Released under the MIT License.', copyright: 'Postwerk contributors' },
+    footer: { message: 'Released under the MIT License.', copyright: 'MarketingAsAService contributors' },
   },
 });

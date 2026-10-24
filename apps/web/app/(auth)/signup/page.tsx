@@ -1,6 +1,6 @@
 import { redirect } from 'next/navigation';
-import { findInvite } from '@postwerk/core';
-import { getDb } from '@postwerk/db';
+import { findInvite } from '@maas/core';
+import { getDb } from '@maas/db';
 import { AuthForm } from '@/components/auth-form';
 import { getMessages } from '@/lib/i18n-server';
 import { getSession } from '@/lib/session';

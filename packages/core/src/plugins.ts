@@ -1,5 +1,5 @@
 import { and, asc, eq } from 'drizzle-orm';
-import { plugins, workspaceMembers, type Database } from '@postwerk/db';
+import { plugins, workspaceMembers, type Database } from '@maas/db';
 import { builtinTheme, builtinThemes, parseThemeManifest, ThemeError, type ThemeManifest } from './theme';
 
 export interface InstalledPlugin {
@@ -21,7 +21,7 @@ export async function listPlugins(db: Database, workspaceId: string): Promise<In
   const installed = rows.flatMap((row): InstalledPlugin[] => {
     const base = { id: row.pluginId, builtin: row.builtin, installedAt: row.installedAt };
     if (row.builtin) {
-      // A built-in a later Postwerk version no longer ships simply disappears.
+      // A built-in a later MarketingAsAService version no longer ships simply disappears.
       const manifest = builtinTheme(row.pluginId);
       return manifest ? [{ ...base, manifest }] : [];
     }

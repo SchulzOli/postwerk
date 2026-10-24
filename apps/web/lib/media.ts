@@ -1,5 +1,5 @@
-import type { Locale } from '@postwerk/core/i18n';
-import type { PostMedia } from '@postwerk/db/types';
+import type { Locale } from '@maas/core/i18n';
+import type { PostMedia } from '@maas/db/types';
 import { uploadMessages } from '@/messages/upload';
 
 const VIDEO_EXTENSION = /\.(mp4|mov|m4v|webm)(?:[?#]|$)/i;

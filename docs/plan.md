@@ -1,6 +1,6 @@
-# Postwerk — Product & Technical Plan
+# MarketingAsAService — Product & Technical Plan
 
-Postwerk is a self-hostable social media scheduler. The goal: **anyone can connect their accounts with one click and plan posts for every network — without ever touching a developer console.**
+MarketingAsAService is a self-hostable social media scheduler. The goal: **anyone can connect their accounts with one click and plan posts for every network — without ever touching a developer console.**
 
 This document is the long-term plan. It is a living document; update it when decisions change.
 
@@ -10,11 +10,11 @@ This document is the long-term plan. It is a living document; update it when dec
 
 Every major network (Instagram, Facebook, LinkedIn, Reddit, TikTok, YouTube, X, Pinterest, Google Business Profile) only allows posting through a **registered developer app** that the network has reviewed. Self-hosted tools usually push this onto every user ("create a Meta app, paste your client ID…"). That is the part we want to remove.
 
-Hosted tools like Buffer register one app per network, get it approved once, and every user just clicks "Connect". Postwerk is self-hosted, so there is no central operator: **whoever runs a Postwerk server registers the apps for that server**, and everyone on that server then just clicks "Connect".
+Hosted tools like Buffer register one app per network, get it approved once, and every user just clicks "Connect". MarketingAsAService is self-hosted, so there is no central operator: **whoever runs a MarketingAsAService server registers the apps for that server**, and everyone on that server then just clicks "Connect".
 
-> **The Postwerk project does not register apps or apply for reviews on behalf of the people who use it.** Each operator does that for their own server, only as far as they need it; for their own accounts, many networks need no review at all. The author applies only for the server he runs for his own work as a self-employed person.
+> **The MarketingAsAService project does not register apps or apply for reviews on behalf of the people who use it.** Each operator does that for their own server, only as far as they need it; for their own accounts, many networks need no review at all. The author applies only for the server he runs for his own work as a self-employed person.
 
-Postwerk therefore distinguishes three kinds of connections:
+MarketingAsAService therefore distinguishes three kinds of connections:
 
 | Kind | Who needs a developer app? | Networks |
 |---|---|---|
@@ -90,7 +90,7 @@ Sizes: **S** ≈ days, **M** ≈ 1–2 weeks, **L** ≈ several weeks (one devel
 - **Media uploads** to local disk or any S3-compatible storage (custom SigV4, no SDK): drag and drop with progress, files checked by their content (not their name), served with strict headers; networks that need the bytes read them straight from storage. Media links still work for files hosted elsewhere
 - **Edit, reschedule, retry**: scheduled, draft and failed posts open in the composer again; flows keep their delays when a post moves; failed networks can be retried; published posts can be posted again. **Per-network text versions** ("customize for LinkedIn") — each network starts from its own text, then flows apply
 - **Calendar region** (and `/calendar`): week and month views in the viewer's time zone and first day of the week; drag a post to another slot or day, or move it from its details; double-click to plan a new post at that time
-- **Bluesky via AT Protocol OAuth**: sign in on your own server (PAR, PKCE, DPoP); Postwerk is a confidential client on https with its own signing key, a loopback client on localhost; app passwords stay as the fallback
+- **Bluesky via AT Protocol OAuth**: sign in on your own server (PAR, PKCE, DPoP); MarketingAsAService is a confidential client on https with its own signing key, a loopback client on localhost; app passwords stay as the fallback
 - **Teams**: several workspaces per user with a switcher, invite links (optionally emailed), roles owner / admin / editor, and a rule that a workspace always keeps an owner
 - **Email** (any SMTP server): address verification, password reset, invites, and an email to the author when a post fails or goes out only partly (can be turned off)
 - **Security**: login and sign-up rate limiting per email and per IP, and an audit log of sign-ins, account, post, flow, plugin and team changes (Team region and `/activity`)
@@ -113,8 +113,8 @@ With a Zernio API key, users can post to Instagram, Facebook, LinkedIn, TikTok, 
 **Code status:** all networks are implemented behind the common provider interface and unit-tested against mocked APIs. What software can prepare is done:
 
 - **A choice per network** for the server admin: own developer app (for their own accounts only, or for other people's too), the Zernio bridge, or off (`HIDE_NETWORKS`). The canvas shows what each path needs, the exact callback URL and the legal page URLs to paste into the developer console.
-- **Pages for reviews and EU law** on every server, from `OPERATOR_*`: about, privacy policy (from what Postwerk really stores, with the networks, processors and YouTube API wording), terms, imprint, data deletion. IP addresses in the activity log are deleted after 90 days.
-- **A documentation website** ([schulzoli.github.io/postwerk](https://schulzoli.github.io/postwerk/)) with a step-by-step guide per network, the scopes and why Postwerk needs each, and a screencast script for reviews. Links are checked in CI.
+- **Pages for reviews and EU law** on every server, from `OPERATOR_*`: about, privacy policy (from what MarketingAsAService really stores, with the networks, processors and YouTube API wording), terms, imprint, data deletion. IP addresses in the activity log are deleted after 90 days.
+- **A documentation website** ([schulzoli.github.io/MarketingAsAService](https://schulzoli.github.io/MarketingAsAService/)) with a step-by-step guide per network, the scopes and why MarketingAsAService needs each, and a screencast script for reviews. Links are checked in CI.
 
 **What remains** happens per server with a real app: register it, pass a review where needed, and make a first live post (then mark the network "live-verified" in [platforms.md](platforms.md)). For one person's own accounts, ordered by value ÷ effort:
 
@@ -164,4 +164,4 @@ Only if other people should connect their accounts through your apps: business v
 
 ## 5. Relation to `physio-ruhige-naehe`
 
-The physio monorepo currently runs Mixpost Lite (`apps/social`) as a stopgap. Once Postwerk supports Instagram (via the bridge in Phase 2 at the latest), the practice can switch to a Postwerk instance and `apps/social` can be removed.
+The physio monorepo currently runs Mixpost Lite (`apps/social`) as a stopgap. Once MarketingAsAService supports Instagram (via the bridge in Phase 2 at the latest), the practice can switch to a MarketingAsAService instance and `apps/social` can be removed.

@@ -9,7 +9,7 @@ import {
   operatorDetails,
   type LegalPage,
   type Operator,
-} from '@postwerk/core';
+} from '@maas/core';
 import { getMessages } from '@/lib/i18n-server';
 import { siteName } from '@/lib/legal';
 import { commonMessages } from '@/messages/common';

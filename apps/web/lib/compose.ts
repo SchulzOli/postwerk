@@ -1,7 +1,7 @@
 import 'server-only';
 import { asc, eq } from 'drizzle-orm';
-import { getPostForEdit, listFlows } from '@postwerk/core';
-import { getDb, socialAccounts } from '@postwerk/db';
+import { getPostForEdit, listFlows } from '@maas/core';
+import { getDb, socialAccounts } from '@maas/db';
 import type { ComposerAccount, ComposerInitial } from '@/components/composer';
 import { commonMessages } from '@/messages/common';
 import { getMessages } from './i18n-server';

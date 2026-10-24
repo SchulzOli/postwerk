@@ -1,5 +1,5 @@
 import { lt } from 'drizzle-orm';
-import { emailTokens, oauthStates, sessions, type Database } from '@postwerk/db';
+import { emailTokens, oauthStates, sessions, type Database } from '@maas/db';
 import { forgetOldAuditIps } from './audit';
 import { recordAllBridgeUsage } from './bridge-usage';
 import { cleanupUnusedMedia } from './media';

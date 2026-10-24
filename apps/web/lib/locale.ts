@@ -1,7 +1,7 @@
-import type { Locale } from '@postwerk/core/i18n';
+import type { Locale } from '@maas/core/i18n';
 
 /** Cookie that remembers the language for visitors who are not signed in (and follows the user's choice). */
-export const LOCALE_COOKIE = 'postwerk_locale';
+export const LOCALE_COOKIE = 'maas_locale';
 
 /**
  * The locale for dates and numbers: the browser's regional variant of the UI

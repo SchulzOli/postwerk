@@ -258,9 +258,9 @@ describe('AT Protocol OAuth', () => {
 
   it('publishes through the PDS with DPoP-bound tokens', async () => {
     const credentials: BlueskyOAuth = { kind: 'oauth', ...(await signIn()) };
-    const result = await bluesky.publish(credentials, { text: 'Hello from Postwerk', media: [], options: {} }, { idempotencyKey: 'k' });
+    const result = await bluesky.publish(credentials, { text: 'Hello from MarketingAsAService', media: [], options: {} }, { idempotencyKey: 'k' });
     expect(result).toEqual({ remoteId: `at://${DID}/app.bsky.feed.post/3jzfcijpj2z2a`, url: `https://bsky.app/profile/${DID}/post/3jzfcijpj2z2a` });
-    expect(fake.records).toEqual([expect.objectContaining({ repo: DID, collection: 'app.bsky.feed.post', record: expect.objectContaining({ text: 'Hello from Postwerk' }) })]);
+    expect(fake.records).toEqual([expect.objectContaining({ repo: DID, collection: 'app.bsky.feed.post', record: expect.objectContaining({ text: 'Hello from MarketingAsAService' }) })]);
     // First try without the PDS nonce, then with it.
     expect(fake.log.filter((line) => line.endsWith('createRecord'))).toHaveLength(2);
   });

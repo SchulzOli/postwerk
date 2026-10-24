@@ -1,9 +1,9 @@
 'use client';
 
 import { useActionState, useMemo, useState, useTransition } from 'react';
-import { errorText } from '@postwerk/core/i18n';
-import { parseThemeManifest, type ThemeManifest } from '@postwerk/core/theme';
-import { catalog, guideUrl } from '@postwerk/providers/catalog';
+import { errorText } from '@maas/core/i18n';
+import { parseThemeManifest, type ThemeManifest } from '@maas/core/theme';
+import { catalog, guideUrl } from '@maas/providers/catalog';
 import { connectMastodon, connectWithForm, disconnectAccount, startBridgeConnectAction, startOAuth } from '@/app/(app)/accounts/actions';
 import { BlueskyConnect } from '@/components/bluesky-connect';
 import { chooseThemeAction, installBuiltinPluginAction, installPluginAction, uninstallPluginAction } from '@/app/(world)/canvas/actions';

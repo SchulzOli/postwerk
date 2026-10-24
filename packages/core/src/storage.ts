@@ -6,7 +6,7 @@ import { pipeline } from 'node:stream/promises';
 import type { ReadableStream as WebReadableStream } from 'node:stream/web';
 import { presignUrl, signRequest, type SigV4Credentials } from './sigv4';
 
-/** The only file types Postwerk accepts and serves (no SVG or HTML, so uploads can never run script). */
+/** The only file types MarketingAsAService accepts and serves (no SVG or HTML, so uploads can never run script). */
 export const mediaTypes = {
   'image/jpeg': { kind: 'image', ext: 'jpg' },
   'image/png': { kind: 'image', ext: 'png' },

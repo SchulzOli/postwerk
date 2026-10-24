@@ -1,4 +1,4 @@
-import { defineMessages } from '@postwerk/core/i18n';
+import { defineMessages } from '@maas/core/i18n';
 
 /** The post composer (list view and canvas). The media picker has its own catalog (`upload`). */
 export const composerMessages = defineMessages({

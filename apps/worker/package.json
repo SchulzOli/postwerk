@@ -1,5 +1,5 @@
 {
-  "name": "@postwerk/worker",
+  "name": "@maas/worker",
   "version": "0.1.0",
   "license": "MIT",
   "private": true,
@@ -11,9 +11,9 @@
     "typecheck": "tsc -p tsconfig.json"
   },
   "dependencies": {
-    "@postwerk/core": "*",
-    "@postwerk/db": "*",
-    "@postwerk/providers": "*"
+    "@maas/core": "*",
+    "@maas/db": "*",
+    "@maas/providers": "*"
   },
   "devDependencies": {
     "esbuild": "^0.28.2",

@@ -18,6 +18,10 @@ on:
 permissions:
   contents: read
 
+env:
+  # GitHub Pages serves the site under the repository's name.
+  DOCS_BASE: /${{ github.event.repository.name }}/
+
 concurrency:
   group: docs-${{ github.ref }}
   cancel-in-progress: true

@@ -1,6 +1,6 @@
 'use client';
 
-import type { FormField } from '@postwerk/providers/catalog';
+import type { FormField } from '@maas/providers/catalog';
 import { connectBluesky, connectWithForm } from '@/app/(app)/accounts/actions';
 import { useMessages } from '@/lib/i18n';
 import { networksMessages } from '@/messages/networks';

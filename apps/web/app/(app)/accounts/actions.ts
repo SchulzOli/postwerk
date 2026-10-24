@@ -11,9 +11,9 @@ import {
   saveConnectedAccounts,
   startBlueskyLogin,
   startBridgeConnect,
-} from '@postwerk/core';
-import { getDb } from '@postwerk/db';
-import { codeChallenge, generateCodeVerifier, getProvider, isProviderId, Mastodon, ProviderError } from '@postwerk/providers';
+} from '@maas/core';
+import { getDb } from '@maas/db';
+import { codeChallenge, generateCodeVerifier, getProvider, isProviderId, Mastodon, ProviderError } from '@maas/providers';
 import { record } from '@/lib/audit';
 import { appUrl, redirectUriFor } from '@/lib/env';
 import { getMessages, localizedError } from '@/lib/i18n-server';
@@ -23,7 +23,7 @@ import { networksMessages } from '@/messages/networks';
 
 export type ConnectState = { error?: string; success?: string; values?: Record<string, string> };
 
-/** Connection problems are meant for the user (in their language where Postwerk wrote them); anything else is our fault. */
+/** Connection problems are meant for the user (in their language where MarketingAsAService wrote them); anything else is our fault. */
 async function message(error: unknown): Promise<string> {
   if (error instanceof ProviderError) return localizedError(error);
   console.error(error);
@@ -38,7 +38,7 @@ export async function connectMastodon(_: ConnectState, form: FormData): Promise<
     const instanceUrl = Mastodon.normalizeInstanceUrl(String(form.get('instance') ?? ''));
     const redirectUri = redirectUriFor('mastodon');
     const db = getDb();
-    const app = await getOrRegisterMastodonApp(db, instanceUrl, redirectUri, 'Postwerk', appUrl);
+    const app = await getOrRegisterMastodonApp(db, instanceUrl, redirectUri, 'MarketingAsAService', appUrl);
     const state = await createOAuthState(db, { workspaceId: workspace.id, userId: user.id, provider: 'mastodon', data: { instanceUrl } });
     target = Mastodon.authorizeUrl(instanceUrl, app, redirectUri, state);
   } catch (error) {

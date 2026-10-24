@@ -1,11 +1,11 @@
 'use client';
 
 import { useActionState, useEffect, useMemo, useState } from 'react';
-import { baseText, planPost, type FlowGraph } from '@postwerk/core/flow';
-import { catalog, type ProviderId } from '@postwerk/providers/catalog';
-import { localizeInfo } from '@postwerk/providers/messages';
-import { countText } from '@postwerk/providers/text';
-import { textLimit, validateContent } from '@postwerk/providers/validate';
+import { baseText, planPost, type FlowGraph } from '@maas/core/flow';
+import { catalog, type ProviderId } from '@maas/providers/catalog';
+import { localizeInfo } from '@maas/providers/messages';
+import { countText } from '@maas/providers/text';
+import { textLimit, validateContent } from '@maas/providers/validate';
 import type { ComposeState } from '@/app/(app)/posts/actions';
 import { useLocale, useMessages } from '@/lib/i18n';
 import { commonMessages } from '@/messages/common';

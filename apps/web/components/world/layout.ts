@@ -1,5 +1,5 @@
 import type { Edge, Node } from '@xyflow/react';
-import type { FlowStep } from '@postwerk/core/flow';
+import type { FlowStep } from '@maas/core/flow';
 import type { AccountData, FlowData, NetworkData, PluginData, WorldData } from './types';
 
 export type RegionKey = 'networks' | 'accounts' | 'flows' | 'compose' | 'calendar' | 'posts' | 'plugins' | 'team';

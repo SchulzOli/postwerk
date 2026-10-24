@@ -1,6 +1,6 @@
-import { isMailConfigured, listUserSecurityAudit } from '@postwerk/core';
-import { isLocale } from '@postwerk/core/i18n';
-import { getDb } from '@postwerk/db';
+import { isMailConfigured, listUserSecurityAudit } from '@maas/core';
+import { isLocale } from '@maas/core/i18n';
+import { getDb } from '@maas/db';
 import { AccountForms } from '@/components/account-forms';
 import { LocalTime } from '@/components/local-time';
 import { getMessages } from '@/lib/i18n-server';

@@ -1,6 +1,6 @@
 import { eq, sql } from 'drizzle-orm';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
-import { createDb, plugins, sessions, users, workspaces, type Database, type MemberRole } from '@postwerk/db';
+import { createDb, plugins, sessions, users, workspaces, type Database, type MemberRole } from '@maas/db';
 import { runMigrations } from '../../db/src/migrate';
 import {
   acceptInvite,

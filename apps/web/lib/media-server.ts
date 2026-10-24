@@ -1,7 +1,7 @@
 import 'server-only';
-import { findMedia, postMediaFromUpload } from '@postwerk/core';
-import type { Locale } from '@postwerk/core/i18n';
-import { getDb, type PostMedia } from '@postwerk/db';
+import { findMedia, postMediaFromUpload } from '@maas/core';
+import type { Locale } from '@maas/core/i18n';
+import { getDb, type PostMedia } from '@maas/db';
 import { uploadMessages } from '@/messages/upload';
 import { checkMediaUrl } from './media';
 

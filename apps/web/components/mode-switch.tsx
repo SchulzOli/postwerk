@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import type { ColorMode } from '@postwerk/core/theme';
+import type { ColorMode } from '@maas/core/theme';
 import { MODE_COOKIE } from '@/lib/color-mode';
 import { useMessages } from '@/lib/i18n';
 import { commonMessages } from '@/messages/common';

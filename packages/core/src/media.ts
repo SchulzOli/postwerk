@@ -1,7 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import { and, eq, inArray, sql } from 'drizzle-orm';
-import { media, type Database, type Media, type PostMedia } from '@postwerk/db';
-import { formatBytes, type MediaItem, type PublishContext } from '@postwerk/providers';
+import { media, type Database, type Media, type PostMedia } from '@maas/db';
+import { formatBytes, type MediaItem, type PublishContext } from '@maas/providers';
 import { getMediaStorage, mediaTypes, type MediaStorage, type MediaType } from './storage';
 import { LocalizedError } from './i18n';
 import { mediaMessages } from './messages';
@@ -15,7 +15,7 @@ export class MediaError extends LocalizedError {
 
 type Env = Record<string, string | undefined>;
 
-/** Largest files Postwerk stores; networks may accept less (see the catalog). */
+/** Largest files MarketingAsAService stores; networks may accept less (see the catalog). */
 export function uploadLimits(env: Env = process.env) {
   return { image: 20 * 1024 * 1024, video: Number(env.MEDIA_MAX_VIDEO_MB || 512) * 1024 * 1024 };
 }

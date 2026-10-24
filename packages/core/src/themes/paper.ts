@@ -6,7 +6,7 @@ export const paper: ThemeManifest = {
   id: 'paper',
   name: 'Paper',
   version: '1.0.0',
-  author: 'Postwerk',
+  author: 'MarketingAsAService',
   description: 'Warm paper and ink. Serif headings, index-card nodes and a quietly ruled canvas — dark mode turns it into ink on charcoal.',
   base: {
     font: '"Avenir Next", Avenir, "Segoe UI", "Noto Sans", system-ui, sans-serif',

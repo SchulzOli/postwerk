@@ -1,15 +1,15 @@
 {
-  "name": "postwerk",
+  "name": "marketing-as-a-service",
   "private": true,
   "description": "Self-hosted social media scheduler: write once, publish everywhere.",
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/SchulzOli/postwerk.git"
+    "url": "git+https://github.com/SchulzOli/MarketingAsAService.git"
   },
-  "homepage": "https://github.com/SchulzOli/postwerk#readme",
+  "homepage": "https://github.com/SchulzOli/MarketingAsAService#readme",
   "bugs": {
-    "url": "https://github.com/SchulzOli/postwerk/issues"
+    "url": "https://github.com/SchulzOli/MarketingAsAService/issues"
   },
   "type": "module",
   "workspaces": [
@@ -20,14 +20,14 @@
     "node": ">=22"
   },
   "scripts": {
-    "dev": "npm run dev --workspace=@postwerk/web & npm run dev --workspace=@postwerk/worker; wait",
-    "dev:web": "npm run dev --workspace=@postwerk/web",
-    "dev:worker": "npm run dev --workspace=@postwerk/worker",
+    "dev": "npm run dev --workspace=@maas/web & npm run dev --workspace=@maas/worker; wait",
+    "dev:web": "npm run dev --workspace=@maas/web",
+    "dev:worker": "npm run dev --workspace=@maas/worker",
     "build": "npm run build --workspaces --if-present",
     "typecheck": "npm run typecheck --workspaces --if-present",
     "test": "vitest run",
-    "db:generate": "npm run generate --workspace=@postwerk/db",
-    "db:migrate": "npm run migrate --workspace=@postwerk/db",
+    "db:generate": "npm run generate --workspace=@maas/db",
+    "db:migrate": "npm run migrate --workspace=@maas/db",
     "services:up": "docker compose up -d postgres",
     "services:down": "docker compose down"
   },

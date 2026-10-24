@@ -1,6 +1,6 @@
 # X
 
-X has no app review, but its API is paid: you pay per use, for your own posts as well. Postwerk reads the app from `X_CLIENT_ID` and `X_CLIENT_SECRET`.
+X has no app review, but its API is paid: you pay per use, for your own posts as well. MarketingAsAService reads the app from `X_CLIENT_ID` and `X_CLIENT_SECRET`.
 
 | Callback URL to register | Scopes |
 |---|---|
@@ -14,10 +14,10 @@ X has no app review, but its API is paid: you pay per use, for your own posts as
    - app type: **Web App** (a confidential client),
    - callback URI: `${APP_URL}/api/connect/x/callback`,
    - website URL: `${APP_URL}/about` (see [About and legal pages](../legal.md)).
-4. Copy the OAuth 2.0 **Client ID** and **Client Secret** into `X_CLIENT_ID` and `X_CLIENT_SECRET`, then restart Postwerk.
+4. Copy the OAuth 2.0 **Client ID** and **Client Secret** into `X_CLIENT_ID` and `X_CLIENT_SECRET`, then restart MarketingAsAService.
 5. On the canvas, click X → **Continue to X**.
 
-X tokens last two hours; Postwerk refreshes them by itself.
+X tokens last two hours; MarketingAsAService refreshes them by itself.
 
 ## Other options
 

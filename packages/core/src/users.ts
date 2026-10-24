@@ -1,5 +1,5 @@
 import { and, eq, gt, ne } from 'drizzle-orm';
-import { emailTokens, sessions, users, type Database, type Transaction } from '@postwerk/db';
+import { emailTokens, sessions, users, type Database, type Transaction } from '@maas/db';
 import { isLocale, LocalizedError, type Locale } from './i18n';
 import { isMailConfigured, sendMail } from './mail';
 import { resetPasswordMail, verifyEmailMail } from './mail-templates';

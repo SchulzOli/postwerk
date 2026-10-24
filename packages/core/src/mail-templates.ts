@@ -31,7 +31,7 @@ function render(to: string, message: Message): Mail {
   const footer = message.footer ? `<p style="margin:22px 0 0;font-size:13px;color:#5d6470">${escapeHtml(message.footer)}</p>` : '';
   const html = `<!doctype html><html lang="${message.locale}"><body style="margin:0;background:#f6f7f9;padding:24px;font:15px/1.5 system-ui,-apple-system,'Segoe UI',sans-serif;color:#16181d">
 <div style="max-width:520px;margin:0 auto;background:#ffffff;border:1px solid #dfe3e8;border-radius:12px;padding:28px">
-<p style="margin:0 0 18px;font-weight:700;font-size:17px">Postwerk</p>${paragraphs}${button}${footer}
+<p style="margin:0 0 18px;font-weight:700;font-size:17px">MarketingAsAService</p>${paragraphs}${button}${footer}
 </div></body></html>`;
   return { to, subject: message.subject, text, html };
 }

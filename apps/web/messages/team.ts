@@ -1,4 +1,4 @@
-import { defineMessages } from '@postwerk/core/i18n';
+import { defineMessages } from '@maas/core/i18n';
 
 /** Members, invites and workspaces: the team page/panel and the workspace menu. Role names are in common. */
 export const teamMessages = defineMessages({

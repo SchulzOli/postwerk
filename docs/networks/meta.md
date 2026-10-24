@@ -1,6 +1,6 @@
 # Facebook, Instagram and Threads
 
-One Meta developer app covers all three. Inside it, Instagram and Threads get their own app ids and secrets, so Postwerk has three pairs of settings:
+One Meta developer app covers all three. Inside it, Instagram and Threads get their own app ids and secrets, so MarketingAsAService has three pairs of settings:
 
 | Network | Settings | Callback URL to register |
 |---|---|---|
@@ -17,7 +17,7 @@ While the app only serves accounts of people who have a role on it (admin, devel
 ## Before you start
 
 - A Facebook account, registered as a developer at [developers.facebook.com](https://developers.facebook.com/).
-- Postwerk on a public https address (`APP_URL`). Instagram and Threads download images and videos from it.
+- MarketingAsAService on a public https address (`APP_URL`). Instagram and Threads download images and videos from it.
 - Your legal pages (set `OPERATOR_NAME` and `OPERATOR_EMAIL`, see [About and legal pages](../legal.md)).
 - Instagram: a professional account (business or creator).
 
@@ -35,32 +35,32 @@ While the app only serves accounts of people who have a role on it (admin, devel
 
 1. Add **Facebook Login for Business** to the app.
 2. Under its settings, add `${APP_URL}/api/connect/facebook/callback` to **Valid OAuth Redirect URIs**.
-3. Copy the **App ID** and **App secret** (App settings → Basic) into `FACEBOOK_CLIENT_ID` and `FACEBOOK_CLIENT_SECRET`, then restart Postwerk.
+3. Copy the **App ID** and **App secret** (App settings → Basic) into `FACEBOOK_CLIENT_ID` and `FACEBOOK_CLIENT_SECRET`, then restart MarketingAsAService.
 4. *Only your own Pages:* under **App roles**, give everyone whose Pages you connect a role (admin, developer or tester).
 5. On the canvas, click Facebook → **Continue to Facebook** and pick the Pages. Each Page becomes its own account.
 
-Postwerk asks for `pages_show_list`, `pages_manage_posts` and `pages_read_engagement`.
+MarketingAsAService asks for `pages_show_list`, `pages_manage_posts` and `pages_read_engagement`.
 
 ## Instagram
 
-Postwerk uses the **Instagram API with Instagram Login**: people sign in with Instagram itself, no Facebook Page needed.
+MarketingAsAService uses the **Instagram API with Instagram Login**: people sign in with Instagram itself, no Facebook Page needed.
 
 1. In the app, open the Instagram product's **API setup with Instagram login**.
 2. Copy the **Instagram app ID** and **Instagram app secret** into `INSTAGRAM_CLIENT_ID` and `INSTAGRAM_CLIENT_SECRET`. They are different from the Meta app's id and secret.
 3. Under **business login settings**, add `${APP_URL}/api/connect/instagram/callback` as redirect URL.
 4. *Only your own accounts:* under **App roles**, add each Instagram account as **Instagram tester**. Accept the invite in Instagram (Settings → Apps and websites → Tester invites).
-5. Restart Postwerk; on the canvas, click Instagram → **Continue to Instagram**.
+5. Restart MarketingAsAService; on the canvas, click Instagram → **Continue to Instagram**.
 
-Postwerk asks for `instagram_business_basic` and `instagram_business_content_publish`. Instagram only takes JPEG images; Postwerk checks this while you write.
+MarketingAsAService asks for `instagram_business_basic` and `instagram_business_content_publish`. Instagram only takes JPEG images; MarketingAsAService checks this while you write.
 
 ## Threads
 
 1. Add the **Threads API** use case. Copy the **Threads app ID** and **Threads app secret** into `THREADS_CLIENT_ID` and `THREADS_CLIENT_SECRET`.
 2. Add `${APP_URL}/api/connect/threads/callback` as redirect callback URL in the Threads settings.
 3. *Only your own accounts:* under **App roles**, add each Threads account as **Threads tester** and accept the invite in Threads (account settings → website permissions).
-4. Restart Postwerk; on the canvas, click Threads → **Continue to Threads**.
+4. Restart MarketingAsAService; on the canvas, click Threads → **Continue to Threads**.
 
-Postwerk asks for `threads_basic` and `threads_content_publish`.
+MarketingAsAService asks for `threads_basic` and `threads_content_publish`.
 
 ## When other people should connect
 
@@ -70,15 +70,15 @@ Postwerk asks for `threads_basic` and `threads_content_publish`.
 
 Texts you can adapt for the review form (describe what *your* server does):
 
-| Permission | Why Postwerk needs it |
+| Permission | Why MarketingAsAService needs it |
 |---|---|
 | `pages_show_list` | Lists the Facebook Pages the person manages, so they can choose which ones to connect as publishing targets. |
-| `pages_manage_posts` | Publishes the posts the person wrote and scheduled in Postwerk to the Page they chose, at the time they chose. |
+| `pages_manage_posts` | Publishes the posts the person wrote and scheduled in MarketingAsAService to the Page they chose, at the time they chose. |
 | `pages_read_engagement` | Reads the Page's name and picture to show which Page a post goes to, and the link of a published post. |
 | `instagram_business_basic` | Reads the account's username and profile picture to show which account the person connected. |
-| `instagram_business_content_publish` | Publishes the photos, carousels and reels the person scheduled in Postwerk. |
+| `instagram_business_content_publish` | Publishes the photos, carousels and reels the person scheduled in MarketingAsAService. |
 | `threads_basic` | Reads the profile's username and picture to show which account the person connected. |
-| `threads_content_publish` | Publishes the text, photo and video posts the person scheduled in Postwerk. |
+| `threads_content_publish` | Publishes the text, photo and video posts the person scheduled in MarketingAsAService. |
 
 ## Or use the bridge
 

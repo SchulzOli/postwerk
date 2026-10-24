@@ -1,10 +1,10 @@
-import type { FlowGraph } from '@postwerk/core/flow';
-import type { ColorMode, ThemeCanvas, ThemeManifest } from '@postwerk/core/theme';
+import type { FlowGraph } from '@maas/core/flow';
+import type { ColorMode, ThemeCanvas, ThemeManifest } from '@maas/core/theme';
 import type { TeamData } from '@/components/team';
 import type { ActivityItem } from '@/lib/activity';
 import type { CalendarData } from '@/lib/calendar';
 import type { FormField, PostStatus, TargetStatus } from './shared-types';
-import type { ProviderId, ProviderInfo } from '@postwerk/providers/catalog';
+import type { ProviderId, ProviderInfo } from '@maas/providers/catalog';
 
 export interface NetworkData {
   info: ProviderInfo;

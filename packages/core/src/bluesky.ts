@@ -1,12 +1,12 @@
 import { eq } from 'drizzle-orm';
-import { serverSecrets, type Database } from '@postwerk/db';
-import { Atproto, Bluesky, ProviderError, type AtprotoKeyset, type PrivateJwk } from '@postwerk/providers';
+import { serverSecrets, type Database } from '@maas/db';
+import { Atproto, Bluesky, ProviderError, type AtprotoKeyset, type PrivateJwk } from '@maas/providers';
 import { createOAuthState } from './accounts';
 import { decryptJson, encryptJson } from './crypto';
 import { generateToken } from './password';
 
 /**
- * Bluesky OAuth needs no developer app: Postwerk describes itself in a client
+ * Bluesky OAuth needs no developer app: MarketingAsAService describes itself in a client
  * metadata document at its own address. On https it is a confidential client
  * with its own signing key; on localhost/127.0.0.1 it is a "loopback" client
  * for development. Anywhere else, people connect with app passwords.
@@ -42,7 +42,7 @@ export function blueskyClientIds(appUrl: string): { clientId: string; redirectUr
 
 export const isBlueskyOAuthAvailable = (appUrl: string) => blueskyClientIds(appUrl) !== undefined;
 
-/** Postwerk's signing key for Bluesky OAuth: created on first use, stored encrypted. */
+/** MarketingAsAService's signing key for Bluesky OAuth: created on first use, stored encrypted. */
 export async function blueskyKeyset(db: Database): Promise<AtprotoKeyset> {
   const row = await db.query.serverSecrets.findFirst({ where: eq(serverSecrets.name, KEY_NAME) });
   if (row) {
@@ -66,7 +66,7 @@ export function blueskyClientMetadata(appUrl: string) {
   if (!ids?.confidential) return undefined;
   return {
     client_id: ids.clientId,
-    client_name: 'Postwerk',
+    client_name: 'MarketingAsAService',
     client_uri: base(appUrl),
     application_type: 'web',
     grant_types: ['authorization_code', 'refresh_token'],
@@ -89,8 +89,8 @@ export async function blueskyJwks(db: Database) {
 export async function startBlueskyLogin(db: Database, input: { workspaceId: string; userId: string; handle: string; appUrl: string }): Promise<string> {
   const ids = blueskyClientIds(input.appUrl);
   if (!ids) {
-    throw new ProviderError('Signing in with Bluesky needs Postwerk on an https address. Use an app password instead.', {
-      de: 'Die Anmeldung mit Bluesky braucht Postwerk unter einer https-Adresse. Verwende stattdessen ein App-Passwort.',
+    throw new ProviderError('Signing in with Bluesky needs MarketingAsAService on an https address. Use an app password instead.', {
+      de: 'Die Anmeldung mit Bluesky braucht MarketingAsAService unter einer https-Adresse. Verwende stattdessen ein App-Passwort.',
     });
   }
   const client = { clientId: ids.clientId, redirectUri: ids.redirectUri, keys: ids.confidential ? (await blueskyKeyset(db)).keys : [] };

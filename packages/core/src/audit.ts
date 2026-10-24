@@ -1,5 +1,5 @@
 import { and, desc, eq, isNotNull, isNull, lt } from 'drizzle-orm';
-import { auditLog, type Database } from '@postwerk/db';
+import { auditLog, type Database } from '@maas/db';
 
 /** Everything we record. Workspace-less events (sign-ins, password changes) concern only the user. */
 export type AuditAction =

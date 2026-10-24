@@ -343,7 +343,7 @@ export const catalog: Record<ProviderId, ProviderInfo> = {
       media: { maxImages: 10, maxVideos: 10, required: false, mixed: true, altText: true },
       options: [],
     },
-    setup: { operator: 'none', docsUrl: 'https://github.com/SchulzOli/postwerk', guide: 'getting-started#try-it-with-the-sandbox' },
+    setup: { operator: 'none', docsUrl: 'https://github.com/SchulzOli/MarketingAsAService', guide: 'getting-started#try-it-with-the-sandbox' },
   },
 };
 
@@ -356,8 +356,8 @@ export function getProviderInfo(id: ProviderId): ProviderInfo {
 export type { OptionField, ProviderId, ProviderInfo } from './types';
 export type { FormField } from './types';
 
-/** Where Postwerk's documentation is published (GitHub Pages). */
-export const DOCS_URL = 'https://schulzoli.github.io/postwerk';
+/** Where MarketingAsAService's documentation is published (GitHub Pages). */
+export const DOCS_URL = 'https://schulzoli.github.io/MarketingAsAService';
 
 /** A network's step-by-step setup guide on the docs site. */
 export const guideUrl = (info: Pick<ProviderInfo, 'setup'>) => `${DOCS_URL}/${info.setup.guide}`;

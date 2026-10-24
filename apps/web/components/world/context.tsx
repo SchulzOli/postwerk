@@ -1,7 +1,7 @@
 'use client';
 
 import { createContext, useContext } from 'react';
-import type { FlowPlan, FlowStep, FlowStepType } from '@postwerk/core/flow';
+import type { FlowPlan, FlowStep, FlowStepType } from '@maas/core/flow';
 import type { ComposerInitial } from '@/components/composer';
 import type { WorldData } from './types';
 

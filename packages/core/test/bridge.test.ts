@@ -1,6 +1,6 @@
 import { eq, sql } from 'drizzle-orm';
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import { bridgeProfiles, bridgeUsage, createDb, posts, postTargets, socialAccounts, users, workspaces, type Database } from '@postwerk/db';
+import { bridgeProfiles, bridgeUsage, createDb, posts, postTargets, socialAccounts, users, workspaces, type Database } from '@maas/db';
 import { mockFetch } from '../../providers/test/helpers';
 import { runMigrations } from '../../db/src/migrate';
 import { consumeOAuthState, saveConnectedAccounts } from '../src/accounts';
@@ -106,7 +106,7 @@ describe.skipIf(!url)('connecting and publishing through the bridge (Postgres)',
     await db.insert(bridgeProfiles).values({ workspaceId: workspace.id, bridge: 'zernio', profileId: 'prof_full' });
     const { calls } = await connect((profileId) => (profileId === 'prof_full' ? [instagram] : []));
     expect(calls.map((call) => `${call.method} ${call.url.split('?')[0]}`)).toEqual([`GET ${API}/accounts`, `POST ${API}/profiles`, `GET ${API}/connect/instagram`]);
-    expect(calls[1]!.body).toMatchObject({ name: 'Praxis · Postwerk 2' });
+    expect(calls[1]!.body).toMatchObject({ name: 'Praxis · MarketingAsAService 2' });
     expect(new URL(calls[2]!.url).searchParams.get('profileId')).toBe('prof_1');
   });
 

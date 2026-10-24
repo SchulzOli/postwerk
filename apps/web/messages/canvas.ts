@@ -1,23 +1,23 @@
-import { defineMessages } from '@postwerk/core/i18n';
+import { defineMessages } from '@maas/core/i18n';
 
 /** The canvas ("world"): regions, toolbar, nodes and panels, and the inspectors (themes are in `themes.ts`). */
 export const canvasMessages = defineMessages({
   en: {
     regions: {
-      networks: { title: 'Networks', subtitle: 'Every network Postwerk can publish to, and what it needs' },
+      networks: { title: 'Networks', subtitle: 'Every network MarketingAsAService can publish to, and what it needs' },
       accounts: { title: 'Accounts', subtitle: 'Connected profiles, pages, boards and channels' },
       flows: { title: 'Flows', subtitle: 'Reusable publishing pipelines: adapt, delay and fan out' },
       compose: { title: 'Compose', subtitle: 'Write once, publish everywhere' },
       calendar: { title: 'Calendar', subtitle: 'When posts go out — drag one to move it' },
       posts: { title: 'Posts', subtitle: 'What went out and what is coming' },
-      plugins: { title: 'Plugins', subtitle: 'Themes for how Postwerk looks — each one with a light and a dark mode' },
+      plugins: { title: 'Plugins', subtitle: 'Themes for how MarketingAsAService looks — each one with a light and a dark mode' },
       team: { title: 'Team', subtitle: 'Who works here and what happened' },
     },
     // Notices after a redirect to the canvas
     verified: 'Thanks, your email address is confirmed.',
     verifyExpired: 'That confirmation link has expired. Send a new one from your account settings.',
     // Toolbar and "Go to…"
-    canvasLabel: 'Postwerk canvas',
+    canvasLabel: 'MarketingAsAService canvas',
     regionsLabel: 'Regions',
     goToPlaceholder: 'Go to…',
     goTo: 'Go to',
@@ -116,18 +116,18 @@ export const canvasMessages = defineMessages({
   },
   de: {
     regions: {
-      networks: { title: 'Netzwerke', subtitle: 'Jedes Netzwerk, auf dem Postwerk veröffentlichen kann, und was es braucht' },
+      networks: { title: 'Netzwerke', subtitle: 'Jedes Netzwerk, auf dem MarketingAsAService veröffentlichen kann, und was es braucht' },
       accounts: { title: 'Konten', subtitle: 'Verbundene Profile, Seiten, Pinnwände und Kanäle' },
       flows: { title: 'Flows', subtitle: 'Wiederverwendbare Abläufe zum Veröffentlichen: anpassen, verzögern, verteilen' },
       compose: { title: 'Verfassen', subtitle: 'Einmal schreiben, überall veröffentlichen' },
       calendar: { title: 'Kalender', subtitle: 'Wann Beiträge rausgehen – zieh einen, um ihn zu verschieben' },
       posts: { title: 'Beiträge', subtitle: 'Was rausging und was noch kommt' },
-      plugins: { title: 'Plugins', subtitle: 'Designs für das Aussehen von Postwerk – jedes mit hellem und dunklem Modus' },
+      plugins: { title: 'Plugins', subtitle: 'Designs für das Aussehen von MarketingAsAService – jedes mit hellem und dunklem Modus' },
       team: { title: 'Team', subtitle: 'Wer hier arbeitet und was passiert ist' },
     },
     verified: 'Danke, deine E-Mail-Adresse ist bestätigt.',
     verifyExpired: 'Dieser Bestätigungslink ist abgelaufen. Fordere in deinen Kontoeinstellungen einen neuen an.',
-    canvasLabel: 'Postwerk-Canvas',
+    canvasLabel: 'MarketingAsAService-Canvas',
     regionsLabel: 'Bereiche',
     goToPlaceholder: 'Gehe zu…',
     goTo: 'Gehe zu',

@@ -14,8 +14,8 @@ import {
   setMemberTheme,
   ThemeError,
   uninstallPlugin,
-} from '@postwerk/core';
-import { getDb } from '@postwerk/db';
+} from '@maas/core';
+import { getDb } from '@maas/db';
 import { record } from '@/lib/audit';
 import { getMessages, localizedError } from '@/lib/i18n-server';
 import { requireAdmin, requireSession } from '@/lib/session';

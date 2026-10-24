@@ -1,7 +1,7 @@
 'use client';
 
 import { createContext, useContext } from 'react';
-import type { Catalog, Locale, Messages } from '@postwerk/core/i18n';
+import type { Catalog, Locale, Messages } from '@maas/core/i18n';
 
 const LocaleContext = createContext<Locale>('en');
 

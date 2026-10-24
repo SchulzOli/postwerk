@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useRef } from 'react';
-import { localeNames } from '@postwerk/core/i18n';
+import { localeNames } from '@maas/core/i18n';
 import { logOut } from '@/app/(auth)/actions';
 import { setLocaleAction } from '@/app/actions/locale';
 import { useLocale, useMessages } from '@/lib/i18n';

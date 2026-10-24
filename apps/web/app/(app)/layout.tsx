@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { needsEmailVerification } from '@postwerk/core';
+import { needsEmailVerification } from '@maas/core';
 import { AccountMenu } from '@/components/account-menu';
 import { ModeSwitch } from '@/components/mode-switch';
 import { VerifyBanner } from '@/components/verify-banner';
@@ -16,7 +16,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   return (
     <>
       <header className="topbar">
-        <Link href="/canvas" className="brand">Postwerk</Link>
+        <Link href="/canvas" className="brand">MarketingAsAService</Link>
         <nav>
           <Link href="/canvas">{t.nav.canvas}</Link>
           <Link href="/posts">{t.nav.posts}</Link>

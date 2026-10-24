@@ -1,4 +1,4 @@
-import { defineMessages } from '@postwerk/core/i18n';
+import { defineMessages } from '@maas/core/i18n';
 
 /** Signing up and in, password reset, invite links. */
 export const authMessages = defineMessages({
@@ -66,7 +66,7 @@ export const authMessages = defineMessages({
       expired: 'It has expired.',
       invalid: 'The link is not valid.',
       askForNew: 'Ask the person who invited you for a new one.',
-      backToApp: 'Back to Postwerk',
+      backToApp: 'Back to MarketingAsAService',
       logIn: 'Log in',
       join: (workspace: string) => `Join ${workspace}`,
       open: (workspace: string) => `Open ${workspace}`,
@@ -143,7 +143,7 @@ export const authMessages = defineMessages({
       expired: 'Sie ist abgelaufen.',
       invalid: 'Der Link ist ungültig.',
       askForNew: 'Bitte die Person, die dich eingeladen hat, um eine neue.',
-      backToApp: 'Zurück zu Postwerk',
+      backToApp: 'Zurück zu MarketingAsAService',
       logIn: 'Anmelden',
       join: (workspace) => `${workspace} beitreten`,
       open: (workspace) => `${workspace} öffnen`,

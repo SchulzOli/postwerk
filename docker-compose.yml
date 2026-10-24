@@ -3,15 +3,15 @@ services:
     image: postgres:17-alpine
     restart: unless-stopped
     environment:
-      POSTGRES_USER: postwerk
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postwerk}
-      POSTGRES_DB: postwerk
+      POSTGRES_USER: maas
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-maas}
+      POSTGRES_DB: maas
     ports:
       - "127.0.0.1:${POSTGRES_PORT:-5432}:5432"
     volumes:
       - postgres-data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postwerk"]
+      test: ["CMD-SHELL", "pg_isready -U maas"]
       interval: 5s
       timeout: 5s
       retries: 10
@@ -22,7 +22,7 @@ services:
       target: worker
     command: ["node", "dist/migrate.js"]
     environment:
-      DATABASE_URL: postgres://postwerk:${POSTGRES_PASSWORD:-postwerk}@postgres:5432/postwerk
+      DATABASE_URL: postgres://maas:${POSTGRES_PASSWORD:-maas}@postgres:5432/maas
     depends_on:
       postgres:
         condition: service_healthy
@@ -40,7 +40,7 @@ services:
     ports:
       - "${WEB_PORT:-3000}:3000"
     environment:
-      DATABASE_URL: postgres://postwerk:${POSTGRES_PASSWORD:-postwerk}@postgres:5432/postwerk
+      DATABASE_URL: postgres://maas:${POSTGRES_PASSWORD:-maas}@postgres:5432/maas
       ENCRYPTION_KEY: ${ENCRYPTION_KEY:-}
       APP_URL: ${APP_URL:-http://localhost:3000}
       ENABLE_SANDBOX: ${ENABLE_SANDBOX:-false}
@@ -61,7 +61,7 @@ services:
       - path: .env
         required: false
     environment:
-      DATABASE_URL: postgres://postwerk:${POSTGRES_PASSWORD:-postwerk}@postgres:5432/postwerk
+      DATABASE_URL: postgres://maas:${POSTGRES_PASSWORD:-maas}@postgres:5432/maas
       ENCRYPTION_KEY: ${ENCRYPTION_KEY:-}
       # Links in emails (failed-post alerts) and to uploaded media point here.
       APP_URL: ${APP_URL:-http://localhost:3000}

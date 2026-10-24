@@ -1,5 +1,5 @@
 import { eq, lt, sql } from 'drizzle-orm';
-import { rateLimits, type Database } from '@postwerk/db';
+import { rateLimits, type Database } from '@maas/db';
 import type { Locale } from './i18n';
 import { timeMessages } from './messages';
 

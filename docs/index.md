@@ -2,12 +2,12 @@
 layout: home
 
 hero:
-  name: Postwerk
+  name: MarketingAsAService
   text: Self-hosted social media scheduling
   tagline: Write a post once, publish it everywhere, now or later. On your own server, with your own apps.
   image:
     src: /icon.svg
-    alt: Postwerk
+    alt: MarketingAsAService
   actions:
     - theme: brand
       text: Get started
@@ -17,7 +17,7 @@ hero:
       link: /networks/
     - theme: alt
       text: GitHub
-      link: https://github.com/SchulzOli/postwerk
+      link: https://github.com/SchulzOli/MarketingAsAService
 
 features:
   - title: One canvas
@@ -34,4 +34,4 @@ features:
     details: MIT licensed, in English and German, with themes as plugins.
 ---
 
-![The Postwerk canvas](./screenshots/canvas-world.png)
+![The MarketingAsAService canvas](./screenshots/canvas-world.png)

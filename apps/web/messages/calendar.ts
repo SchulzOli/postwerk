@@ -1,4 +1,4 @@
-import { defineMessages } from '@postwerk/core/i18n';
+import { defineMessages } from '@maas/core/i18n';
 
 /** The calendar (its page and the canvas panel). Status labels come from `common.status`. */
 export const calendarMessages = defineMessages({

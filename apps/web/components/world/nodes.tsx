@@ -2,8 +2,8 @@
 
 import { Handle, Position, type NodeProps } from '@xyflow/react';
 import { useTransition } from 'react';
-import type { FlowStep } from '@postwerk/core/flow';
-import { catalog } from '@postwerk/providers/catalog';
+import type { FlowStep } from '@maas/core/flow';
+import { catalog } from '@maas/providers/catalog';
 import { Composer } from '@/components/composer';
 import { LocalTime } from '@/components/local-time';
 import { RelativeTime } from '@/components/relative-time';

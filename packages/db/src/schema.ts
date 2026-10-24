@@ -125,7 +125,7 @@ export const invites = pgTable(
   (t) => [uniqueIndex('invites_token_idx').on(t.tokenHash), index('invites_workspace_idx').on(t.workspaceId)],
 );
 
-/** Plugins installed in a workspace (themes for now, see @postwerk/core/theme). */
+/** Plugins installed in a workspace (themes for now, see @maas/core/theme). */
 export const plugins = pgTable(
   'plugins',
   {
@@ -133,7 +133,7 @@ export const plugins = pgTable(
     /** The manifest's id, e.g. "paper". */
     pluginId: text('plugin_id').notNull(),
     kind: pluginKind('kind').notNull(),
-    /** Built-in plugins ship with Postwerk and are read from code, so they update with it. */
+    /** Built-in plugins ship with MarketingAsAService and are read from code, so they update with it. */
     builtin: boolean('builtin').notNull().default(false),
     /** The validated manifest of a custom plugin; null for built-ins. */
     manifest: jsonb('manifest'),
@@ -228,7 +228,7 @@ export const bridgeUsage = pgTable(
   (t) => [primaryKey({ columns: [t.workspaceId, t.bridge, t.month] })],
 );
 
-/** Saved publishing flows (graph of steps, see @postwerk/core/flow). */
+/** Saved publishing flows (graph of steps, see @maas/core/flow). */
 export const flows = pgTable('flows', {
   id: id(),
   workspaceId: uuid('workspace_id').notNull().references(() => workspaces.id, { onDelete: 'cascade' }),
@@ -243,7 +243,7 @@ export const flows = pgTable('flows', {
 
 export const mediaKind = pgEnum('media_kind', ['image', 'video']);
 
-/** Uploaded files (local disk or S3, see @postwerk/core storage). Unused uploads are cleaned up after a day. */
+/** Uploaded files (local disk or S3, see @maas/core storage). Unused uploads are cleaned up after a day. */
 export const media = pgTable(
   'media',
   {

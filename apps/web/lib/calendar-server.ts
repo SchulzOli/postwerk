@@ -1,6 +1,6 @@
 import 'server-only';
-import { listPostsBetween } from '@postwerk/core';
-import { getDb } from '@postwerk/db';
+import { listPostsBetween } from '@maas/core';
+import { getDb } from '@maas/db';
 import type { CalendarData } from './calendar';
 
 const LIMIT = 500;

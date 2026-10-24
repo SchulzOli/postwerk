@@ -1,6 +1,6 @@
 # About and legal pages
 
-Every Postwerk server is run by someone: the operator. The networks' developer consoles and reviews ask for the app's website, privacy policy, terms and data deletion instructions, and EU law asks for the operator's contact details. Postwerk can serve all of these, filled in for your server.
+Every MarketingAsAService server is run by someone: the operator. The networks' developer consoles and reviews ask for the app's website, privacy policy, terms and data deletion instructions, and EU law asks for the operator's contact details. MarketingAsAService can serve all of these, filled in for your server.
 
 ## Turn them on
 
@@ -25,18 +25,18 @@ With name and email set, these pages appear (in English and German, following th
 | `/legal/data-deletion` | data deletion instructions URL (Meta) |
 | `/legal/imprint` | imprint (Impressum, § 5 DDG); needs `OPERATOR_ADDRESS` |
 
-![The privacy policy of a Postwerk server](screenshots/legal-privacy.png)
+![The privacy policy of a MarketingAsAService server](screenshots/legal-privacy.png)
 
 They are linked from the sign-in pages and from the account menu. The canvas lists their full addresses next to each network's setup, ready to copy.
 
 ## What the pages say
 
-They are written from what Postwerk really does, and adapt to your settings:
+They are written from what MarketingAsAService really does, and adapt to your settings:
 
-- **Privacy policy:** who is responsible; what Postwerk stores and why (account, content, connected accounts with encrypted access, sign-in protection, an activity log whose IP addresses are deleted after 90 days, only necessary cookies, emails); the privacy policies of the networks offered on your server; the YouTube API Services wording Google requires, when YouTube is offered; the service providers your settings use (hosting, S3 storage, SMTP, Zernio); how long data is kept; people's rights.
+- **Privacy policy:** who is responsible; what MarketingAsAService stores and why (account, content, connected accounts with encrypted access, sign-in protection, an activity log whose IP addresses are deleted after 90 days, only necessary cookies, emails); the privacy policies of the networks offered on your server; the YouTube API Services wording Google requires, when YouTube is offered; the service providers your settings use (hosting, S3 storage, SMTP, Zernio); how long data is kept; people's rights.
 - **Terms:** the service, accounts, content, liability, ending, changes; YouTube's terms when YouTube is offered.
 - **Data deletion:** disconnecting accounts (and that Zernio removes them too), revoking access at the network, deleting everything by email.
-- **About:** who runs the server, what Postwerk does, which networks people can connect and which go through Zernio.
+- **About:** who runs the server, what MarketingAsAService does, which networks people can connect and which go through Zernio.
 
 ::: warning Templates, not legal advice
 The texts are a careful starting point for a small, self-hosted server in the EU. Your situation may need more, for example other processors, analytics you added, or rules of your profession. Have them checked, or use your own pages instead (below).
@@ -53,4 +53,4 @@ LEGAL_IMPRINT_URL=https://example.com/impressum
 LEGAL_DATA_DELETION_URL=https://example.com/daten-loeschen
 ```
 
-Postwerk then links to these and redirects its own `/legal/…` addresses there. Mention in your own policy what Postwerk stores; the list above is a good start.
+MarketingAsAService then links to these and redirects its own `/legal/…` addresses there. Mention in your own policy what MarketingAsAService stores; the list above is a good start.

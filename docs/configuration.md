@@ -1,6 +1,6 @@
 # Configuration
 
-Postwerk reads its settings from environment variables, for Docker usually from `.env` (copy [`.env.example`](https://github.com/SchulzOli/postwerk/blob/main/.env.example)). Web app and worker need the same values. Restart both after a change.
+MarketingAsAService reads its settings from environment variables, for Docker usually from `.env` (copy [`.env.example`](https://github.com/SchulzOli/MarketingAsAService/blob/main/.env.example)). Web app and worker need the same values. Restart both after a change.
 
 ## Basics
 
@@ -23,14 +23,14 @@ Postwerk reads its settings from environment variables, for Docker usually from 
 | `S3_ENDPOINT`, `S3_REGION`, `S3_BUCKET`, `S3_ACCESS_KEY_ID`, `S3_SECRET_ACCESS_KEY`, `S3_FORCE_PATH_STYLE` | S3 storage (AWS, MinIO, Cloudflare R2, Backblaze, Hetzner…) |
 | `S3_PUBLIC_URL` | Public address of the bucket or a CDN; without it, files are shared with presigned links |
 
-Instagram, Threads, TikTok and Pinterest download media from Postwerk, so `APP_URL` (or `S3_PUBLIC_URL`) must be reachable from the internet for them.
+Instagram, Threads, TikTok and Pinterest download media from MarketingAsAService, so `APP_URL` (or `S3_PUBLIC_URL`) must be reachable from the internet for them.
 
 ## Email
 
 | Variable | What it does |
 |---|---|
 | `SMTP_URL` | `smtp://user:pass@host:587` (STARTTLS) or `smtps://user:pass@host:465`. Without it, emails are written to the server log |
-| `MAIL_FROM` | Sender, e.g. `Postwerk <postwerk@example.com>` |
+| `MAIL_FROM` | Sender, e.g. `MarketingAsAService <maas@example.com>` |
 
 ## About and legal pages
 

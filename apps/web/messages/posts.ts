@@ -1,4 +1,4 @@
-import { defineMessages } from '@postwerk/core/i18n';
+import { defineMessages } from '@maas/core/i18n';
 
 /** The post list, the new/edit post pages and their server actions. */
 export const postsMessages = defineMessages({

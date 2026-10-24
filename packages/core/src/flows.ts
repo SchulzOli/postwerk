@@ -1,5 +1,5 @@
 import { and, eq } from 'drizzle-orm';
-import { canvasPositions, flows, type Database, type Transaction } from '@postwerk/db';
+import { canvasPositions, flows, type Database, type Transaction } from '@maas/db';
 import { emptyFlow, parseFlowGraph, type FlowGraph } from './flow';
 
 export async function listFlows(db: Database, workspaceId: string) {

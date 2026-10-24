@@ -1,7 +1,7 @@
 'use client';
 
 import { useActionState, useState, useTransition } from 'react';
-import type { MemberRole } from '@postwerk/db/types';
+import type { MemberRole } from '@maas/db/types';
 import {
   changeRoleAction,
   inviteAction,

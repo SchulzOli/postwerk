@@ -11,7 +11,7 @@ try {
 const config: NextConfig = {
   output: 'standalone',
   outputFileTracingRoot: fileURLToPath(new URL('../..', import.meta.url)),
-  transpilePackages: ['@postwerk/core', '@postwerk/db', '@postwerk/providers'],
+  transpilePackages: ['@maas/core', '@maas/db', '@maas/providers'],
   poweredByHeader: false,
 };
 

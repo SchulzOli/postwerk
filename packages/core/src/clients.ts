@@ -1,4 +1,4 @@
-import { getProviderInfo, type OAuthClient, type ProviderId } from '@postwerk/providers';
+import { getProviderInfo, type OAuthClient, type ProviderId } from '@maas/providers';
 
 type Env = Record<string, string | undefined>;
 

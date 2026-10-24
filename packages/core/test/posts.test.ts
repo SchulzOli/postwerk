@@ -1,6 +1,6 @@
 import { eq, sql } from 'drizzle-orm';
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import { createDb, posts, postTargets, users, workspaces, type Database } from '@postwerk/db';
+import { createDb, posts, postTargets, users, workspaces, type Database } from '@maas/db';
 import { runMigrations } from '../../db/src/migrate';
 import { saveAccount } from '../src/accounts';
 import { planPost } from '../src/flow';

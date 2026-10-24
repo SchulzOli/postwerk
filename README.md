@@ -1,10 +1,10 @@
-# Postwerk
+# MarketingAsAService
 
-[![CI](https://github.com/SchulzOli/postwerk/actions/workflows/ci.yml/badge.svg)](https://github.com/SchulzOli/postwerk/actions/workflows/ci.yml) [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE) [![Docs](https://img.shields.io/badge/docs-schulzoli.github.io%2Fpostwerk-3b5bdb.svg)](https://schulzoli.github.io/postwerk/)
+[![CI](https://github.com/SchulzOli/MarketingAsAService/actions/workflows/ci.yml/badge.svg)](https://github.com/SchulzOli/MarketingAsAService/actions/workflows/ci.yml) [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE) [![Docs](https://img.shields.io/badge/docs-schulzoli.github.io%2FMarketingAsAService-3b5bdb.svg)](https://schulzoli.github.io/MarketingAsAService/)
 
 Self-hosted social media scheduling. Connect your accounts with one click, write a post once, publish it everywhere — now or later.
 
-**Documentation:** [schulzoli.github.io/postwerk](https://schulzoli.github.io/postwerk/): getting started, configuration, and a guide for every network.
+**Documentation:** [schulzoli.github.io/MarketingAsAService](https://schulzoli.github.io/MarketingAsAService/): getting started, configuration, and a guide for every network.
 
 - **One big canvas.** Networks, accounts, flows, the composer and your posts live in a single zoomable 2D world. Drag things where you like, and link to any node or view (`/canvas#n=network:instagram`, `/canvas#@x,y,zoom`).
 - **Flows.** Build reusable publishing pipelines on the canvas: *New post → add hashtags → shorten to fit → wait 30 min → publish to these accounts*. Each account receives its own adapted version.
@@ -17,7 +17,7 @@ Self-hosted social media scheduling. Connect your accounts with one click, write
 - **Reliable publishing.** Every network is published and retried independently, with backoff, token refresh, crash recovery and clear "reconnect needed" states.
 - **Your data stays yours.** Tokens are encrypted at rest; runs anywhere Docker runs.
 
-![The Postwerk canvas](docs/screenshots/canvas-world.png)
+![The MarketingAsAService canvas](docs/screenshots/canvas-world.png)
 
 | Flow builder | Composing through a flow |
 |---|---|
@@ -33,7 +33,7 @@ Self-hosted social media scheduling. Connect your accounts with one click, write
 
 ## Status
 
-Phases 0 (foundation), 1 (uploads, editing, calendar, teams, email, Bluesky sign-in, German and English) and 2 (the bridge: every network without app reviews, through Zernio) are done, and Phase 3 is prepared: every network integration is implemented, and each server's admin chooses per network between their own developer app, the Zernio bridge, or switching it off ([guide](docs/networks/index.md)). Every server registers its own apps; the project applies for none on anyone's behalf. Postwerk serves the about, privacy, terms, imprint and data deletion pages the reviews ask for ([docs/legal.md](docs/legal.md)). Networks become "live-verified" as operators run them with their own apps ([docs/platforms.md](docs/platforms.md)). The canvas with flows is the main interface (the classic list pages remain under “List view”); its look comes from theme plugins. Roadmap: [docs/plan.md](docs/plan.md).
+Phases 0 (foundation), 1 (uploads, editing, calendar, teams, email, Bluesky sign-in, German and English) and 2 (the bridge: every network without app reviews, through Zernio) are done, and Phase 3 is prepared: every network integration is implemented, and each server's admin chooses per network between their own developer app, the Zernio bridge, or switching it off ([guide](docs/networks/index.md)). Every server registers its own apps; the project applies for none on anyone's behalf. MarketingAsAService serves the about, privacy, terms, imprint and data deletion pages the reviews ask for ([docs/legal.md](docs/legal.md)). Networks become "live-verified" as operators run them with their own apps ([docs/platforms.md](docs/platforms.md)). The canvas with flows is the main interface (the classic list pages remain under “List view”); its look comes from theme plugins. Roadmap: [docs/plan.md](docs/plan.md).
 
 ## Quick start (development)
 
@@ -44,7 +44,7 @@ npm install
 cp .env.example .env
 sed -i "s|^ENCRYPTION_KEY=.*|ENCRYPTION_KEY=$(openssl rand -base64 32)|" .env
 npm run services:up        # Postgres on localhost:5432
-docker compose exec postgres psql -U postwerk -c "CREATE DATABASE postwerk_test"   # for tests
+docker compose exec postgres psql -U maas -c "CREATE DATABASE maas_test"   # for tests
 npm run db:migrate
 npm run dev                # web on http://localhost:3000 + worker
 ```
@@ -70,7 +70,7 @@ This starts Postgres, runs migrations, and launches the web app (port 3000) and 
 | `MEDIA_STORAGE` | no | `local` (default) keeps uploads in `MEDIA_DIR` (a Docker volume), `s3` uses any S3-compatible storage (`S3_ENDPOINT`, `S3_BUCKET`, `S3_ACCESS_KEY_ID`, `S3_SECRET_ACCESS_KEY`, see `.env.example`) |
 | `MEDIA_MAX_VIDEO_MB` | no | Largest video upload (default 512; images up to 20 MB) |
 | `SMTP_URL` | no | Outgoing mail for password resets, invites, email confirmation and failed-post alerts, e.g. `smtp://user:pass@smtp.example.com:587`. Without it, emails are printed to the log |
-| `MAIL_FROM` | no | Sender address, e.g. `Postwerk <postwerk@example.com>` |
+| `MAIL_FROM` | no | Sender address, e.g. `MarketingAsAService <maas@example.com>` |
 | `OPERATOR_NAME`, `OPERATOR_EMAIL` | for app reviews | Who runs the server. Turns on `/about`, a privacy policy, terms and data deletion instructions; with `OPERATOR_ADDRESS` also an imprint. `LEGAL_*_URL` links your own pages instead. See [docs/legal.md](docs/legal.md) |
 | `<NETWORK>_CLIENT_ID` / `_CLIENT_SECRET` | no | Operator developer apps, e.g. `INSTAGRAM_CLIENT_ID`. See [docs/platforms.md](docs/platforms.md) |
 | `HIDE_NETWORKS` | no | Network ids you don't offer at all, e.g. `x,tiktok` |
@@ -109,4 +109,4 @@ Contributions are welcome — bug reports, ideas, translations and code. Read [C
 
 ## License
 
-Postwerk is open source under the [MIT License](LICENSE). Its dependencies have their own licenses, almost all MIT, Apache-2.0, ISC or BSD; the image library `sharp` that Next.js installs includes `libvips` under LGPL-3.0.
+MarketingAsAService is open source under the [MIT License](LICENSE). Its dependencies have their own licenses, almost all MIT, Apache-2.0, ISC or BSD; the image library `sharp` that Next.js installs includes `libvips` under LGPL-3.0.

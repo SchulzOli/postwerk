@@ -38,7 +38,7 @@ export function setMailTransport(next: MailTransport | undefined): void {
 }
 
 export function mailFrom(env: Env = process.env): string {
-  return env.MAIL_FROM?.trim() || 'Postwerk <postwerk@localhost>';
+  return env.MAIL_FROM?.trim() || 'MarketingAsAService <maas@localhost>';
 }
 
 /** Sends an email; throws when the SMTP server rejects it. */

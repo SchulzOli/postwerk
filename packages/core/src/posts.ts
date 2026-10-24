@@ -1,6 +1,6 @@
 import { and, asc, eq, gte, lt, notInArray } from 'drizzle-orm';
-import { posts, postTargets, socialAccounts, type Database, type PostMedia, type PostStatus, type Transaction } from '@postwerk/db';
-import { countText, getProvider, getProviderInfo, isProviderId, resolveOptions, textLimit, validateContent, type ProviderId } from '@postwerk/providers';
+import { posts, postTargets, socialAccounts, type Database, type PostMedia, type PostStatus, type Transaction } from '@maas/db';
+import { countText, getProvider, getProviderInfo, isProviderId, resolveOptions, textLimit, validateContent, type ProviderId } from '@maas/providers';
 import { planPost, type TextVariants } from './flow';
 import { getFlow } from './flows';
 import type { Locale } from './i18n';

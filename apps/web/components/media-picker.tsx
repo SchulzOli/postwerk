@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState, type Dispatch, type SetStateAction } from 'react';
-import { formatBytes } from '@postwerk/providers/validate';
+import { formatBytes } from '@maas/providers/validate';
 import { useLocale, useMessages } from '@/lib/i18n';
 import { ACCEPTED_MEDIA, checkMediaUrl, MAX_IMAGE_BYTES, type ComposerMediaInput } from '@/lib/media';
 import { uploadMessages } from '@/messages/upload';

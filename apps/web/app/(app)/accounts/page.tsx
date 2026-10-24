@@ -1,7 +1,7 @@
 import { asc, eq } from 'drizzle-orm';
-import { bridgeFor, bridgeSetup, bridgeUsageSummary, isBlueskyOAuthAvailable, isProviderAvailable, networkRoute } from '@postwerk/core';
-import { getDb, socialAccounts } from '@postwerk/db';
-import { bridges, getProvider, guideUrl, isBridgeId, localizeFields, localizeInfo, providerInfos } from '@postwerk/providers';
+import { bridgeFor, bridgeSetup, bridgeUsageSummary, isBlueskyOAuthAvailable, isProviderAvailable, networkRoute } from '@maas/core';
+import { getDb, socialAccounts } from '@maas/db';
+import { bridges, getProvider, guideUrl, isBridgeId, localizeFields, localizeInfo, providerInfos } from '@maas/providers';
 import { BlueskyConnect } from '@/components/bluesky-connect';
 import { ConnectForm } from '@/components/connect-form';
 import { appUrl, redirectUriFor } from '@/lib/env';
