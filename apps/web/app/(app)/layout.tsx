@@ -21,6 +21,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
           <Link href="/canvas">{t.nav.canvas}</Link>
           <Link href="/posts">{t.nav.posts}</Link>
           <Link href="/calendar">{t.nav.calendar}</Link>
+          <Link href="/campaigns">{t.nav.campaigns}</Link>
           <Link href="/accounts">{t.nav.accounts}</Link>
           <Link href="/brand">{t.nav.brand}</Link>
           <Link href="/team">{t.nav.team}</Link>

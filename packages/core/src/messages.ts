@@ -30,6 +30,7 @@ export const postMessages = defineMessages({
     postGone: 'This post no longer exists.',
     goingOut: 'This post is already going out, so it cannot be changed anymore.',
     pickTime: 'Please pick a date and time.',
+    campaignGone: 'The selected campaign no longer exists.',
   },
   de: {
     flowGone: 'Der gewählte Flow existiert nicht mehr.',
@@ -39,6 +40,7 @@ export const postMessages = defineMessages({
     postGone: 'Diesen Beitrag gibt es nicht mehr.',
     goingOut: 'Dieser Beitrag wird schon veröffentlicht und kann nicht mehr geändert werden.',
     pickTime: 'Bitte wähle Datum und Uhrzeit.',
+    campaignGone: 'Die gewählte Kampagne gibt es nicht mehr.',
   },
 });
 
@@ -162,6 +164,45 @@ export const brandMessages = defineMessages({
       catchphrase: 'Spruch',
       rules: 'Niemals',
     },
+  },
+});
+
+export const campaignMessages = defineMessages({
+  en: {
+    name: 'Please give the campaign a name.',
+    nameTooLong: 'The name is longer than 120 characters.',
+    textTooLong: (max: number) => `A text is longer than ${max} characters.`,
+    date: 'Please enter dates as YYYY-MM-DD.',
+    endBeforeStart: 'The campaign ends before it starts.',
+    budget: 'Budgets must be amounts of 0 or more.',
+    currency: 'Unknown currency.',
+    channel: 'Unknown channel.',
+    notFound: 'This campaign no longer exists.',
+    pieceNotFound: 'This piece no longer exists.',
+    pieceTitle: 'Please give the piece a title.',
+    format: 'Unknown format.',
+    numbers: 'Results must be whole numbers of 0 or more.',
+    day: 'Please enter the day the results are for.',
+    manage: 'Only workspace owners and admins can approve pieces.',
+    approveFirst: 'Approve the piece first.',
+  },
+  de: {
+    name: 'Bitte gib der Kampagne einen Namen.',
+    nameTooLong: 'Der Name ist länger als 120 Zeichen.',
+    textTooLong: (max) => `Ein Text ist länger als ${max} Zeichen.`,
+    date: 'Bitte gib Daten als JJJJ-MM-TT ein.',
+    endBeforeStart: 'Die Kampagne endet, bevor sie beginnt.',
+    budget: 'Budgets müssen Beträge von 0 oder mehr sein.',
+    currency: 'Unbekannte Währung.',
+    channel: 'Unbekannter Kanal.',
+    notFound: 'Diese Kampagne gibt es nicht mehr.',
+    pieceNotFound: 'Dieses Werbemittel gibt es nicht mehr.',
+    pieceTitle: 'Bitte gib dem Werbemittel einen Titel.',
+    format: 'Unbekanntes Format.',
+    numbers: 'Ergebnisse müssen ganze Zahlen von 0 oder mehr sein.',
+    day: 'Bitte gib den Tag an, für den die Ergebnisse gelten.',
+    manage: 'Nur Inhaber und Admins des Arbeitsbereichs können Werbemittel freigeben.',
+    approveFirst: 'Gib das Werbemittel zuerst frei.',
   },
 });
 

@@ -60,6 +60,7 @@ export async function submitPost(_: ComposeState, form: FormData): Promise<Compo
   }
 
   const flowId = String(form.get('flowId') ?? '') || undefined;
+  const campaignId = String(form.get('campaignId') ?? '') || null;
   const input = {
     workspaceId: workspace.id,
     text,
@@ -67,6 +68,7 @@ export async function submitPost(_: ComposeState, form: FormData): Promise<Compo
     options: readOptions(form),
     variants: readVariants(form),
     ...(flowId ? { flowId } : { accountIds }),
+    campaignId,
     scheduledAt,
     locale,
   };

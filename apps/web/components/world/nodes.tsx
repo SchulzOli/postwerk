@@ -3,6 +3,7 @@
 import { Handle, Position, type NodeProps } from '@xyflow/react';
 import { useTransition } from 'react';
 import type { FlowStep } from '@maas/core/flow';
+import { formatMoney } from '@maas/core/marketing';
 import { catalog } from '@maas/providers/catalog';
 import { Composer } from '@/components/composer';
 import { LocalTime } from '@/components/local-time';
@@ -13,12 +14,14 @@ import { retryPostAction, submitPost } from '@/app/(app)/posts/actions';
 import { chooseThemeAction, installBuiltinPluginAction } from '@/app/(world)/canvas/actions';
 import { useWorld } from './context';
 import { describeActivity, isWarning } from '@/lib/activity';
+import { formatDay } from '@/lib/dates';
 import { useLocale, useMessages } from '@/lib/i18n';
 import { intlLocale } from '@/lib/locale';
 import { canEdit, canPostAgain, canRetry } from '@/lib/post-status';
 import { Calendar } from '@/components/calendar';
 import { canvasMessages, formatMinutes } from '@/messages/canvas';
 import { brandMessages } from '@/messages/brand';
+import { campaignsMessages } from '@/messages/campaigns';
 import { commonMessages } from '@/messages/common';
 import { mediaSummary, networksMessages, usageCost } from '@/messages/networks';
 import { themesMessages } from '@/messages/themes';
@@ -133,6 +136,42 @@ export function BrandNode({ selected }: Props<'brand'>) {
       )}
       <a className="small-link nodrag" href="/brand">
         {t.edit}
+      </a>
+    </div>
+  );
+}
+
+/** The latest campaigns; each opens on its own page. */
+export function CampaignsNode({ selected }: Props<'campaigns'>) {
+  const t = useMessages(campaignsMessages);
+  const locale = intlLocale(useLocale());
+  const campaigns = useWorld().data.campaigns;
+  const day = (value: string | null) => (value ? formatDay(value, locale) : '…');
+  return (
+    <div className={`world-card campaigns-node ${selected ? 'is-selected' : ''}`}>
+      {campaigns.length === 0 ? (
+        <small className="muted">{t.canvasEmpty}</small>
+      ) : (
+        <ul className="stack-sm">
+          {campaigns.slice(0, 8).map((campaign) => (
+            <li key={campaign.id} className="campaign-mini">
+              <div className="row-tight">
+                <a className="clip grow nodrag" href={`/campaigns/${campaign.id}`}>
+                  <strong>{campaign.name}</strong>
+                </a>
+                <span className={`badge campaign-${campaign.status}`}>{t.statuses[campaign.status]}</span>
+              </div>
+              {campaign.message && <small className="clip">{campaign.message}</small>}
+              <small className="muted">
+                {campaign.startsOn || campaign.endsOn ? t.dates(day(campaign.startsOn), day(campaign.endsOn)) : t.noDates} · {t.counts(campaign.pieceCount, campaign.postCount)}
+                {campaign.budgetCents > 0 && <> · {t.spentOf(formatMoney(campaign.spendCents, campaign.currency, locale), formatMoney(campaign.budgetCents, campaign.currency, locale))}</>}
+              </small>
+            </li>
+          ))}
+        </ul>
+      )}
+      <a className="small-link nodrag" href="/campaigns">
+        {t.open}
       </a>
     </div>
   );
@@ -283,6 +322,7 @@ export function ComposerNode({ selected }: Props<'composer'>) {
             key={world.composerKey}
             accounts={accounts}
             flows={world.data.flows}
+            campaigns={world.data.campaigns.map((campaign) => ({ id: campaign.id, name: campaign.name, done: campaign.status === 'done' }))}
             action={submitPost}
             returnTo="/canvas"
             initial={composing}
@@ -498,4 +538,5 @@ export const nodeTypes = {
   members: MembersNode,
   bridgeUsage: BridgeUsageNode,
   brand: BrandNode,
+  campaigns: CampaignsNode,
 };

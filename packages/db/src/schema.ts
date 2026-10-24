@@ -1,5 +1,5 @@
 import { relations, sql } from 'drizzle-orm';
-import { boolean, index, integer, jsonb, pgEnum, pgTable, primaryKey, text, timestamp, uniqueIndex, uuid } from 'drizzle-orm/pg-core';
+import { boolean, date, index, integer, jsonb, pgEnum, pgTable, primaryKey, text, timestamp, uniqueIndex, uuid } from 'drizzle-orm/pg-core';
 
 const id = () => uuid('id').primaryKey().defaultRandom();
 const createdAt = () => timestamp('created_at', { withTimezone: true }).notNull().defaultNow();
@@ -309,6 +309,92 @@ export const brandKits = pgTable('brand_kits', {
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
 });
 
+export const campaignGoal = pgEnum('campaign_goal', ['awareness', 'traffic', 'leads', 'sales', 'event']);
+export const campaignStatus = pgEnum('campaign_status', ['draft', 'planned', 'running', 'paused', 'done']);
+export const pieceKind = pgEnum('piece_kind', ['ad', 'print', 'spot']);
+export const pieceStatus = pgEnum('piece_status', ['draft', 'approved', 'live', 'done']);
+export const pieceSource = pgEnum('piece_source', ['manual', 'ai']);
+
+/** A campaign's planned spend on one channel. */
+export interface ChannelBudget {
+  channel: string;
+  budgetCents: number;
+}
+
+/** A marketing campaign: goal, audience, message, time and budget, across channels (see @maas/core/marketing). */
+export const campaigns = pgTable(
+  'campaigns',
+  {
+    id: id(),
+    workspaceId: uuid('workspace_id').notNull().references(() => workspaces.id, { onDelete: 'cascade' }),
+    name: text('name').notNull(),
+    goal: campaignGoal('goal').notNull().default('awareness'),
+    status: campaignStatus('status').notNull().default('draft'),
+    audience: text('audience').notNull().default(''),
+    /** The one thing people should remember. */
+    message: text('message').notNull().default(''),
+    startsOn: date('starts_on'),
+    endsOn: date('ends_on'),
+    currency: text('currency').notNull().default('EUR'),
+    budgetCents: integer('budget_cents').notNull().default(0),
+    channels: jsonb('channels').$type<ChannelBudget[]>().notNull().default([]),
+    notes: text('notes').notNull().default(''),
+    createdBy: uuid('created_by').references(() => users.id, { onDelete: 'set null' }),
+    createdAt: createdAt(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [index('campaigns_workspace_idx').on(t.workspaceId, t.startsOn)],
+);
+
+/** A campaign's ad, print piece or spot; its content's shape depends on kind and format. */
+export const pieces = pgTable(
+  'pieces',
+  {
+    id: id(),
+    workspaceId: uuid('workspace_id').notNull().references(() => workspaces.id, { onDelete: 'cascade' }),
+    campaignId: uuid('campaign_id').notNull().references(() => campaigns.id, { onDelete: 'cascade' }),
+    kind: pieceKind('kind').notNull(),
+    format: text('format').notNull(),
+    title: text('title').notNull(),
+    content: jsonb('content').$type<Record<string, unknown>>().notNull(),
+    status: pieceStatus('status').notNull().default('draft'),
+    /** Written by a person, or drafted by the AI studio (needs a person's approval). */
+    source: pieceSource('source').notNull().default('manual'),
+    /** Uploads the piece uses, so media cleanup keeps them. */
+    mediaIds: uuid('media_ids').array().notNull().default(sql`'{}'::uuid[]`),
+    approvedBy: uuid('approved_by').references(() => users.id, { onDelete: 'set null' }),
+    approvedAt: timestamp('approved_at', { withTimezone: true }),
+    createdAt: createdAt(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [index('pieces_campaign_idx').on(t.campaignId)],
+);
+
+/** Results of a campaign on a channel, entered by people (print, radio…) or synced from ad platforms. */
+export const campaignResults = pgTable(
+  'campaign_results',
+  {
+    id: id(),
+    workspaceId: uuid('workspace_id').notNull().references(() => workspaces.id, { onDelete: 'cascade' }),
+    campaignId: uuid('campaign_id').notNull().references(() => campaigns.id, { onDelete: 'cascade' }),
+    channel: text('channel').notNull(),
+    /** The day (or the end of the period) the numbers are for. */
+    day: date('day').notNull(),
+    reach: integer('reach').notNull().default(0),
+    clicks: integer('clicks').notNull().default(0),
+    leads: integer('leads').notNull().default(0),
+    sales: integer('sales').notNull().default(0),
+    revenueCents: integer('revenue_cents').notNull().default(0),
+    spendCents: integer('spend_cents').notNull().default(0),
+    note: text('note').notNull().default(''),
+    /** Where the numbers came from: "manual", or an ad platform's id for synced rows. */
+    source: text('source').notNull().default('manual'),
+    createdBy: uuid('created_by').references(() => users.id, { onDelete: 'set null' }),
+    createdAt: createdAt(),
+  },
+  (t) => [index('campaign_results_campaign_idx').on(t.campaignId, t.day)],
+);
+
 /** Positions of canvas nodes the user moved (networks, accounts, panels), per workspace. */
 export const canvasPositions = pgTable(
   'canvas_positions',
@@ -332,6 +418,8 @@ export const posts = pgTable(
     /** Per-network versions of the text ("customize for LinkedIn"), keyed by provider id. */
     variants: jsonb('variants').$type<Partial<Record<string, string>>>().notNull().default({}),
     flowId: uuid('flow_id').references(() => flows.id, { onDelete: 'set null' }),
+    /** The campaign the post belongs to, if any. */
+    campaignId: uuid('campaign_id').references(() => campaigns.id, { onDelete: 'set null' }),
     status: postStatus('status').notNull().default('draft'),
     scheduledAt: timestamp('scheduled_at', { withTimezone: true }),
     createdAt: createdAt(),
@@ -427,6 +515,22 @@ export type AuditEntry = typeof auditLog.$inferSelect;
 export type Invite = typeof invites.$inferSelect;
 export type Media = typeof media.$inferSelect;
 export type BrandKit = typeof brandKits.$inferSelect;
+export type Campaign = typeof campaigns.$inferSelect;
+export type Piece = typeof pieces.$inferSelect;
+export type CampaignResult = typeof campaignResults.$inferSelect;
 export type MemberRole = (typeof memberRole.enumValues)[number];
 export type PostStatus = (typeof postStatus.enumValues)[number];
 export type TargetStatus = (typeof targetStatus.enumValues)[number];
+
+export const campaignsRelations = relations(campaigns, ({ many }) => ({
+  pieces: many(pieces),
+  results: many(campaignResults),
+}));
+
+export const piecesRelations = relations(pieces, ({ one }) => ({
+  campaign: one(campaigns, { fields: [pieces.campaignId], references: [campaigns.id] }),
+}));
+
+export const campaignResultsRelations = relations(campaignResults, ({ one }) => ({
+  campaign: one(campaigns, { fields: [campaignResults.campaignId], references: [campaigns.id] }),
+}));

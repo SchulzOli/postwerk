@@ -29,6 +29,7 @@ export interface ComposerInitial {
   media: ComposerMedia[];
   accountIds: string[];
   flowId: string;
+  campaignId: string;
   options: Options;
   variants: Record<string, string>;
   /** ISO time if the post is scheduled for later. */
@@ -39,10 +40,14 @@ interface Props {
   accounts: ComposerAccount[];
   /** Saved flows; picking one replaces the manual account selection. */
   flows?: { id: string; name: string; graph: FlowGraph }[];
+  /** Campaigns the post can belong to; finished ones only for posts already in them. */
+  campaigns?: { id: string; name: string; done?: boolean }[];
   action: (state: ComposeState, form: FormData) => Promise<ComposeState>;
   /** Where to go after publishing ('/posts' or '/canvas'). */
   returnTo?: '/posts' | '/canvas';
   initial?: ComposerInitial;
+  /** A new post's campaign at first (started from a campaign). */
+  campaignId?: string;
   /** ISO time a new post is scheduled for at first (planned from the calendar). */
   scheduledAt?: string;
   /** Called after a successful save (canvas only; the list view navigates away). */
@@ -56,7 +61,7 @@ function toLocalInput(iso: string): string {
   return new Date(date.getTime() - date.getTimezoneOffset() * 60_000).toISOString().slice(0, 16);
 }
 
-export function Composer({ accounts, flows = [], action, returnTo = '/posts', initial, scheduledAt: startAt, onSaved, onCancel }: Props) {
+export function Composer({ accounts, flows = [], campaigns = [], action, returnTo = '/posts', initial, campaignId: startCampaign, scheduledAt: startAt, onSaved, onCancel }: Props) {
   const [state, formAction, pending] = useActionState(action, {});
   const locale = useLocale();
   const t = useMessages(composerMessages);
@@ -73,6 +78,8 @@ export function Composer({ accounts, flows = [], action, returnTo = '/posts', in
   const [when, setWhen] = useState<'now' | 'later'>(firstTime ? 'later' : 'now');
   const [localTime, setLocalTime] = useState('');
   const [flowId, setFlowId] = useState(initial?.flowId ?? '');
+  const campaignId = initial?.campaignId || startCampaign || '';
+  const campaignChoices = campaigns.filter((c) => !c.done || c.id === campaignId);
 
   // The local time depends on the browser's time zone, so it is filled in after hydration.
   useEffect(() => {
@@ -160,6 +167,19 @@ export function Composer({ accounts, flows = [], action, returnTo = '/posts', in
       </fieldset>
 
       <input type="hidden" name="returnTo" value={returnTo} />
+      {campaignChoices.length > 0 ? (
+        <label>
+          {t.campaign}
+          <select name="campaignId" defaultValue={campaignId}>
+            <option value="">{t.noCampaign}</option>
+            {campaignChoices.map((c) => (
+              <option key={c.id} value={c.id}>{c.name}</option>
+            ))}
+          </select>
+        </label>
+      ) : (
+        <input type="hidden" name="campaignId" value={campaignId} />
+      )}
       {flows.length > 0 && (
         <label>
           {t.flow}

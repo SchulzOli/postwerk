@@ -1,5 +1,5 @@
 import { and, asc, eq, gte, lt, notInArray } from 'drizzle-orm';
-import { posts, postTargets, socialAccounts, type Database, type PostMedia, type PostStatus, type Transaction } from '@maas/db';
+import { campaigns, posts, postTargets, socialAccounts, type Database, type PostMedia, type PostStatus, type Transaction } from '@maas/db';
 import { countText, getProvider, getProviderInfo, isProviderId, resolveOptions, textLimit, validateContent, type ProviderId } from '@maas/providers';
 import { planPost, type TextVariants } from './flow';
 import { getFlow } from './flows';
@@ -18,6 +18,8 @@ export interface PostInput {
   accountIds?: string[];
   /** A flow decides the accounts, per-account text and delays. */
   flowId?: string;
+  /** The campaign the post belongs to. */
+  campaignId?: string | null;
   /** null publishes as soon as the worker picks it up. */
   scheduledAt: Date | null;
   draft?: boolean;
@@ -52,6 +54,11 @@ async function prepareTargets(db: Database | Transaction, input: PostInput): Pro
   const workspaceAccounts = await db.query.socialAccounts.findMany({ where: eq(socialAccounts.workspaceId, input.workspaceId) });
   const byId = new Map(workspaceAccounts.map((account) => [account.id, account]));
   const providerOf = (accountId: string) => byId.get(accountId)?.provider;
+
+  if (input.campaignId) {
+    const campaign = await db.query.campaigns.findFirst({ where: and(eq(campaigns.id, input.campaignId), eq(campaigns.workspaceId, input.workspaceId)), columns: { id: true } });
+    if (!campaign) return { ok: false, errors: [m.campaignGone] };
+  }
 
   let graph;
   let flowName = '';
@@ -112,6 +119,7 @@ export async function createPost(db: Database, input: CreatePostInput): Promise<
         media: input.media ?? [],
         variants: prepared.variants,
         flowId: input.flowId ?? null,
+        campaignId: input.campaignId ?? null,
         status: input.draft ? 'draft' : 'scheduled',
         scheduledAt,
       })
@@ -152,6 +160,7 @@ export async function updatePost(db: Database, postId: string, input: PostInput)
         media: input.media ?? [],
         variants: prepared.variants,
         flowId: input.flowId ?? null,
+        campaignId: input.campaignId ?? null,
         status: input.draft ? 'draft' : 'scheduled',
         scheduledAt,
         updatedAt: new Date(),
@@ -214,6 +223,7 @@ export async function getPostForEdit(db: Database, workspaceId: string, postId: 
     media: post.media,
     variants: post.variants,
     flowId: post.flowId,
+    campaignId: post.campaignId,
     accountIds: post.targets.map((target) => target.socialAccountId),
     options,
     scheduledAt: post.scheduledAt,

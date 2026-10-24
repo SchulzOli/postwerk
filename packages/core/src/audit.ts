@@ -29,7 +29,13 @@ export type AuditAction =
   | 'post.retried'
   | 'plugin.installed'
   | 'plugin.uninstalled'
-  | 'brand.updated';
+  | 'brand.updated'
+  | 'campaign.created'
+  | 'campaign.updated'
+  | 'campaign.deleted'
+  | 'piece.created'
+  | 'piece.approved'
+  | 'piece.deleted';
 
 export interface AuditInput {
   action: AuditAction;

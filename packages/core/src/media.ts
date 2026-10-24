@@ -151,6 +151,7 @@ export async function cleanupUnusedMedia(db: Database, storage: MediaStorage = g
         SELECT 1 FROM posts p WHERE p.media @> jsonb_build_array(jsonb_build_object('mediaId', m.id::text))
       )
       AND NOT EXISTS (SELECT 1 FROM brand_kits b WHERE m.id = ANY(b.media_ids))
+      AND NOT EXISTS (SELECT 1 FROM pieces pc WHERE m.id = ANY(pc.media_ids))
     RETURNING m.key
   `);
   for (const { key } of deleted) await storage.delete(key).catch((error: unknown) => console.error('could not delete media file', key, error));

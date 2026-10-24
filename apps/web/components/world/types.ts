@@ -82,6 +82,21 @@ export interface BrandData {
   character: { name: string; role: string; catchphrase: string; imageUrl: string | null } | null;
 }
 
+/** A campaign, as the canvas lists it. */
+export interface CampaignData {
+  id: string;
+  name: string;
+  status: 'draft' | 'planned' | 'running' | 'paused' | 'done';
+  message: string;
+  startsOn: string | null;
+  endsOn: string | null;
+  currency: string;
+  budgetCents: number;
+  spendCents: number;
+  pieceCount: number;
+  postCount: number;
+}
+
 export interface WorldData {
   user: { name: string; email: string };
   /** Show the "confirm your email" reminder. */
@@ -105,6 +120,7 @@ export interface WorldData {
   activity: ActivityItem[] | null;
   bridgeUsage: BridgeUsageData | null;
   brand: BrandData;
+  campaigns: CampaignData[];
   /** The server's about and legal pages that are set up. */
   legal: { page: 'about' | 'privacy' | 'terms' | 'imprint' | 'data-deletion'; href: string }[];
   /** This server's public address (APP_URL). */

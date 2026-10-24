@@ -567,7 +567,7 @@ export function Inspector({ node, onClose }: { node: WorldNode | undefined; onCl
   if (!node || node.type === 'step' || node.type === 'composer' || node.type === 'posts' || node.type === 'calendar' || node.type === 'activity' || node.type === 'members') return null;
   if (node.type === 'bridgeUsage' && !usage) return null;
   // The brand card links to its own page; the canvas shows everything else on the card.
-  if (node.type === 'brand') return null;
+  if (node.type === 'brand' || node.type === 'campaigns') return null;
   const title =
     node.type === 'bridgeUsage'
       ? networks.usageTitle(usage!.name)

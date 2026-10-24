@@ -13,6 +13,7 @@ export const canvasMessages = defineMessages({
       plugins: { title: 'Plugins', subtitle: 'Themes for how MarketingAsAService looks — each one with a light and a dark mode' },
       team: { title: 'Team', subtitle: 'Who works here and what happened' },
       brand: { title: 'Brand', subtitle: 'Who you are, how you sound and look, and your brand character' },
+      campaigns: { title: 'Campaigns', subtitle: 'One goal, one message, every channel' },
     },
     // Notices after a redirect to the canvas
     verified: 'Thanks, your email address is confirmed.',
@@ -39,6 +40,7 @@ export const canvasMessages = defineMessages({
       members: 'Members and invites',
       bridgeUsage: 'Costs of connected accounts',
       brand: 'Brand kit',
+      campaigns: 'Campaigns',
     },
     // Durations ("1 d 2 h 30 min")
     duration: {
@@ -127,6 +129,7 @@ export const canvasMessages = defineMessages({
       plugins: { title: 'Plugins', subtitle: 'Designs für das Aussehen von MarketingAsAService – jedes mit hellem und dunklem Modus' },
       team: { title: 'Team', subtitle: 'Wer hier arbeitet und was passiert ist' },
       brand: { title: 'Marke', subtitle: 'Wer du bist, wie du klingst und aussiehst, und deine Markenfigur' },
+      campaigns: { title: 'Kampagnen', subtitle: 'Ein Ziel, eine Botschaft, alle Kanäle' },
     },
     verified: 'Danke, deine E-Mail-Adresse ist bestätigt.',
     verifyExpired: 'Dieser Bestätigungslink ist abgelaufen. Fordere in deinen Kontoeinstellungen einen neuen an.',
@@ -150,6 +153,7 @@ export const canvasMessages = defineMessages({
       members: 'Mitglieder und Einladungen',
       bridgeUsage: 'Kosten verbundener Konten',
       brand: 'Marken-Kit',
+      campaigns: 'Kampagnen',
     },
     duration: {
       minutes: (count) => `${count} Min.`,

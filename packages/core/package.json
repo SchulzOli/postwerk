@@ -9,6 +9,7 @@
     "./calendar": "./src/calendar.ts",
     "./flow": "./src/flow.ts",
     "./i18n": "./src/i18n.ts",
+    "./marketing": "./src/marketing.ts",
     "./theme": "./src/theme.ts"
   },
   "scripts": {

@@ -2,7 +2,7 @@ import type { Edge, Node } from '@xyflow/react';
 import type { FlowStep } from '@maas/core/flow';
 import type { AccountData, FlowData, NetworkData, PluginData, WorldData } from './types';
 
-export type RegionKey = 'networks' | 'accounts' | 'flows' | 'compose' | 'calendar' | 'posts' | 'plugins' | 'team' | 'brand';
+export type RegionKey = 'networks' | 'accounts' | 'flows' | 'compose' | 'calendar' | 'posts' | 'plugins' | 'team' | 'brand' | 'campaigns';
 
 export type WorldNode =
   | Node<{ region: RegionKey }, 'region'>
@@ -18,7 +18,8 @@ export type WorldNode =
   | Node<Record<string, never>, 'activity'>
   | Node<Record<string, never>, 'members'>
   | Node<Record<string, never>, 'bridgeUsage'>
-  | Node<Record<string, never>, 'brand'>;
+  | Node<Record<string, never>, 'brand'>
+  | Node<Record<string, never>, 'campaigns'>;
 
 /** Stable node ids double as deep-link targets (#n=<id>). */
 export const ids = {
@@ -36,10 +37,11 @@ export const ids = {
   members: 'panel:members',
   bridgeUsage: 'panel:bridge-usage',
   brand: 'panel:brand',
+  campaigns: 'panel:campaigns',
 };
 
 /** Regions in toolbar order; their titles and subtitles are in `canvasMessages.regions`. */
-export const regionKeys: RegionKey[] = ['brand', 'networks', 'accounts', 'flows', 'compose', 'calendar', 'posts', 'plugins', 'team'];
+export const regionKeys: RegionKey[] = ['brand', 'campaigns', 'networks', 'accounts', 'flows', 'compose', 'calendar', 'posts', 'plugins', 'team'];
 
 const NETWORK = { width: 240, height: 112, gap: 20, columns: 4 };
 const ACCOUNT = { width: 250, height: 76, gap: 16, columns: 2 };
@@ -139,6 +141,7 @@ export function buildWorld(data: WorldData, saved: Record<string, { x: number; y
     { key: 'posts', position: { x: networksSize.width + accountsSize.width + 840, y: 0 }, size: { width: 600, height: Math.max(topHeight, 980) } },
     { key: 'team', position: { x: networksSize.width + accountsSize.width + 1520, y: 0 }, size: { width: 1168, height: Math.max(topHeight, 980) } },
     { key: 'brand', position: { x: networksSize.width + accountsSize.width + 2768, y: 0 }, size: { width: 600, height: Math.max(topHeight, 980) } },
+    { key: 'campaigns', position: { x: networksSize.width + accountsSize.width + 3448, y: 0 }, size: { width: 600, height: Math.max(topHeight, 980) } },
     { key: 'flows', position: { x: 0, y: flowsY }, size: { width: FLOW.width + PAD.x * 2, height: flowsHeight } },
     { key: 'plugins', position: { x: FLOW.width + PAD.x * 2 + 80, y: flowsY }, size: pluginsSize },
     {
@@ -202,6 +205,7 @@ export function buildWorld(data: WorldData, saved: Record<string, { x: number; y
     { id: ids.posts, type: 'posts', parentId: ids.region('posts'), position: place(ids.posts, { x: PAD.x, y: PAD.top }), data: {}, deletable: false, dragHandle: '.panel-drag', style: { width: 536 } },
     { id: ids.calendar, type: 'calendar', parentId: ids.region('calendar'), position: place(ids.calendar, { x: PAD.x, y: PAD.top }), data: {}, deletable: false, dragHandle: '.panel-drag', style: { width: CALENDAR.width } },
     { id: ids.brand, type: 'brand', parentId: ids.region('brand'), position: place(ids.brand, { x: PAD.x, y: PAD.top }), data: {}, deletable: false, style: { width: 536 } },
+    { id: ids.campaigns, type: 'campaigns', parentId: ids.region('campaigns'), position: place(ids.campaigns, { x: PAD.x, y: PAD.top }), data: {}, deletable: false, style: { width: 536 } },
     { id: ids.members, type: 'members', parentId: ids.region('team'), position: place(ids.members, { x: PAD.x, y: PAD.top }), data: {}, deletable: false, dragHandle: '.panel-drag', style: { width: 536 } },
     { id: ids.activity, type: 'activity', parentId: ids.region('team'), position: place(ids.activity, { x: PAD.x + 568, y: PAD.top }), data: {}, deletable: false, dragHandle: '.panel-drag', style: { width: 536 } },
   );

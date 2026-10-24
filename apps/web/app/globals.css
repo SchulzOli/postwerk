@@ -105,8 +105,9 @@ ul { margin: 0; padding: 0; list-style: none; }
   border-bottom: 1px solid var(--border);
   flex-wrap: wrap;
 }
-.topbar nav { display: flex; gap: 1rem; flex: 1; }
+.topbar nav { display: flex; flex-wrap: wrap; gap: 0.35rem 1rem; flex: 1; }
 .topbar nav a { color: var(--text); text-decoration: none; font-weight: 500; }
+@media (max-width: 640px) { .topbar { gap: 0.75rem; padding: 0.75rem 1rem; } .topbar nav { order: 3; flex-basis: 100%; } }
 .topbar nav a:hover { color: var(--accent); }
 .who { display: flex; align-items: center; gap: 1rem; }
 .brand { font-weight: 700; font-size: 1.15rem; color: var(--text); text-decoration: none; letter-spacing: -0.01em; }
@@ -124,6 +125,41 @@ ul { margin: 0; padding: 0; list-style: none; }
 .brand-character img { width: 56px; height: 56px; object-fit: contain; border-radius: var(--radius); flex-shrink: 0; }
 .brand-character p { margin: 0.2rem 0 0; font-size: 0.85rem; }
 .image-field { display: flex; flex-wrap: wrap; gap: 0.75rem; }
+/* Campaigns */
+.grid-2, .grid-3, .grid-4 { display: grid; gap: 0.75rem 1rem; grid-template-columns: repeat(var(--cols), minmax(0, 1fr)); }
+.grid-2 { --cols: 2; }
+.grid-3 { --cols: 3; }
+.grid-4 { --cols: 4; }
+@media (max-width: 720px) { .grid-3, .grid-4 { --cols: 2; } }
+@media (max-width: 480px) { .grid-2, .grid-3, .grid-4 { --cols: 1; } }
+.align-start { align-self: flex-start; }
+.small { font-size: 0.85rem; }
+.warn-text { color: var(--warn); }
+button.danger { color: var(--error); }
+.money-input { display: flex; align-items: center; gap: 0.4rem; }
+.money-input input { min-width: 0; }
+.money-input select { width: auto; }
+.channel-list { display: flex; flex-direction: column; border: 1px solid var(--border); border-radius: var(--radius); }
+.channel-list li { display: flex; align-items: center; gap: 0.75rem; padding: 0.4rem 0.7rem; min-height: 2.9rem; }
+.channel-list li + li { border-top: 1px solid var(--border); }
+.channel-list li.is-on { background: color-mix(in srgb, var(--accent) 6%, transparent); }
+.channel-list .money-input { width: 11rem; flex-shrink: 0; }
+@media (max-width: 480px) { .channel-list .money-input { width: 7rem; } .channel-list li { padding: 0.4rem 0.5rem; gap: 0.5rem; } }
+.campaign-name { font-weight: 700; font-size: 1.1rem; color: var(--text); text-decoration: none; }
+.campaign-name:hover { color: var(--accent); }
+.campaign-planned, .campaign-running, .piece-approved, .piece-live { color: var(--accent); border-color: currentColor; }
+.campaign-done, .piece-done { color: var(--success); border-color: currentColor; }
+.campaign-paused { color: var(--warn); border-color: currentColor; }
+.table-scroll { overflow-x: auto; }
+.results-table td { white-space: nowrap; }
+.results-table th { font-size: 0.8rem; vertical-align: bottom; }
+.results-table .total-row td { font-weight: 600; border-bottom: 0; }
+details > summary { cursor: pointer; color: var(--muted); }
+.campaigns-node { gap: 0.6rem; }
+.campaign-mini { display: flex; flex-direction: column; gap: 0.15rem; padding-bottom: 0.5rem; border-bottom: 1px solid var(--border); }
+.campaign-mini a { color: var(--text); text-decoration: none; }
+.campaign-mini a:hover { color: var(--accent); }
+
 .image-field figure { margin: 0; display: flex; flex-direction: column; gap: 0.25rem; align-items: flex-start; }
 .image-field img { width: 96px; height: 96px; object-fit: contain; border: 1px solid var(--border); border-radius: var(--radius); background: var(--field); }
 .legal { max-width: 46rem; margin: 0 auto; padding: 1.5rem 1rem 3rem; display: flex; flex-direction: column; gap: 1.5rem; min-height: 100vh; }
@@ -261,6 +297,7 @@ code { font-family: var(--font-mono); font-size: 0.85em; background: var(--field
 .region-plugins { border-color: color-mix(in srgb, var(--tint-plugin) 45%, var(--border)); }
 .region-team { border-color: color-mix(in srgb, var(--tint-account) 45%, var(--border)); }
 .region-brand { border-color: color-mix(in srgb, var(--tint-plugin) 45%, var(--border)); }
+.region-campaigns { border-color: color-mix(in srgb, var(--tint-step) 45%, var(--border)); }
 .region-calendar { border-color: color-mix(in srgb, var(--tint-posts) 45%, var(--border)); }
 
 .world-card {

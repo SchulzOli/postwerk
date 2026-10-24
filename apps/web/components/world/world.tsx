@@ -52,7 +52,7 @@ const patterns: Record<Exclude<ThemeCanvas['pattern'], 'none'>, BackgroundVarian
 };
 const edgeTypes: Record<ThemeCanvas['edges'], string> = { smoothstep: 'smoothstep', bezier: 'default', step: 'step', straight: 'straight' };
 /** Minimap color per node type (theme tokens). */
-const tints: Partial<Record<string, string>> = { pluginInstall: 'plugin', activity: 'account', members: 'account', calendar: 'posts', bridgeUsage: 'account', brand: 'plugin' };
+const tints: Partial<Record<string, string>> = { pluginInstall: 'plugin', activity: 'account', members: 'account', calendar: 'posts', bridgeUsage: 'account', brand: 'plugin', campaigns: 'step' };
 
 function serializeFlow(flowId: string, nodes: WorldNode[], edges: Edge[]): FlowGraph {
   const steps = nodes
@@ -107,6 +107,8 @@ function label(node: WorldNode, t: (typeof canvasMessages)['en']): string {
       return t.destinations.bridgeUsage;
     case 'brand':
       return t.destinations.brand;
+    case 'campaigns':
+      return t.destinations.campaigns;
     default:
       return '';
   }
