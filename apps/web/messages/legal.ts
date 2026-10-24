@@ -36,9 +36,11 @@ export const legalMessages = defineMessages({
       account:
         'Your account: name, email address and password (stored only as a salted hash), your language and display settings. We need them to provide your account (Art. 6(1)(b) GDPR).',
       content:
-        'What you create: posts, uploaded images and videos, flows, schedules, and your workspaces with their members and invitations. We need them to plan and publish your posts (Art. 6(1)(b) GDPR).',
+        'What you create: posts, uploaded images and videos, flows, schedules, your brand kit, campaigns with their pieces and results, and your workspaces with their members and invitations. We need them to plan and publish your marketing (Art. 6(1)(b) GDPR).',
       accounts:
-        'Social media accounts you connect: name, handle, profile picture and the access the network grants, stored encrypted. MarketingAsAService uses this access only to publish the posts you schedule and to show which account is which (Art. 6(1)(b) GDPR).',
+        'Social media and ad accounts you connect: name, handle, profile picture and the access the platform grants, stored encrypted. MarketingAsAService uses this access only to publish the posts you schedule, run the ads you start and read their numbers, and to show which account is which (Art. 6(1)(b) GDPR).',
+      letters:
+        'Letters by post: the names and postal addresses you enter for a mailing. They are used only to print and send these letters through the letter service named below, and are kept until you delete the mailing or its campaign.',
       security: (days: number) =>
         `Security: sign-in attempts are counted per email address and IP address for up to an hour to stop password guessing. Sign-ins and changes are recorded in an activity log with the IP address; IP addresses are removed after ${days} days. Our legitimate interest is keeping accounts safe (Art. 6(1)(f) GDPR).`,
       cookies: 'Cookies: only the ones the service needs: your sign-in (30 days), your language, and light or dark mode. No tracking, analytics or advertising.',
@@ -138,9 +140,11 @@ export const legalMessages = defineMessages({
       account:
         'Dein Konto: Name, E-Mail-Adresse und Passwort (nur als gesalzener Hash gespeichert), deine Sprache und Anzeige-Einstellungen. Wir brauchen sie, um dein Konto bereitzustellen (Art. 6 Abs. 1 lit. b DSGVO).',
       content:
-        'Was du erstellst: Beiträge, hochgeladene Bilder und Videos, Flows, Zeitpläne sowie deine Arbeitsbereiche mit Mitgliedern und Einladungen. Wir brauchen sie, um deine Beiträge zu planen und zu veröffentlichen (Art. 6 Abs. 1 lit. b DSGVO).',
+        'Was du erstellst: Beiträge, hochgeladene Bilder und Videos, Flows, Zeitpläne, dein Marken-Kit, Kampagnen mit ihren Werbemitteln und Ergebnissen sowie deine Arbeitsbereiche mit Mitgliedern und Einladungen. Wir brauchen sie, um dein Marketing zu planen und zu veröffentlichen (Art. 6 Abs. 1 lit. b DSGVO).',
       accounts:
-        'Social-Media-Konten, die du verbindest: Name, Handle, Profilbild und der Zugriff, den das Netzwerk gewährt, verschlüsselt gespeichert. MarketingAsAService nutzt diesen Zugriff nur, um deine geplanten Beiträge zu veröffentlichen und anzuzeigen, welches Konto welches ist (Art. 6 Abs. 1 lit. b DSGVO).',
+        'Social-Media- und Werbekonten, die du verbindest: Name, Handle, Profilbild und der Zugriff, den die Plattform gewährt, verschlüsselt gespeichert. MarketingAsAService nutzt diesen Zugriff nur, um deine geplanten Beiträge zu veröffentlichen, die Anzeigen zu schalten, die du startest, und ihre Zahlen abzurufen, und um anzuzeigen, welches Konto welches ist (Art. 6 Abs. 1 lit. b DSGVO).',
+      letters:
+        'Briefe per Post: die Namen und Postanschriften, die du für ein Mailing eingibst. Sie dienen nur dazu, diese Briefe über den unten genannten Versanddienst zu drucken und zu versenden, und bleiben gespeichert, bis du das Mailing oder seine Kampagne löschst.',
       security: (days) =>
         `Sicherheit: Anmeldeversuche werden pro E-Mail-Adresse und IP-Adresse bis zu einer Stunde gezählt, um das Erraten von Passwörtern zu verhindern. Anmeldungen und Änderungen werden mit IP-Adresse in einem Aktivitätsprotokoll festgehalten; die IP-Adressen werden nach ${days} Tagen entfernt. Unser berechtigtes Interesse ist die Sicherheit der Konten (Art. 6 Abs. 1 lit. f DSGVO).`,
       cookies: 'Cookies: nur die nötigen – deine Anmeldung (30 Tage), deine Sprache und heller oder dunkler Modus. Kein Tracking, keine Analyse, keine Werbung.',
