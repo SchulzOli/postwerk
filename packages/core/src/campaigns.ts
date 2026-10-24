@@ -18,6 +18,10 @@ import {
   type PieceKind,
   type PieceStatus,
   type PrintContent,
+  SPOT_FORMATS,
+  type SpotContent,
+  type SpotFormat,
+  youtubeVideoId,
 } from './marketing';
 import { campaignMessages } from './messages';
 
@@ -372,4 +376,78 @@ export async function savePrintPiece(db: Database, workspaceId: string, pieceId:
   const found = await findMedia(db, workspaceId, mediaIds);
   if (mediaIds.some((id) => found.get(id)?.kind !== 'image')) throw new CampaignError((m) => m.notAnImage);
   return savePiece(db, workspaceId, pieceId, { title: input.title, content, mediaIds });
+}
+
+// ------------------------------------------------------------------ spots
+
+export const MAX_SCENES = 20;
+
+/** Checks a spot script; radio spots keep only what can be heard. Throws CampaignError with what to fix. */
+export function cleanSpotContent(format: string, input: SpotContent): SpotContent {
+  const spot = SPOT_FORMATS[format as SpotFormat];
+  if (!spot) throw new CampaignError((m) => m.format);
+  const audio = spot.medium === 'audio';
+  if (!Array.isArray(input.scenes) || input.scenes.length === 0 || input.scenes.length > MAX_SCENES) throw new CampaignError((m) => m.scenes(MAX_SCENES));
+  const scenes = input.scenes.map((scene) => {
+    const seconds = Number(scene.seconds);
+    if (!Number.isInteger(seconds) || seconds < 1 || seconds > 120) throw new CampaignError((m) => m.seconds);
+    return {
+      seconds,
+      visual: audio ? '' : longText(String(scene.visual ?? ''), 600),
+      voiceOver: longText(String(scene.voiceOver ?? ''), 600),
+      onScreenText: audio ? '' : longText(String(scene.onScreenText ?? ''), 120),
+      sound: longText(String(scene.sound ?? ''), 200),
+      character: Boolean(scene.character),
+    };
+  });
+  let video: string | undefined;
+  if (input.youtubeVideoId) {
+    video = youtubeVideoId(input.youtubeVideoId) ?? undefined;
+    if (!video) throw new CampaignError((m) => m.youtube);
+  }
+  return {
+    scenes,
+    directions: longText(String(input.directions ?? ''), 2000),
+    ...(input.fileMediaId && { fileMediaId: input.fileMediaId }),
+    ...(!audio && video && { youtubeVideoId: video }),
+    ...(!audio && input.youtubePostId && { youtubePostId: input.youtubePostId }),
+  };
+}
+
+/** Saves a spot script and its produced file (a video, or audio for radio). Sends the spot back to draft. */
+export async function saveSpotPiece(db: Database, workspaceId: string, pieceId: string, input: { title: string; content: SpotContent }): Promise<Piece> {
+  const piece = await getPiece(db, workspaceId, pieceId);
+  if (!piece || piece.kind !== 'spot') throw new CampaignError((m) => m.pieceNotFound);
+  const content = cleanSpotContent(piece.format, input.content);
+  const mediaIds = content.fileMediaId ? [content.fileMediaId] : [];
+  const found = await findMedia(db, workspaceId, mediaIds);
+  const medium = SPOT_FORMATS[piece.format as SpotFormat].medium;
+  if (mediaIds.some((id) => found.get(id)?.kind !== medium)) throw new CampaignError((m) => (medium === 'audio' ? m.notAudio : m.notVideo));
+  return savePiece(db, workspaceId, pieceId, { title: input.title, content, mediaIds });
+}
+
+/** Records the YouTube upload of a spot (the post, then the video once it is out) without sending the spot back to draft. */
+export async function linkSpotVideo(db: Database, workspaceId: string, pieceId: string, link: { youtubePostId?: string; youtubeVideoId?: string }): Promise<void> {
+  const piece = await getPiece(db, workspaceId, pieceId);
+  if (!piece || piece.kind !== 'spot') throw new CampaignError((m) => m.pieceNotFound);
+  const content = { ...(piece.content as unknown as SpotContent), ...link };
+  await db.update(pieces).set({ content: content as unknown as Record<string, unknown>, updatedAt: new Date() }).where(eq(pieces.id, pieceId));
+}
+
+export interface SpotVideo {
+  /** The YouTube video id, pasted or taken from the upload once it is out. */
+  videoId: string | null;
+  /** The upload from here, while and after it goes out. */
+  post: { id: string; status: string; url: string | null; error: string | null } | null;
+}
+
+/** Where a spot's video stands on YouTube. */
+export async function spotVideo(db: Database, workspaceId: string, content: SpotContent): Promise<SpotVideo> {
+  let post: SpotVideo['post'] = null;
+  if (content.youtubePostId) {
+    const row = await db.query.posts.findFirst({ where: and(eq(posts.id, content.youtubePostId), eq(posts.workspaceId, workspaceId)), with: { targets: true } });
+    const target = row?.targets[0];
+    if (row) post = { id: row.id, status: row.status, url: target?.remoteUrl ?? null, error: target?.lastError ?? null };
+  }
+  return { videoId: content.youtubeVideoId ?? (post?.url ? youtubeVideoId(post.url) : null), post };
 }

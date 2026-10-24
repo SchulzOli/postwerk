@@ -241,7 +241,7 @@ export const flows = pgTable('flows', {
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
 });
 
-export const mediaKind = pgEnum('media_kind', ['image', 'video']);
+export const mediaKind = pgEnum('media_kind', ['image', 'video', 'audio']);
 
 /** Uploaded files (local disk or S3, see @maas/core storage). Unused uploads are cleaned up after a day. */
 export const media = pgTable(

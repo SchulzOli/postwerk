@@ -21,7 +21,7 @@ import { findMedia } from './media';
 import { PRINT_FONTS } from './print-fonts';
 import { getMediaStorage } from './storage';
 
-const PT_PER_MM = 72 / 25.4;
+export const PT_PER_MM = 72 / 25.4;
 /** Below this, pictures look blurry in print. */
 export const MIN_PRINT_DPI = 150;
 
@@ -105,20 +105,20 @@ const luminance = (hex: string) => {
   return 0.2126 * r + 0.7152 * g + 0.0722 * b;
 };
 /** White or the brand's text color, whichever reads better on `background`. */
-const onColor = (background: string, text: string) => (luminance(background) > 0.4 ? toCmyk(luminance(text) < 0.3 ? text : '#111111') : cmyk(0, 0, 0, 0));
+export const onColor = (background: string, text: string) => (luminance(background) > 0.4 ? toCmyk(luminance(text) < 0.3 ? text : '#111111') : cmyk(0, 0, 0, 0));
 const BLACK = cmyk(0, 0, 0, 1);
 const WHITE = cmyk(0, 0, 0, 0);
 
 // ------------------------------------------------------------------ fonts and text
 
-interface Fonts {
+export interface Fonts {
   regular: PDFFont;
   bold: PDFFont;
   /** Code points the fonts can draw. */
   covers: Set<number>;
 }
 
-async function embedFonts(doc: PDFDocument, family: string): Promise<Fonts> {
+export async function embedFonts(doc: PDFDocument, family: string): Promise<Fonts> {
   doc.registerFontkit(fontkit);
   const files = PRINT_FONTS[family === 'serif' ? 'serif' : 'sans'];
   // Subsetting also turns the WOFF files into the TrueType fonts PDF readers expect.
@@ -128,7 +128,7 @@ async function embedFonts(doc: PDFDocument, family: string): Promise<Fonts> {
 }
 
 /** Drops what the fonts cannot draw (emoji and the like). */
-const printable = (fonts: Fonts, text: string) =>
+export const printable = (fonts: Fonts, text: string) =>
   [...text.replace(/\r/g, '')].filter((char) => char === '\n' || fonts.covers.has(char.codePointAt(0)!)).join('');
 
 /** Splits text into lines that fit `width` (pt); keeps the author's line breaks. */
@@ -163,11 +163,11 @@ const LEADING = 1.22;
 
 // ------------------------------------------------------------------ images
 
-const isPng = (bytes: Uint8Array) => bytes[0] === 0x89 && bytes[1] === 0x50 && bytes[2] === 0x4e && bytes[3] === 0x47;
+export const isPng = (bytes: Uint8Array) => bytes[0] === 0x89 && bytes[1] === 0x50 && bytes[2] === 0x4e && bytes[3] === 0x47;
 const isJpeg = (bytes: Uint8Array) => bytes[0] === 0xff && bytes[1] === 0xd8 && bytes[2] === 0xff;
 
 /** WebP and GIF become PNG when the optional `sharp` package is installed. */
-async function toEmbeddable(bytes: Uint8Array): Promise<Uint8Array | null> {
+export async function toEmbeddable(bytes: Uint8Array): Promise<Uint8Array | null> {
   if (isPng(bytes) || isJpeg(bytes)) return bytes;
   try {
     const { default: sharp } = await import('sharp');
@@ -180,7 +180,7 @@ async function toEmbeddable(bytes: Uint8Array): Promise<Uint8Array | null> {
 // ------------------------------------------------------------------ drawing
 
 /** Draws in millimetres from the trim box's top-left corner. */
-class Sheet {
+export class Sheet {
   constructor(
     readonly page: PDFPage,
     /** Trim box offset from the page's left and top edge, in mm. */
@@ -247,10 +247,10 @@ class Sheet {
   }
 }
 
-const lineHeightMm = (size: number) => (size * LEADING) / PT_PER_MM;
+export const lineHeightMm = (size: number) => (size * LEADING) / PT_PER_MM;
 
 /** The size of an image fitted into a box, keeping its proportions. */
-function fit(image: PDFImage, maxWidth: number, maxHeight: number) {
+export function fit(image: PDFImage, maxWidth: number, maxHeight: number) {
   const scale = Math.min(maxWidth / image.width, maxHeight / image.height);
   return { width: image.width * scale, height: image.height * scale };
 }
@@ -669,7 +669,7 @@ export async function renderPrint(format: PrintFormat, content: PrintContent, br
 // ------------------------------------------------------------------ pieces
 
 /** Reads an upload's bytes (null when it is gone). */
-async function uploadBytes(key: string): Promise<Uint8Array | null> {
+export async function uploadBytes(key: string): Promise<Uint8Array | null> {
   const file = await getMediaStorage().get(key);
   return file ? new Uint8Array(await new Response(file.body).arrayBuffer()) : null;
 }

@@ -131,6 +131,8 @@ export interface SpotContent {
   fileMediaId?: string;
   /** The produced video on YouTube, for video ads. */
   youtubeVideoId?: string;
+  /** The post that uploaded it to YouTube from here, while it goes out. */
+  youtubePostId?: string;
 }
 
 export type PieceContent = AdContent | PrintContent | SpotContent;
@@ -151,6 +153,79 @@ export function emptyContent(kind: PieceKind, format: string): PieceContent {
     ],
     directions: '',
   } satisfies SpotContent;
+}
+
+// ------------------------------------------------------------------ spots
+
+/** Words a speaker says per second at a calm, clear pace (voice-overs of ads). */
+export const WORDS_PER_SECOND = 2.5;
+
+export type SpotHint =
+  | { code: 'duration'; total: number; target: number }
+  | { code: 'tooFast'; scene: number; words: number; max: number }
+  | { code: 'noCharacter'; name: string }
+  | { code: 'noCatchphrase'; name: string; catchphrase: string }
+  | { code: 'noFile' };
+
+const words = (text: string) => text.split(/\s+/).filter(Boolean).length;
+const normalize = (text: string) => text.toLocaleLowerCase().replace(/[^\p{L}\p{N}]+/gu, ' ').trim();
+
+/** Where each scene starts and ends, in seconds. */
+export function spotTimecodes(scenes: Pick<SpotScene, 'seconds'>[]): { start: number; end: number }[] {
+  let at = 0;
+  return scenes.map((scene) => {
+    const start = at;
+    at += scene.seconds;
+    return { start, end: at };
+  });
+}
+
+/** "0:05" */
+export const timecode = (seconds: number) => `${Math.floor(seconds / 60)}:${String(Math.round(seconds % 60)).padStart(2, '0')}`;
+
+/**
+ * What a spot script still needs: the right length, voice-overs that can be
+ * spoken in their scene, the brand character on screen (or on air) and its
+ * catchphrase, and finally the produced file.
+ */
+export function checkSpot(format: string, content: SpotContent, character: { name: string; catchphrase: string } | null): SpotHint[] {
+  const hints: SpotHint[] = [];
+  const target = SPOT_FORMATS[format as SpotFormat]?.seconds;
+  const total = content.scenes.reduce((sum, scene) => sum + scene.seconds, 0);
+  if (target && total !== target) hints.push({ code: 'duration', total, target });
+  content.scenes.forEach((scene, index) => {
+    const max = Math.floor(scene.seconds * WORDS_PER_SECOND);
+    const count = words(scene.voiceOver);
+    if (count > max) hints.push({ code: 'tooFast', scene: index + 1, words: count, max });
+  });
+  if (character) {
+    if (!content.scenes.some((scene) => scene.character)) hints.push({ code: 'noCharacter', name: character.name });
+    const phrase = normalize(character.catchphrase);
+    const spoken = content.scenes.map((scene) => normalize(`${scene.voiceOver} ${scene.onScreenText}`)).join(' ');
+    if (phrase && !spoken.includes(phrase)) hints.push({ code: 'noCatchphrase', name: character.name, catchphrase: character.catchphrase });
+  }
+  if (!content.fileMediaId) hints.push({ code: 'noFile' });
+  return hints;
+}
+
+/** A YouTube video id from a link (watch, youtu.be, shorts, embed) or the bare id; null otherwise. */
+export function youtubeVideoId(input: string): string | null {
+  const text = input.trim();
+  if (/^[\w-]{11}$/.test(text)) return text;
+  let url: URL;
+  try {
+    url = new URL(text);
+  } catch {
+    return null;
+  }
+  const host = url.hostname.replace(/^(www|m)\./, '');
+  const id =
+    host === 'youtu.be'
+      ? url.pathname.slice(1)
+      : host === 'youtube.com' || host === 'youtube-nocookie.com'
+        ? (url.searchParams.get('v') ?? /^\/(?:shorts|embed|live)\/([\w-]+)/.exec(url.pathname)?.[1] ?? '')
+        : '';
+  return /^[\w-]{11}$/.test(id) ? id : null;
 }
 
 // ------------------------------------------------------------------ money

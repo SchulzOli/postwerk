@@ -1,17 +1,20 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { findMedia, formatMoney, getBrandKit, getCampaign, isMailable, listMailings, pingenConfig, type PieceStatus, type PrintContent } from '@maas/core';
+import { asc, and, eq } from 'drizzle-orm';
+import { findMedia, formatMoney, getBrandKit, getCampaign, isMailable, listMailings, pingenConfig, SPOT_FORMATS, spotVideo, type PieceStatus, type PrintContent, type SpotContent, type SpotFormat } from '@maas/core';
 import { renderPiece } from '@maas/core/print';
 import { DOCS_URL } from '@maas/providers/catalog';
-import { getDb } from '@maas/db';
+import { getDb, socialAccounts, type Campaign, type Piece } from '@maas/db';
 import { PieceStatusButtons } from '@/components/campaign-forms';
 import { LocalTime } from '@/components/local-time';
 import { DeleteMailingButton, MailingForm, PrintForm } from '@/components/print-editor';
+import { SpotEditor, YoutubeUpload } from '@/components/spot-editor';
 import { getLocale, getMessages } from '@/lib/i18n-server';
 import { requireSession } from '@/lib/session';
 import { campaignsMessages } from '@/messages/campaigns';
 import { commonMessages } from '@/messages/common';
 import { printMessages } from '@/messages/print';
+import { spotsMessages } from '@/messages/spots';
 
 type Params = { params: Promise<{ id: string; pieceId: string }> };
 
@@ -35,13 +38,13 @@ export default async function PiecePage({ params }: Params) {
   const { id, pieceId } = await params;
   const session = await requireSession();
   const found = await load(id, pieceId);
-  if (!found || found.piece.kind !== 'print') notFound();
+  if (!found || found.piece.kind === 'ad') notFound();
   const { campaign, piece } = found;
+  if (piece.kind === 'spot') return <SpotPiece campaign={campaign} piece={piece} />;
   const db = getDb();
   const content = piece.content as unknown as PrintContent;
-  const [t, c, locale, kit, uploads] = await Promise.all([
+  const [t, locale, kit, uploads] = await Promise.all([
     getMessages(printMessages),
-    getMessages(campaignsMessages),
     getLocale(),
     getBrandKit(db, session.workspace),
     findMedia(db, session.workspace.id, content.imageMediaId ? [content.imageMediaId] : []),
@@ -57,19 +60,7 @@ export default async function PiecePage({ params }: Params) {
 
   return (
     <div className="stack-lg">
-      <div className="stack-sm">
-        <Link href={`/campaigns/${campaign.id}`} className="small-link">{t.back}</Link>
-        <div className="row">
-          <h1 className="grow">{piece.title}</h1>
-          <span className={`badge piece-${piece.status}`}>{c.pieceStatuses[piece.status]}</span>
-        </div>
-        <div className="row">
-          <span className="muted grow">
-            {campaign.name} · {c.formats[piece.format]}
-          </span>
-          <PieceStatusButtons pieceId={piece.id} status={piece.status as PieceStatus} canApprove={canManage} />
-        </div>
-      </div>
+      <PieceHeader campaign={campaign} piece={piece} canManage={canManage} />
 
       <div className="piece-layout">
         <PrintForm
@@ -158,6 +149,99 @@ export default async function PiecePage({ params }: Params) {
               </ul>
             </>
           )}
+        </section>
+      )}
+    </div>
+  );
+}
+
+/** Back link, title, status and the next steps of a piece. */
+async function PieceHeader({ campaign, piece, canManage }: { campaign: Campaign; piece: Piece; canManage: boolean }) {
+  const [t, c] = await Promise.all([getMessages(printMessages), getMessages(campaignsMessages)]);
+  return (
+    <div className="stack-sm">
+      <Link href={`/campaigns/${campaign.id}`} className="small-link">{t.back}</Link>
+      <div className="row">
+        <h1 className="grow">{piece.title}</h1>
+        <span className={`badge piece-${piece.status}`}>{c.pieceStatuses[piece.status]}</span>
+      </div>
+      <div className="row">
+        <span className="muted grow">
+          {campaign.name} · {c.formats[piece.format]}
+        </span>
+        <PieceStatusButtons pieceId={piece.id} status={piece.status as PieceStatus} canApprove={canManage} />
+      </div>
+    </div>
+  );
+}
+
+/** A video or radio spot: script, briefing, produced file and YouTube. */
+async function SpotPiece({ campaign, piece }: { campaign: Campaign; piece: Piece }) {
+  const session = await requireSession();
+  const db = getDb();
+  const content = piece.content as unknown as SpotContent;
+  const spot = SPOT_FORMATS[piece.format as SpotFormat];
+  const audio = spot.medium === 'audio';
+  const [t, kit, uploads, video, youtubeAccounts] = await Promise.all([
+    getMessages(spotsMessages),
+    getBrandKit(db, session.workspace),
+    findMedia(db, session.workspace.id, content.fileMediaId ? [content.fileMediaId] : []),
+    spotVideo(db, session.workspace.id, content),
+    audio
+      ? []
+      : db.query.socialAccounts.findMany({
+          where: and(eq(socialAccounts.workspaceId, session.workspace.id), eq(socialAccounts.provider, 'youtube')),
+          orderBy: [asc(socialAccounts.handle)],
+        }),
+  ]);
+  const file = content.fileMediaId ? uploads.get(content.fileMediaId) : undefined;
+  const canManage = session.role !== 'editor';
+  const approved = piece.status === 'approved' || piece.status === 'live';
+
+  return (
+    <div className="stack-lg">
+      <PieceHeader campaign={campaign} piece={piece} canManage={canManage} />
+      <SpotEditor
+        pieceId={piece.id}
+        title={piece.title}
+        format={piece.format}
+        audio={audio}
+        target={spot.seconds}
+        content={content}
+        file={file ? { id: file.id, url: `/media/${file.key}` } : null}
+        character={kit.character ? { name: kit.character.name, catchphrase: kit.character.catchphrase } : null}
+      />
+      <section className="card stack">
+        <h2>{t.briefing}</h2>
+        <p className="muted">{t.briefingIntro}</p>
+        <a className="button align-start" href={`/campaigns/${campaign.id}/pieces/${piece.id}/pdf?download=1`}>{t.downloadBriefing}</a>
+      </section>
+      {!audio && (
+        <section className="card stack">
+          <h2>{t.youtube}</h2>
+          <p className="muted">{t.youtubeIntro}</p>
+          {video.videoId && (
+            <p>
+              {t.youtubeVideo}:{' '}
+              <a href={`https://youtu.be/${video.videoId}`} target="_blank" rel="noreferrer">youtu.be/{video.videoId}</a>
+            </p>
+          )}
+          {video.post && !video.videoId && (
+            <p className={video.post.status === 'failed' ? 'error' : 'muted'}>
+              {t.youtubeStatus[video.post.status] ?? video.post.status}
+              {video.post.error && ` · ${video.post.error}`}
+              {' · '}
+              <Link href="/posts">{t.openPost}</Link>
+            </p>
+          )}
+          {!video.videoId && !(video.post && video.post.status !== 'failed') &&
+            (youtubeAccounts.length === 0 ? (
+              <p className="muted">{t.noYoutubeAccount}</p>
+            ) : !approved || !file ? (
+              <p className="muted">{t.approveFirst}</p>
+            ) : (
+              <YoutubeUpload pieceId={piece.id} accounts={youtubeAccounts.map((account) => ({ id: account.id, handle: account.handle }))} title={piece.title} description={campaign.message} />
+            ))}
         </section>
       )}
     </div>

@@ -31,7 +31,7 @@ export function mediaField(items: ComposerMedia[]): string {
 export interface Uploaded {
   id: string;
   url: string;
-  kind: 'image' | 'video';
+  kind: 'image' | 'video' | 'audio';
   mimeType: string;
   size: number;
 }
@@ -93,6 +93,7 @@ export function MediaPicker({ items, setItems }: Props) {
       if (item.error) continue;
       uploadFile(file, (progress) => update(localId, { progress }), t)
         .then((uploaded) => {
+          if (uploaded.kind === 'audio') throw new Error(t.noAudio);
           // Keep showing the local preview until the browser has the stored file.
           update(localId, { id: uploaded.id, url: uploaded.url, kind: uploaded.kind, size: uploaded.size, mimeType: uploaded.mimeType, progress: undefined });
           URL.revokeObjectURL(preview);

@@ -54,7 +54,10 @@ export default defineConfig({
       },
       {
         text: 'Marketing',
-        items: [{ text: 'Print and letters', link: '/marketing/print' }],
+        items: [
+          { text: 'Print and letters', link: '/marketing/print' },
+          { text: 'Video and radio spots', link: '/marketing/spots' },
+        ],
       },
       {
         text: 'Project',

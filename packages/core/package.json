@@ -11,6 +11,7 @@
     "./i18n": "./src/i18n.ts",
     "./marketing": "./src/marketing.ts",
     "./print": "./src/print.ts",
+    "./briefing": "./src/briefing.ts",
     "./theme": "./src/theme.ts"
   },
   "scripts": {

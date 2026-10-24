@@ -85,7 +85,7 @@ export default async function CampaignPage({ params }: Params) {
             {pieces.map((piece) => (
               <li key={piece.id} className="stack-sm">
                 <div className="row">
-                  {piece.kind === 'print' ? (
+                  {piece.kind !== 'ad' ? (
                     <Link href={`/campaigns/${campaign.id}/pieces/${piece.id}`} className="grow piece-link">{piece.title}</Link>
                   ) : (
                     <strong className="grow">{piece.title}</strong>

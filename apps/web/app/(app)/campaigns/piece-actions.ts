@@ -4,6 +4,15 @@ import { revalidatePath } from 'next/cache';
 import {
   CampaignError,
   createMailing,
+  createPost,
+  findMedia,
+  linkSpotVideo,
+  postMediaFromUpload,
+  saveSpotPiece,
+  SPOT_FORMATS,
+  type SpotContent,
+  type SpotFormat,
+  type SpotScene,
   deleteMailing,
   estimateMailing,
   formatMoney,
@@ -15,11 +24,13 @@ import {
   type DeliveryProduct,
   type PrintContent,
 } from '@maas/core';
-import { getDb } from '@maas/db';
+import { getDb, socialAccounts } from '@maas/db';
+import { and, eq } from 'drizzle-orm';
 import { record } from '@/lib/audit';
 import { getLocale, getMessages, localizedError } from '@/lib/i18n-server';
 import { requireAdmin, requireSession } from '@/lib/session';
 import { printMessages } from '@/messages/print';
+import { spotsMessages } from '@/messages/spots';
 
 export type PieceState = { error?: string; success?: string; saved?: number };
 
@@ -117,4 +128,69 @@ export async function deleteMailingAction(campaignId: string, pieceId: string, m
     await record({ action: 'mailing.deleted', userId: user.id, workspaceId: workspace.id, target: piece?.title ?? null });
   }
   refresh(campaignId, pieceId);
+}
+
+/** Saves a spot's script, directions, produced file and YouTube link (it goes back to draft). */
+export async function saveSpotPieceAction(pieceId: string, _: PieceState, form: FormData): Promise<PieceState> {
+  const { workspace } = await requireSession();
+  const db = getDb();
+  const existing = await getPiece(db, workspace.id, pieceId);
+  if (!existing) return { error: (await getMessages(printMessages)).approveFirst };
+  let scenes: SpotScene[] = [];
+  try {
+    const parsed: unknown = JSON.parse(text(form, 'scenes') || '[]');
+    if (Array.isArray(parsed)) scenes = parsed as SpotScene[];
+  } catch {
+    scenes = [];
+  }
+  const content: SpotContent = {
+    scenes,
+    directions: text(form, 'directions'),
+    ...(text(form, 'file') && { fileMediaId: text(form, 'file') }),
+    ...(text(form, 'youtube').trim() && { youtubeVideoId: text(form, 'youtube') }),
+    // An upload from here stays linked.
+    ...((existing.content as unknown as SpotContent).youtubePostId && { youtubePostId: (existing.content as unknown as SpotContent).youtubePostId }),
+  };
+  try {
+    const piece = await saveSpotPiece(db, workspace.id, pieceId, { title: text(form, 'title'), content });
+    refresh(piece.campaignId, piece.id);
+  } catch (error) {
+    if (error instanceof CampaignError) return { error: await localizedError(error) };
+    throw error;
+  }
+  return { success: (await getMessages(spotsMessages)).saved, saved: Date.now() };
+}
+
+/** Uploads an approved video spot to a connected YouTube channel, as a post of the campaign. */
+export async function uploadSpotToYoutubeAction(pieceId: string, _: PieceState, form: FormData): Promise<PieceState> {
+  const { user, workspace } = await requireSession();
+  const [t, locale] = await Promise.all([getMessages(spotsMessages), getLocale()]);
+  const db = getDb();
+  const piece = await getPiece(db, workspace.id, pieceId);
+  const content = piece?.content as unknown as SpotContent | undefined;
+  const ready = piece && piece.kind === 'spot' && SPOT_FORMATS[piece.format as SpotFormat]?.medium === 'video' && (piece.status === 'approved' || piece.status === 'live') && content?.fileMediaId;
+  if (!piece || !content || !ready) return { error: t.approveFirst };
+  const accountId = text(form, 'account');
+  const account = await db.query.socialAccounts.findFirst({ where: and(eq(socialAccounts.id, accountId), eq(socialAccounts.workspaceId, workspace.id), eq(socialAccounts.provider, 'youtube')) });
+  if (!account) return { error: t.noYoutubeAccount };
+  const file = (await findMedia(db, workspace.id, [content.fileMediaId!])).get(content.fileMediaId!);
+  if (!file || file.kind !== 'video') return { error: t.approveFirst };
+  const privacy = ['unlisted', 'public', 'private'].includes(text(form, 'privacy')) ? text(form, 'privacy') : 'unlisted';
+  const result = await createPost(db, {
+    workspaceId: workspace.id,
+    authorId: user.id,
+    text: text(form, 'description'),
+    media: [postMediaFromUpload(file)],
+    accountIds: [account.id],
+    options: { youtube: { title: text(form, 'title') || piece.title, privacy } },
+    campaignId: piece.campaignId,
+    scheduledAt: null,
+    locale,
+  });
+  if (!result.ok) return { error: result.errors.join(' ') };
+  await linkSpotVideo(db, workspace.id, piece.id, { youtubePostId: result.postId });
+  await record({ action: 'post.created', userId: user.id, workspaceId: workspace.id, target: piece.title, details: { scheduled: false } });
+  refresh(piece.campaignId, piece.id);
+  revalidatePath('/posts');
+  return { success: t.youtubeQueued, saved: Date.now() };
 }
