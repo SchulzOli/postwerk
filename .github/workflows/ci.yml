@@ -40,6 +40,9 @@ jobs:
   docker:
     name: Docker images
     runs-on: ubuntu-latest
+    # Compose names images after the project (default: the checkout folder), so fix it to match the tags below.
+    env:
+      COMPOSE_PROJECT_NAME: maas
     steps:
       - uses: actions/checkout@v4
       - name: Build worker image
