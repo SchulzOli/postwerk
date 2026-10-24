@@ -57,6 +57,7 @@ export default defineConfig({
         items: [
           { text: 'Print and letters', link: '/marketing/print' },
           { text: 'Video and radio spots', link: '/marketing/spots' },
+          { text: 'Paid ads', link: '/marketing/ads' },
         ],
       },
       {

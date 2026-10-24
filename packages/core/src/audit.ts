@@ -37,7 +37,12 @@ export type AuditAction =
   | 'piece.approved'
   | 'piece.deleted'
   | 'mailing.sent'
-  | 'mailing.deleted';
+  | 'mailing.deleted'
+  | 'ads.connected'
+  | 'ads.removed'
+  | 'ads.launched'
+  | 'ads.started'
+  | 'ads.paused';
 
 export interface AuditInput {
   action: AuditAction;

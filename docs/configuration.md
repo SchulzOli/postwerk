@@ -57,6 +57,15 @@ Details: [About and legal pages](legal.md).
 
 Network ids: `mastodon`, `bluesky`, `facebook`, `instagram`, `threads`, `linkedin`, `linkedin_page`, `x`, `tiktok`, `youtube`, `google_business`, `pinterest`, `reddit`, `telegram`, `discord`. Which to pick: [Choose how to offer each network](networks/index.md).
 
+## Paid ads
+
+| Variable | What it does |
+|---|---|
+| `GOOGLE_ADS_DEVELOPER_TOKEN` | Turns on [Google Ads](marketing/ads.md#set-up-google-ads) (search and YouTube video ads), with the Google app from `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` |
+| `GOOGLE_ADS_LOGIN_CUSTOMER_ID` | The manager account (MCC) the ad accounts are reached through, if any |
+| `ENABLE_META_ADS` | `true` turns on [Meta Ads](marketing/ads.md#set-up-meta-ads) (Facebook and Instagram ads), with the Facebook app from `FACEBOOK_CLIENT_ID` / `FACEBOOK_CLIENT_SECRET` |
+| `GOOGLE_ADS_API_URL`, `META_GRAPH_URL` | The platforms' API addresses; only for tests against fake servers |
+
 ## Letters by post
 
 | Variable | What it does |

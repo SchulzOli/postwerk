@@ -445,6 +445,62 @@ export const mailingLetters = pgTable(
   (t) => [index('mailing_letters_mailing_idx').on(t.mailingId), index('mailing_letters_status_idx').on(t.status, t.updatedAt)],
 );
 
+export const adPlatform = pgEnum('ad_platform', ['google_ads', 'meta_ads']);
+export const adLaunchStatus = pgEnum('ad_launch_status', ['paused', 'running', 'ended']);
+
+/** An ad account a workspace connected (a Google Ads customer, a Meta ad account). */
+export const adAccounts = pgTable(
+  'ad_accounts',
+  {
+    id: id(),
+    workspaceId: uuid('workspace_id').notNull().references(() => workspaces.id, { onDelete: 'cascade' }),
+    platform: adPlatform('platform').notNull(),
+    /** The platform's account id. */
+    externalId: text('external_id').notNull(),
+    name: text('name').notNull(),
+    currency: text('currency').notNull(),
+    timeZone: text('time_zone'),
+    test: boolean('test').notNull().default(false),
+    /** Meta: Facebook Pages ads can run as. */
+    pages: jsonb('pages').$type<{ id: string; name: string }[]>().notNull().default([]),
+    /** Encrypted with encryptJson. */
+    credentialsEnc: text('credentials_enc').notNull(),
+    status: accountStatus('status').notNull().default('active'),
+    connectedBy: uuid('connected_by').references(() => users.id, { onDelete: 'set null' }),
+    createdAt: createdAt(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [uniqueIndex('ad_accounts_external_idx').on(t.workspaceId, t.platform, t.externalId)],
+);
+
+/** An ad piece running as a campaign on an ad platform. */
+export const adLaunches = pgTable(
+  'ad_launches',
+  {
+    id: id(),
+    workspaceId: uuid('workspace_id').notNull().references(() => workspaces.id, { onDelete: 'cascade' }),
+    pieceId: uuid('piece_id').notNull().references(() => pieces.id, { onDelete: 'cascade' }),
+    adAccountId: uuid('ad_account_id').notNull().references(() => adAccounts.id, { onDelete: 'cascade' }),
+    /** The campaign's id on the platform, and where to see it there. */
+    externalId: text('external_id').notNull(),
+    url: text('url').notNull(),
+    status: adLaunchStatus('status').notNull().default('paused'),
+    /** The most it may spend, in the account currency. */
+    budgetCents: integer('budget_cents').notNull(),
+    currency: text('currency').notNull(),
+    startsOn: date('starts_on').notNull(),
+    endsOn: date('ends_on').notNull(),
+    countries: jsonb('countries').$type<string[]>().notNull(),
+    /** The last problem with the platform (starting, pausing, reading numbers). */
+    error: text('error'),
+    syncedAt: timestamp('synced_at', { withTimezone: true }),
+    createdBy: uuid('created_by').references(() => users.id, { onDelete: 'set null' }),
+    createdAt: createdAt(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [uniqueIndex('ad_launches_piece_idx').on(t.pieceId)],
+);
+
 /** Positions of canvas nodes the user moved (networks, accounts, panels), per workspace. */
 export const canvasPositions = pgTable(
   'canvas_positions',
@@ -570,6 +626,8 @@ export type Piece = typeof pieces.$inferSelect;
 export type CampaignResult = typeof campaignResults.$inferSelect;
 export type Mailing = typeof mailings.$inferSelect;
 export type MailingLetter = typeof mailingLetters.$inferSelect;
+export type AdAccount = typeof adAccounts.$inferSelect;
+export type AdLaunch = typeof adLaunches.$inferSelect;
 export type MemberRole = (typeof memberRole.enumValues)[number];
 export type PostStatus = (typeof postStatus.enumValues)[number];
 export type TargetStatus = (typeof targetStatus.enumValues)[number];

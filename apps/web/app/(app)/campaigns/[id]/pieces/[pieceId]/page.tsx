@@ -1,19 +1,45 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { asc, and, eq } from 'drizzle-orm';
-import { findMedia, formatMoney, getBrandKit, getCampaign, isMailable, listMailings, pingenConfig, SPOT_FORMATS, spotVideo, type PieceStatus, type PrintContent, type SpotContent, type SpotFormat } from '@maas/core';
+import {
+  adProblems,
+  adsSetup,
+  adVideoId,
+  findMedia,
+  formatMoney,
+  getAdLaunch,
+  getBrandKit,
+  getCampaign,
+  isMailable,
+  listAdAccounts,
+  listMailings,
+  pieceChannel,
+  pingenConfig,
+  platformOf,
+  SPOT_FORMATS,
+  spotVideo,
+  type AdContent,
+  type AdFormat,
+  type PieceStatus,
+  type PrintContent,
+  type SpotContent,
+  type SpotFormat,
+} from '@maas/core';
 import { renderPiece } from '@maas/core/print';
 import { DOCS_URL } from '@maas/providers/catalog';
 import { getDb, socialAccounts, type Campaign, type Piece } from '@maas/db';
 import { PieceStatusButtons } from '@/components/campaign-forms';
 import { LocalTime } from '@/components/local-time';
 import { DeleteMailingButton, MailingForm, PrintForm } from '@/components/print-editor';
+import { AdForm, LaunchForm, RunButtons } from '@/components/ad-editor';
 import { SpotEditor, YoutubeUpload } from '@/components/spot-editor';
+import { formatDay } from '@/lib/dates';
 import { getLocale, getMessages } from '@/lib/i18n-server';
 import { requireSession } from '@/lib/session';
 import { campaignsMessages } from '@/messages/campaigns';
 import { commonMessages } from '@/messages/common';
 import { printMessages } from '@/messages/print';
+import { adsMessages } from '@/messages/ads';
 import { spotsMessages } from '@/messages/spots';
 
 type Params = { params: Promise<{ id: string; pieceId: string }> };
@@ -38,9 +64,10 @@ export default async function PiecePage({ params }: Params) {
   const { id, pieceId } = await params;
   const session = await requireSession();
   const found = await load(id, pieceId);
-  if (!found || found.piece.kind === 'ad') notFound();
+  if (!found) notFound();
   const { campaign, piece } = found;
   if (piece.kind === 'spot') return <SpotPiece campaign={campaign} piece={piece} />;
+  if (piece.kind === 'ad') return <AdPiece campaign={campaign} piece={piece} />;
   const db = getDb();
   const content = piece.content as unknown as PrintContent;
   const [t, locale, kit, uploads] = await Promise.all([
@@ -244,6 +271,93 @@ async function SpotPiece({ campaign, piece }: { campaign: Campaign; piece: Piece
             ))}
         </section>
       )}
+    </div>
+  );
+}
+
+/** An online ad: texts and preview, then its campaign on Google Ads or Meta Ads. */
+async function AdPiece({ campaign, piece }: { campaign: Campaign; piece: Piece }) {
+  const session = await requireSession();
+  const db = getDb();
+  const content = piece.content as unknown as AdContent;
+  const format = piece.format as AdFormat;
+  const platform = platformOf(format);
+  const detail = await getCampaign(db, session.workspace.id, campaign.id);
+  const spotPieces = (detail?.pieces ?? []).filter((candidate) => candidate.kind === 'spot' && SPOT_FORMATS[candidate.format as SpotFormat]?.medium === 'video');
+  const [t, locale, kit, uploads, launch, accounts, spots, video] = await Promise.all([
+    getMessages(adsMessages),
+    getLocale(),
+    getBrandKit(db, session.workspace),
+    findMedia(db, session.workspace.id, content.imageMediaId ? [content.imageMediaId] : []),
+    getAdLaunch(db, session.workspace.id, piece.id),
+    listAdAccounts(db, session.workspace.id),
+    Promise.all(spotPieces.map(async (spot) => ({ id: spot.id, title: spot.title, videoId: (await spotVideo(db, session.workspace.id, spot.content as unknown as SpotContent)).videoId }))),
+    format === 'video' ? adVideoId(db, session.workspace.id, content) : null,
+  ]);
+  const upload = content.imageMediaId ? uploads.get(content.imageMediaId) : undefined;
+  const canManage = session.role !== 'editor';
+  const approved = piece.status === 'approved' || piece.status === 'live';
+  const usable = accounts.filter((account) => account.platform === platform && account.status === 'active');
+  const planned = campaign.channels.find((entry) => entry.channel === pieceChannel('ad', format))?.budgetCents ?? 0;
+  const name = t.platforms[platform];
+  const money = (cents: number, currency: string) => formatMoney(cents, currency, locale);
+
+  return (
+    <div className="stack-lg">
+      <PieceHeader campaign={campaign} piece={piece} canManage={canManage} />
+      <AdForm
+        pieceId={piece.id}
+        title={piece.title}
+        format={format}
+        content={content}
+        picture={upload ? [{ id: upload.id, url: `/media/${upload.key}` }] : []}
+        spots={spots}
+        brandName={kit.companyName}
+      />
+      <section className="card stack">
+        <h2>{t.launch}</h2>
+        {launch ? (
+          <>
+            <div className="row">
+              <span className={`badge ad-${launch.status}`}>{t.status[launch.status]}</span>
+              <span className="grow">
+                {launch.account.name} · {t.runs(formatDay(launch.startsOn, locale), formatDay(launch.endsOn, locale), money(launch.budgetCents, launch.currency))}
+              </span>
+              <a href={launch.url} target="_blank" rel="noreferrer">{t.openOn(name)}</a>
+            </div>
+            {canManage && launch.status !== 'ended' && <RunButtons pieceId={piece.id} launchId={launch.id} status={launch.status} budget={money(launch.budgetCents, launch.currency)} />}
+            {launch.error && <p className="error">{launch.error}</p>}
+            <small className="muted">{t.synced}</small>
+          </>
+        ) : (
+          <>
+            <p className="muted">{t.launchIntro(name)}</p>
+            {!approved ? (
+              <p className="muted">{t.approveFirst}</p>
+            ) : adProblems(format, content, video).length > 0 ? (
+              <p className="muted">{t.completeFirst}</p>
+            ) : !adsSetup()[platform] ? (
+              <p className="muted">{t.notSetUp(name)}</p>
+            ) : usable.length === 0 ? (
+              <p className="muted">
+                {t.connectFirst(name)} <Link href="/campaigns#ad-accounts">{t.accounts} →</Link>
+              </p>
+            ) : !canManage ? (
+              <p className="muted">{t.adminsOnly}</p>
+            ) : (
+              <LaunchForm
+                pieceId={piece.id}
+                platform={platform}
+                accounts={usable.map((account) => ({ id: account.id, name: account.name, currency: account.currency, pages: account.pages }))}
+                budget={planned ? String(planned / 100) : ''}
+                startsOn={campaign.startsOn ?? new Date().toISOString().slice(0, 10)}
+                endsOn={campaign.endsOn ?? ''}
+                plannedHint={planned ? t.plannedBudget(money(planned, campaign.currency)) : null}
+              />
+            )}
+          </>
+        )}
+      </section>
     </div>
   );
 }

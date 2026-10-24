@@ -1,6 +1,6 @@
 # Video and radio spots
 
-Spots belong to a campaign, like [print pieces](print.md). MarketingAsAService does not produce the video or the audio itself. It helps you write a script that fits the format and the brand, hands it to whoever produces it, and keeps the finished file with the campaign. A video spot can then go to YouTube for video ads.
+Spots belong to a campaign, like [print pieces](print.md). MarketingAsAService does not produce the video or the audio itself. It helps you write a script that fits the format and the brand, hands it to whoever produces it, and keeps the finished file with the campaign. A video spot can then go to YouTube for [video ads](ads.md).
 
 ## Formats
 

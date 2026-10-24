@@ -28,6 +28,9 @@ export * as Atproto from './atproto';
 export * from './bridge';
 export { bridges, getBridge } from './bridges';
 export { ZERNIO_BASE_URL } from './bridges/zernio';
+export * from './ads';
+export { GOOGLE_TOKEN_URL } from './google';
+export { authorizeUrl, expiresSoon, tokenRequest } from './oauth';
 
 const providers: Record<ProviderId, Provider> = {
   mastodon,

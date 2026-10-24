@@ -29,15 +29,33 @@ export interface TextRule {
   chars: number;
 }
 
-/** Ad formats and the platform that runs them. Limits follow the platforms' own rules. */
+/**
+ * Ad formats and the platform that runs them. Limits follow the platforms'
+ * rules: Google's responsive search ad and Demand Gen video ad, and Meta's
+ * single-image ad (headline, and the primary text as "description"; Meta
+ * shows its first 125 characters before "See more").
+ */
 export const AD_FORMATS = {
   /** Google responsive search ad. */
   search: { channel: 'search_ads', platform: 'google_ads', headlines: { min: 3, max: 15, chars: 30 }, descriptions: { min: 2, max: 4, chars: 90 }, media: 'none' },
   /** Facebook and Instagram image ad. */
-  social: { channel: 'social_ads', platform: 'meta_ads', headlines: { min: 1, max: 5, chars: 40 }, descriptions: { min: 1, max: 5, chars: 125 }, media: 'image' },
-  /** YouTube video ad (the video comes from a spot or an upload, published on YouTube). */
+  social: { channel: 'social_ads', platform: 'meta_ads', headlines: { min: 1, max: 1, chars: 40 }, descriptions: { min: 1, max: 1, chars: 500 }, media: 'image' },
+  /** YouTube video ad (a Demand Gen video ad; the video comes from a spot on YouTube). */
   video: { channel: 'video_ads', platform: 'google_ads', headlines: { min: 1, max: 5, chars: 40 }, descriptions: { min: 1, max: 5, chars: 90 }, media: 'video' },
 } as const satisfies Record<string, { channel: Channel; platform: string; headlines: TextRule; descriptions: TextRule; media: string }>;
+
+/** Video ads: long headlines (Demand Gen). */
+export const LONG_HEADLINES: TextRule = { min: 1, max: 5, chars: 90 };
+/** Search ads: display path parts and keywords. */
+export const PATH_CHARS = 15;
+export const KEYWORDS: TextRule = { min: 1, max: 50, chars: 80 };
+/** Meta's primary text is cut off after this many characters. */
+export const PRIMARY_TEXT_VISIBLE = 125;
+/** Call-to-action buttons of social ads. */
+export const AD_CALLS_TO_ACTION = ['LEARN_MORE', 'BOOK_NOW', 'SIGN_UP', 'CONTACT_US', 'SHOP_NOW'] as const;
+/** Countries ads can target from here. */
+export const AD_COUNTRIES = ['DE', 'AT', 'CH', 'LI', 'LU', 'NL', 'BE', 'FR', 'IT', 'ES', 'GB', 'US'] as const;
+export const AD_LANGUAGES = ['de', 'en', 'fr', 'it', 'es', 'nl'] as const;
 export type AdFormat = keyof typeof AD_FORMATS;
 
 /** Print formats in millimetres (trim size; bleed is added when rendering). */
@@ -83,15 +101,48 @@ export function pieceChannel(kind: PieceKind, format: string): Channel {
 
 export interface AdContent {
   headlines: string[];
+  /** Social ads: the primary text. */
   descriptions: string[];
+  /** Video ads. */
+  longHeadlines?: string[];
   /** Where the ad leads. */
   finalUrl: string;
+  /** Social ads: the button (AD_CALLS_TO_ACTION). */
   callToAction: string;
+  /** Search ads: the display path ("example.com/path1/path2") and the keywords. */
+  path1?: string;
+  path2?: string;
+  keywords?: string[];
   /** Social ads: the picture (an upload). */
   imageMediaId?: string;
-  /** Video ads: the spot the video comes from, and its YouTube video once published there. */
+  /** Video ads: the video spot of the campaign the YouTube video comes from, or a YouTube link. */
   spotId?: string;
   youtubeVideoId?: string;
+}
+
+export type AdProblem =
+  | { code: 'headlines'; min: number }
+  | { code: 'descriptions'; min: number }
+  | { code: 'longHeadlines'; min: number }
+  | { code: 'finalUrl' }
+  | { code: 'keywords' }
+  | { code: 'image' }
+  | { code: 'video' };
+
+/** What an ad still lacks before it can run (limits on length are checked when saving). */
+export function adProblems(format: string, content: AdContent, video: string | null = content.youtubeVideoId ?? null): AdProblem[] {
+  const rules = AD_FORMATS[format as AdFormat];
+  if (!rules) return [];
+  const filled = (list: string[] | undefined) => (list ?? []).filter((text) => text.trim()).length;
+  const problems: AdProblem[] = [];
+  if (filled(content.headlines) < rules.headlines.min) problems.push({ code: 'headlines', min: rules.headlines.min });
+  if (filled(content.descriptions) < rules.descriptions.min) problems.push({ code: 'descriptions', min: rules.descriptions.min });
+  if (format === 'video' && filled(content.longHeadlines) < LONG_HEADLINES.min) problems.push({ code: 'longHeadlines', min: LONG_HEADLINES.min });
+  if (!/^https?:\/\/\S+\.\S+/.test(content.finalUrl)) problems.push({ code: 'finalUrl' });
+  if (format === 'search' && filled(content.keywords) < KEYWORDS.min) problems.push({ code: 'keywords' });
+  if (format === 'social' && !content.imageMediaId) problems.push({ code: 'image' });
+  if (format === 'video' && !video) problems.push({ code: 'video' });
+  return problems;
 }
 
 export interface PrintContent {
@@ -139,7 +190,11 @@ export type PieceContent = AdContent | PrintContent | SpotContent;
 
 /** A new piece's starting content. */
 export function emptyContent(kind: PieceKind, format: string): PieceContent {
-  if (kind === 'ad') return { headlines: [], descriptions: [], finalUrl: '', callToAction: '' } satisfies AdContent;
+  if (kind === 'ad') {
+    if (format === 'search') return { headlines: ['', '', ''], descriptions: ['', ''], finalUrl: '', callToAction: '', path1: '', path2: '', keywords: [] } satisfies AdContent;
+    if (format === 'video') return { headlines: [''], longHeadlines: [''], descriptions: [''], finalUrl: '', callToAction: '' } satisfies AdContent;
+    return { headlines: [''], descriptions: [''], finalUrl: '', callToAction: 'LEARN_MORE' } satisfies AdContent;
+  }
   if (kind === 'print') {
     const size = format === 'newspaper' ? { widthMm: PRINT_FORMATS.newspaper.widthMm, heightMm: PRINT_FORMATS.newspaper.heightMm } : {};
     return { headline: '', body: '', callToAction: '', showCharacter: true, showLogo: true, showContact: true, qrUrl: '', ...size } satisfies PrintContent;

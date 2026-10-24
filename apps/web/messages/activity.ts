@@ -69,6 +69,11 @@ export const activityMessages = defineMessages({
       'piece.deleted': (p) => `deleted ${p.target}`,
       'mailing.sent': (p) => `sent ${p.target} by post`,
       'mailing.deleted': (p) => `deleted the addresses of a mailing${p.target ? ` of ${p.target}` : ''}`,
+      'ads.connected': (p) => `connected the ad account ${p.target}`,
+      'ads.removed': (p) => `removed the ad account ${p.target}`,
+      'ads.launched': (p) => `created the paused ad campaign ${p.target}`,
+      'ads.started': (p) => `started the ad campaign ${p.target}`,
+      'ads.paused': (p) => `paused the ad campaign ${p.target}`,
     } satisfies Phrases as Phrases,
   },
   de: {
@@ -117,6 +122,11 @@ export const activityMessages = defineMessages({
       'piece.deleted': (p) => `hat ${p.target} gelöscht`,
       'mailing.sent': (p) => `hat ${p.target} per Post verschickt`,
       'mailing.deleted': (p) => `hat die Adressen eines Mailings${p.target ? ` von ${p.target}` : ''} gelöscht`,
+      'ads.connected': (p) => `hat das Werbekonto ${p.target} verbunden`,
+      'ads.removed': (p) => `hat das Werbekonto ${p.target} entfernt`,
+      'ads.launched': (p) => `hat die pausierte Werbekampagne ${p.target} angelegt`,
+      'ads.started': (p) => `hat die Werbekampagne ${p.target} gestartet`,
+      'ads.paused': (p) => `hat die Werbekampagne ${p.target} pausiert`,
     },
   },
 });

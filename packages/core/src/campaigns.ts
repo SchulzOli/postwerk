@@ -18,6 +18,14 @@ import {
   type PieceKind,
   type PieceStatus,
   type PrintContent,
+  AD_CALLS_TO_ACTION,
+  AD_FORMATS,
+  KEYWORDS,
+  LONG_HEADLINES,
+  PATH_CHARS,
+  type AdContent,
+  type AdFormat,
+  type TextRule,
   SPOT_FORMATS,
   type SpotContent,
   type SpotFormat,
@@ -450,4 +458,69 @@ export async function spotVideo(db: Database, workspaceId: string, content: Spot
     if (row) post = { id: row.id, status: row.status, url: target?.remoteUrl ?? null, error: target?.lastError ?? null };
   }
   return { videoId: content.youtubeVideoId ?? (post?.url ? youtubeVideoId(post.url) : null), post };
+}
+
+// ------------------------------------------------------------------ ads
+
+/** Checks an ad's texts against the platform's limits (what is still missing is `adProblems`'s job). */
+export function cleanAdContent(format: string, input: AdContent): AdContent {
+  const rules = AD_FORMATS[format as AdFormat];
+  if (!rules) throw new CampaignError((m) => m.format);
+  const list = (values: string[] | undefined, rule: TextRule) => {
+    const texts = (values ?? []).map((value) => String(value ?? '').trim()).filter(Boolean);
+    if (texts.length > rule.max) throw new CampaignError((m) => m.adCount(rule.max));
+    if (texts.some((text) => text.length > rule.chars)) throw new CampaignError((m) => m.textTooLong(rule.chars));
+    return texts;
+  };
+  const finalUrl = String(input.finalUrl ?? '').trim();
+  if (finalUrl && (!/^https?:\/\/\S+\.\S+$/i.test(finalUrl) || finalUrl.length > 1000)) throw new CampaignError((m) => m.adLink);
+  const content: AdContent = { headlines: list(input.headlines, rules.headlines), descriptions: list(input.descriptions, rules.descriptions), finalUrl, callToAction: '' };
+  if (format === 'search') {
+    const path = (value: string | undefined) => {
+      const text = String(value ?? '').trim().replace(/^\/+|\/+$/g, '');
+      if (text.length > PATH_CHARS || /\s/.test(text)) throw new CampaignError((m) => m.adPath(PATH_CHARS));
+      return text;
+    };
+    content.path1 = path(input.path1);
+    content.path2 = content.path1 ? path(input.path2) : '';
+    const seen = new Set<string>();
+    content.keywords = list(input.keywords, KEYWORDS).filter((keyword) => !seen.has(keyword.toLowerCase()) && seen.add(keyword.toLowerCase()));
+  }
+  if (format === 'social') {
+    content.callToAction = (AD_CALLS_TO_ACTION as readonly string[]).includes(input.callToAction) ? input.callToAction : 'LEARN_MORE';
+    if (input.imageMediaId) content.imageMediaId = input.imageMediaId;
+  }
+  if (format === 'video') {
+    content.longHeadlines = list(input.longHeadlines, LONG_HEADLINES);
+    if (input.spotId) content.spotId = input.spotId;
+    else if (input.youtubeVideoId) {
+      const video = youtubeVideoId(input.youtubeVideoId);
+      if (!video) throw new CampaignError((m) => m.youtube);
+      content.youtubeVideoId = video;
+    }
+  }
+  return content;
+}
+
+/** Saves an ad's texts, picture or video; the picture must be an image of the workspace, the spot a video spot of the same campaign. */
+export async function saveAdPiece(db: Database, workspaceId: string, pieceId: string, input: { title: string; content: AdContent }): Promise<Piece> {
+  const piece = await getPiece(db, workspaceId, pieceId);
+  if (!piece || piece.kind !== 'ad') throw new CampaignError((m) => m.pieceNotFound);
+  const content = cleanAdContent(piece.format, input.content);
+  const mediaIds = content.imageMediaId ? [content.imageMediaId] : [];
+  const found = await findMedia(db, workspaceId, mediaIds);
+  if (mediaIds.some((id) => found.get(id)?.kind !== 'image')) throw new CampaignError((m) => m.notAnImage);
+  if (content.spotId) {
+    const spot = await getPiece(db, workspaceId, content.spotId);
+    if (!spot || spot.campaignId !== piece.campaignId || spot.kind !== 'spot' || SPOT_FORMATS[spot.format as SpotFormat]?.medium !== 'video') throw new CampaignError((m) => m.spot);
+  }
+  return savePiece(db, workspaceId, pieceId, { title: input.title, content, mediaIds });
+}
+
+/** The YouTube video a video ad shows: its own link, or its spot's video. */
+export async function adVideoId(db: Database, workspaceId: string, content: AdContent): Promise<string | null> {
+  if (content.youtubeVideoId) return content.youtubeVideoId;
+  if (!content.spotId) return null;
+  const spot = await getPiece(db, workspaceId, content.spotId);
+  return spot ? (await spotVideo(db, workspaceId, spot.content as unknown as SpotContent)).videoId : null;
 }

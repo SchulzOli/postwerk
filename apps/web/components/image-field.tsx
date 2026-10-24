@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useMessages } from '@/lib/i18n';
 import { brandMessages } from '@/messages/brand';
 import { uploadMessages } from '@/messages/upload';
@@ -17,13 +17,14 @@ const IMAGE_TYPES = 'image/jpeg,image/png,image/webp,image/gif';
  * Uploaded images for a form (a logo, a character's reference pictures):
  * submits their ids as JSON in a hidden input named `name`.
  */
-export function ImageField({ name, initial, max, disabled }: { name: string; initial: StoredImage[]; max: number; disabled?: boolean }) {
+export function ImageField({ name, initial, max, disabled, onChange }: { name: string; initial: StoredImage[]; max: number; disabled?: boolean; onChange?(images: StoredImage[]): void }) {
   const t = useMessages(brandMessages);
   const uploadText = useMessages(uploadMessages);
   const input = useRef<HTMLInputElement>(null);
   const [images, setImages] = useState(initial);
   const [progress, setProgress] = useState<number>();
   const [error, setError] = useState<string>();
+  useEffect(() => onChange?.(images), [images]); // eslint-disable-line react-hooks/exhaustive-deps
 
   async function add(files: FileList | null) {
     const file = files?.[0];

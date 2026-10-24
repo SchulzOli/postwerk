@@ -4,6 +4,7 @@ export * from './status';
 export * from './accounts';
 export * from './bluesky';
 export * from './brand';
+export * from './ads';
 export * from './campaigns';
 export * from './mailings';
 export * from './pingen';
