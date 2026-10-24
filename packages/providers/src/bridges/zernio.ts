@@ -13,7 +13,7 @@ export const ZERNIO_BASE_URL = 'https://zernio.com/api';
 /** How often to ask about a post that is still processing (tests shorten it). */
 export const zernioTiming = { pollMs: 5_000, timeoutMs: 5 * 60_000 };
 
-/** Postwerk networks → Zernio platform names. Networks Postwerk connects natively without setup are left out. */
+/** MarketingAsAService networks → Zernio platform names. Networks MarketingAsAService connects natively without setup are left out. */
 const platforms: Partial<Record<ProviderId, string>> = {
   facebook: 'facebook',
   instagram: 'instagram',
@@ -131,7 +131,7 @@ function failure(result: ZernioPlatformResult): ProviderError {
 const accountIdOf = (result: ZernioPlatformResult) => (typeof result.accountId === 'string' ? result.accountId : result.accountId?._id);
 
 /**
- * Media for Zernio: uploaded files go straight from Postwerk's storage to a
+ * Media for Zernio: uploaded files go straight from MarketingAsAService's storage to a
  * presigned upload, so the server needs no public address; links are passed on.
  */
 async function mediaItem(config: BridgeConfig, item: MediaItem, context: PublishContext, index: number) {
@@ -140,7 +140,7 @@ async function mediaItem(config: BridgeConfig, item: MediaItem, context: Publish
   if (stored) {
     const ext = stored.mimeType.split('/')[1]?.replace('quicktime', 'mov') ?? 'bin';
     const presign = await sendJson<{ uploadUrl?: string; publicUrl?: string }>(config, 'POST', '/media/presign', {
-      filename: `postwerk-${index + 1}.${ext}`,
+      filename: `maas-${index + 1}.${ext}`,
       contentType: stored.mimeType,
       size: stored.blob.size,
     });
@@ -153,13 +153,13 @@ async function mediaItem(config: BridgeConfig, item: MediaItem, context: Publish
   return { type: item.kind, url, ...(item.altText && { altText: item.altText }) };
 }
 
-/** Per-post fields of Postwerk's catalog in Zernio's names. */
+/** Per-post fields of MarketingAsAService's catalog in Zernio's names. */
 function platformSpecificData(network: ProviderId, options: Record<string, string>): Record<string, unknown> | undefined {
   switch (network) {
     case 'youtube':
       return { title: options.title, visibility: options.privacy };
     case 'tiktok':
-      // The person wrote and confirmed the post in Postwerk's composer.
+      // The person wrote and confirmed the post in MarketingAsAService's composer.
       return { privacyLevel: options.privacy, contentPreviewConfirmed: true, expressConsentGiven: true };
     case 'pinterest':
       return { ...(options.title && { title: options.title }), ...(options.link && { link: options.link }) };
@@ -215,7 +215,7 @@ export const zernio: Bridge = {
   platforms,
 
   async createProfile(config, name) {
-    const { profile } = await sendJson<{ profile?: { _id?: string } }>(config, 'POST', '/profiles', { name: name.slice(0, 80), description: 'Created by Postwerk' });
+    const { profile } = await sendJson<{ profile?: { _id?: string } }>(config, 'POST', '/profiles', { name: name.slice(0, 80), description: 'Created by MarketingAsAService' });
     if (!profile?._id) throw new ProviderError('Zernio did not create the profile.', { retryable: true });
     return profile._id;
   },

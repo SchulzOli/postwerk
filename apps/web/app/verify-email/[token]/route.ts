@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
-import { verifyEmail } from '@postwerk/core';
-import { getDb } from '@postwerk/db';
+import { verifyEmail } from '@maas/core';
+import { getDb } from '@maas/db';
 import { record } from '@/lib/audit';
 import { appUrl } from '@/lib/env';
 import { getSession } from '@/lib/session';

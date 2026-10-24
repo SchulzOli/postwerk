@@ -1,8 +1,8 @@
 # The Zernio bridge
 
-Most networks only accept posts from a developer app they know. The bridge is one of the [three ways to offer a network](networks/index.md): instead of registering your own app, the **bridge** connects the network through an aggregator API that already passed every review. People click "Continue to Instagram", sign in on the aggregator's pages, and the account appears in Postwerk. Posts go out through the aggregator.
+Most networks only accept posts from a developer app they know. The bridge is one of the [three ways to offer a network](networks/index.md): instead of registering your own app, the **bridge** connects the network through an aggregator API that already passed every review. People click "Continue to Instagram", sign in on the aggregator's pages, and the account appears in MarketingAsAService. Posts go out through the aggregator.
 
-Postwerk uses [Zernio](https://zernio.com) (formerly Late) for this. The bridge is an interface (`Bridge` in `packages/providers/src/bridge.ts`), so another aggregator can be added later.
+MarketingAsAService uses [Zernio](https://zernio.com) (formerly Late) for this. The bridge is an interface (`Bridge` in `packages/providers/src/bridge.ts`), so another aggregator can be added later.
 
 | Connecting through Zernio | What it costs |
 |---|---|
@@ -18,11 +18,11 @@ Compared in October 2026 on price, EU data handling and API quality. Prices chan
 | Data processing agreement (GDPR) | yes | yes, applies to every business customer automatically |
 | Billed by | connected account; profiles are free | plan: number of profiles (and uploads on the free plan) |
 | Small setup | first 2 accounts free, then per account and month: $6 (accounts 3–10), $3 (11–100), $1 (101–2,000) | free: 2 profiles, 10 uploads a month; Basic: 5 profiles, $16 a month billed yearly ($24 monthly) |
-| Hosted account linking | a connect link per network and profile that returns to Postwerk with the account | a signed connect link per profile, valid 48 hours |
+| Hosted account linking | a connect link per network and profile that returns to MarketingAsAService with the account | a signed connect link per profile, valid 48 hours |
 
 [Ayrshare](https://www.ayrshare.com) was ruled out on price: $149 a month for one profile, $599 for 30.
 
-Zernio fits a self-hosted server best. A small team pays only for the accounts it uses, nothing for idle profiles. It is an EU company with a DPA, and it covers all ten networks that need a developer app. Its API (read from the official `@zernio/node` SDK) makes two key decisions reliable: an `Idempotency-Key` header means a retry never posts twice, and each network's result comes back with an error category (usually right away; videos once processed), so Postwerk can tell "retry" from "reconnect". Where Zernio stores data is not stated publicly; check its DPA if that matters to you.
+Zernio fits a self-hosted server best. A small team pays only for the accounts it uses, nothing for idle profiles. It is an EU company with a DPA, and it covers all ten networks that need a developer app. Its API (read from the official `@zernio/node` SDK) makes two key decisions reliable: an `Idempotency-Key` header means a retry never posts twice, and each network's result comes back with an error category (usually right away; videos once processed), so MarketingAsAService can tell "retry" from "reconnect". Where Zernio stores data is not stated publicly; check its DPA if that matters to you.
 
 ## Setting it up
 
@@ -40,17 +40,17 @@ Optional settings:
 
 ## How it works
 
-**Routing.** For each network, Postwerk picks the first that works: its own developer app ("native") → the bridge → "needs setup"; `HIDE_NETWORKS` switches networks off. Mastodon, Bluesky, Telegram and Discord never need the bridge. `networkRoute()` in `packages/core/src/bridge.ts` decides.
+**Routing.** For each network, MarketingAsAService picks the first that works: its own developer app ("native") → the bridge → "needs setup"; `HIDE_NETWORKS` switches networks off. Mastodon, Bluesky, Telegram and Discord never need the bridge. `networkRoute()` in `packages/core/src/bridge.ts` decides.
 
-**Connecting.** Zernio groups accounts in profiles; a profile holds one account per network. Postwerk creates profiles per workspace as needed ("Praxis · Postwerk", "Praxis · Postwerk 2", …), so a workspace can connect several accounts of one network. "Continue to …" creates a sign-in state and sends the browser to Zernio's hosted pages. Zernio sends it back to `/api/bridge/callback`. Postwerk then:
+**Connecting.** Zernio groups accounts in profiles; a profile holds one account per network. MarketingAsAService creates profiles per workspace as needed ("Praxis · MarketingAsAService", "Praxis · MarketingAsAService 2", …), so a workspace can connect several accounts of one network. "Continue to …" creates a sign-in state and sends the browser to Zernio's hosted pages. Zernio sends it back to `/api/bridge/callback`. MarketingAsAService then:
 
 - checks the state (single use, same user, 10 minutes),
 - looks the account up in the profile the sign-in started with (so a changed link cannot attach someone else's account),
 - and saves it.
 
-Zernio keeps the network tokens. Postwerk stores only Zernio's account and profile ids, encrypted like any credentials. The API key is read from the environment and never stored.
+Zernio keeps the network tokens. MarketingAsAService stores only Zernio's account and profile ids, encrypted like any credentials. The API key is read from the environment and never stored.
 
-**Publishing.** The worker sends each target with its id as `Idempotency-Key`, so a retry never posts twice. Uploaded files go straight from Postwerk's storage to Zernio (a presigned upload), so the server needs no public address. Media links must be public `https` addresses. Videos are processed after upload, and the worker waits for the result. Zernio's error categories decide what happens next:
+**Publishing.** The worker sends each target with its id as `Idempotency-Key`, so a retry never posts twice. Uploaded files go straight from MarketingAsAService's storage to Zernio (a presigned upload), so the server needs no public address. Media links must be public `https` addresses. Videos are processed after upload, and the worker waits for the result. Zernio's error categories decide what happens next:
 
 - an expired login means "reconnect needed",
 - rate limits and network outages are retried,
@@ -60,11 +60,11 @@ A rejected API key is reported as a server problem, not as a reconnect.
 
 **Disconnecting** removes the account on Zernio too, so it stops counting toward the bill. **Reconnecting** an account whose access ran out keeps the same account, flows and history.
 
-**Costs.** Postwerk notes each workspace's bridged accounts and profiles per month (`bridge_usage`), keeping the most connected at once. The numbers update on connect and disconnect and hourly from the worker. Admins see them on a card in the canvas's Accounts region and on the accounts page, with an estimate when `ZERNIO_ACCOUNT_PRICE` is set. The estimate multiplies the workspace's peak by your price. Zernio's free accounts and volume tiers apply to the whole server, so your actual bill may be lower.
+**Costs.** MarketingAsAService notes each workspace's bridged accounts and profiles per month (`bridge_usage`), keeping the most connected at once. The numbers update on connect and disconnect and hourly from the worker. Admins see them on a card in the canvas's Accounts region and on the accounts page, with an estimate when `ZERNIO_ACCOUNT_PRICE` is set. The estimate multiplies the workspace's peak by your price. Zernio's free accounts and volume tiers apply to the whole server, so your actual bill may be lower.
 
 ## Privacy
 
-Posts, media and the connected accounts' tokens pass through Zernio. Accept its data processing agreement. Postwerk's [built-in privacy page](legal.md) names Zernio as a processor, with the networks it connects, as soon as `ZERNIO_API_KEY` is set; if you use your own privacy policy, add it there.
+Posts, media and the connected accounts' tokens pass through Zernio. Accept its data processing agreement. MarketingAsAService's [built-in privacy page](legal.md) names Zernio as a processor, with the networks it connects, as soon as `ZERNIO_API_KEY` is set; if you use your own privacy policy, add it there.
 
 ## Moving a network to its own developer app
 
@@ -73,7 +73,7 @@ Once a network's own developer app is approved, set its `<PREFIX>_CLIENT_ID`/`_S
 ## Known gaps
 
 - Built from Zernio's official SDK (its OpenAPI types) and tested against a fake Zernio server, not yet with a live Zernio account.
-- Postwerk's own limits per network still apply (e.g. Instagram only takes JPEG images), even where Zernio would convert.
+- MarketingAsAService's own limits per network still apply (e.g. Instagram only takes JPEG images), even where Zernio would convert.
 - Zernio features beyond publishing (analytics, inbox, first comments) are not used.
 
 ## Adding another aggregator

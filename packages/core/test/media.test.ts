@@ -5,7 +5,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { sql } from 'drizzle-orm';
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest';
-import { createDb, media, posts, users, workspaces, type Database } from '@postwerk/db';
+import { createDb, media, posts, users, workspaces, type Database } from '@maas/db';
 import { runMigrations } from '../../db/src/migrate';
 import { cleanupUnusedMedia, mediaForPublishing, MediaError, postMediaFromUpload, sniffMediaType, storeUpload } from '../src/media';
 import { isMediaKey, localStorage, s3Storage, type MediaStorage } from '../src/storage';
@@ -50,7 +50,7 @@ describe('local storage', () => {
   let dir: string;
   let storage: MediaStorage;
   beforeEach(async () => {
-    dir = await mkdtemp(join(tmpdir(), 'postwerk-media-'));
+    dir = await mkdtemp(join(tmpdir(), 'maas-media-'));
     storage = localStorage(dir, 'https://app.test');
   });
   afterEach(async () => rm(dir, { recursive: true, force: true }));
@@ -154,7 +154,7 @@ describe.skipIf(!url)('uploads (Postgres)', () => {
   afterAll(async () => db?.close());
 
   beforeEach(async () => {
-    dir = await mkdtemp(join(tmpdir(), 'postwerk-media-'));
+    dir = await mkdtemp(join(tmpdir(), 'maas-media-'));
     storage = localStorage(dir, 'https://app.test');
     await db.execute(sql`TRUNCATE users, workspaces CASCADE`);
     const [user] = await db.insert(users).values({ email: 'a@example.com', name: 'A', passwordHash: 'x' }).returning();

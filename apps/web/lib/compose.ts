@@ -1,17 +1,18 @@
 import 'server-only';
 import { asc, eq } from 'drizzle-orm';
-import { getPostForEdit, listFlows } from '@postwerk/core';
-import { getDb, socialAccounts } from '@postwerk/db';
+import { getPostForEdit, listCampaigns, listFlows } from '@maas/core';
+import { getDb, socialAccounts } from '@maas/db';
 import type { ComposerAccount, ComposerInitial } from '@/components/composer';
 import { commonMessages } from '@/messages/common';
 import { getMessages } from './i18n-server';
 
-/** Accounts and flows the composer offers in a workspace. */
+/** Accounts, flows and campaigns the composer offers in a workspace. */
 export async function loadComposerChoices(workspaceId: string) {
   const db = getDb();
-  const [accounts, flows, common] = await Promise.all([
+  const [accounts, flows, campaigns, common] = await Promise.all([
     db.query.socialAccounts.findMany({ where: eq(socialAccounts.workspaceId, workspaceId), orderBy: [asc(socialAccounts.provider), asc(socialAccounts.handle)] }),
     listFlows(db, workspaceId),
+    listCampaigns(db, workspaceId),
     getMessages(commonMessages),
   ]);
   return {
@@ -25,6 +26,8 @@ export async function loadComposerChoices(workspaceId: string) {
       }),
     ),
     flows: flows.map((flow) => ({ id: flow.id, name: flow.name, graph: flow.graph })),
+    // Finished campaigns stay selectable only for posts already in them (see the composer's initial value).
+    campaigns: campaigns.map((campaign) => ({ id: campaign.id, name: campaign.name, done: campaign.status === 'done' })),
   };
 }
 
@@ -46,6 +49,7 @@ export async function loadComposerInitial(workspaceId: string, postId: string, a
     })),
     accountIds: post.accountIds,
     flowId: post.flowId ?? '',
+    campaignId: post.campaignId ?? '',
     options: post.options,
     variants: Object.fromEntries(Object.entries(post.variants).filter((entry): entry is [string, string] => typeof entry[1] === 'string')),
     scheduledAt: !asCopy && post.scheduledAt && post.scheduledAt.getTime() > Date.now() ? post.scheduledAt.toISOString() : null,

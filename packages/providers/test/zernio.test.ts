@@ -40,7 +40,7 @@ describe('zernio bridge', () => {
       item.url.startsWith('https://app.test/') ? { blob: new Blob([new Uint8Array(4)], { type: 'image/png' }), mimeType: 'image/png' } : undefined;
     await zernio.publish(config, 'instagram', credentials, { text: 'Look', media, options: {} }, { idempotencyKey: 'k', loadMedia });
     expect(calls.map((call) => `${call.method} ${call.url}`)).toEqual([`POST ${API}/media/presign`, 'PUT https://upload.test/put/1', `POST ${API}/posts`]);
-    expect(calls[0]!.body).toEqual({ filename: 'postwerk-1.png', contentType: 'image/png', size: 4 });
+    expect(calls[0]!.body).toEqual({ filename: 'maas-1.png', contentType: 'image/png', size: 4 });
     expect(calls[1]!.headers['content-type']).toBe('image/png');
     expect(calls[2]!.body).toMatchObject({
       mediaItems: [

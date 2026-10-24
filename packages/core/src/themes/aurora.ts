@@ -6,7 +6,7 @@ export const aurora: ThemeManifest = {
   id: 'aurora',
   name: 'Aurora',
   version: '1.0.0',
-  author: 'Postwerk',
+  author: 'MarketingAsAService',
   description: 'Frosted glass over soft northern-lights gradients. Rounded type, gradient buttons and a glow on whatever you select.',
   base: {
     font: '"Inter", "SF Pro Text", system-ui, -apple-system, "Segoe UI", sans-serif',

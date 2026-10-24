@@ -1,4 +1,4 @@
-import { defineMessages } from '@postwerk/core/i18n';
+import { defineMessages } from '@maas/core/i18n';
 
 /** Themes on the canvas: plugin cards, the plugin inspector, the theme editor and its server action, theme previews. */
 export const themesMessages = defineMessages({
@@ -27,7 +27,7 @@ export const themesMessages = defineMessages({
     factVersion: 'Version',
     factAuthor: 'Author',
     factSource: 'Source',
-    sourceBuiltin: 'Built-in, updates with Postwerk',
+    sourceBuiltin: 'Built-in, updates with MarketingAsAService',
     sourceCustom: 'Custom',
     factCanvas: 'Canvas',
     factStatus: 'Status',
@@ -87,7 +87,7 @@ export const themesMessages = defineMessages({
     factVersion: 'Version',
     factAuthor: 'Autor',
     factSource: 'Quelle',
-    sourceBuiltin: 'Integriert, wird mit Postwerk aktualisiert',
+    sourceBuiltin: 'Integriert, wird mit MarketingAsAService aktualisiert',
     sourceCustom: 'Eigenes',
     factCanvas: 'Canvas',
     factStatus: 'Status',

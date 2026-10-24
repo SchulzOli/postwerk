@@ -1,19 +1,19 @@
 {
-  "name": "@postwerk/worker",
+  "name": "@maas/worker",
   "version": "0.1.0",
   "license": "MIT",
   "private": true,
   "type": "module",
   "scripts": {
     "dev": "tsx watch --env-file-if-exists=../../.env src/index.ts",
-    "build": "esbuild src/index.ts ../../packages/db/src/migrate.ts --bundle --platform=node --target=node22 --format=esm --outdir=dist --entry-names=[name] --banner:js=\"import{createRequire}from'node:module';const require=createRequire(import.meta.url);\"",
+    "build": "esbuild src/index.ts ../../packages/db/src/migrate.ts --bundle --platform=node --target=node22 --format=esm --external:sharp --outdir=dist --entry-names=[name] --banner:js=\"import{createRequire}from'node:module';const require=createRequire(import.meta.url);\"",
     "start": "node dist/index.js",
     "typecheck": "tsc -p tsconfig.json"
   },
   "dependencies": {
-    "@postwerk/core": "*",
-    "@postwerk/db": "*",
-    "@postwerk/providers": "*"
+    "@maas/core": "*",
+    "@maas/db": "*",
+    "@maas/providers": "*"
   },
   "devDependencies": {
     "esbuild": "^0.28.2",

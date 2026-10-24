@@ -1,6 +1,6 @@
 # LinkedIn
 
-One LinkedIn developer app serves both personal profiles and company pages. Postwerk reads it from `LINKEDIN_CLIENT_ID` and `LINKEDIN_CLIENT_SECRET`.
+One LinkedIn developer app serves both personal profiles and company pages. MarketingAsAService reads it from `LINKEDIN_CLIENT_ID` and `LINKEDIN_CLIENT_SECRET`.
 
 | Network | Callback URL to register | Scopes |
 |---|---|---|
@@ -21,9 +21,9 @@ Add two products under **Products**:
 - **Share on LinkedIn**
 - **Sign In with LinkedIn using OpenID Connect**
 
-Both are self-serve: they work right away, for your own profile and for everyone else's. Restart Postwerk, then on the canvas click LinkedIn → **Continue to LinkedIn**.
+Both are self-serve: they work right away, for your own profile and for everyone else's. Restart MarketingAsAService, then on the canvas click LinkedIn → **Continue to LinkedIn**.
 
-LinkedIn gives these apps tokens for about 60 days and no refresh tokens. Postwerk marks the account "reconnect needed" when it expires; reconnecting takes one click.
+LinkedIn gives these apps tokens for about 60 days and no refresh tokens. MarketingAsAService marks the account "reconnect needed" when it expires; reconnecting takes one click.
 
 ## Company pages
 
@@ -33,9 +33,9 @@ Until it is granted, LinkedIn Page can connect through [Zernio](../bridge.md): w
 
 Texts you can adapt for the access request:
 
-| Scope | Why Postwerk needs it |
+| Scope | Why MarketingAsAService needs it |
 |---|---|
 | `r_organization_admin` | Lists the pages the person administers, so they can choose which ones to connect. |
-| `w_organization_social` | Publishes the posts the person wrote and scheduled in Postwerk to the page they chose. |
+| `w_organization_social` | Publishes the posts the person wrote and scheduled in MarketingAsAService to the page they chose. |
 
 LinkedIn's documentation: [Share on LinkedIn](https://learn.microsoft.com/linkedin/consumer/integrations/self-serve/share-on-linkedin) · [Posts API for pages](https://learn.microsoft.com/linkedin/marketing/community-management/shares/posts-api)

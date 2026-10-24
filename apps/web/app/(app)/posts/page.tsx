@@ -1,6 +1,6 @@
 import Link from 'next/link';
-import { listPosts } from '@postwerk/core';
-import { getDb } from '@postwerk/db';
+import { listPosts } from '@maas/core';
+import { getDb } from '@maas/db';
 import { LocalTime } from '@/components/local-time';
 import { getMessages } from '@/lib/i18n-server';
 import { providerLabels } from '@/lib/platforms';

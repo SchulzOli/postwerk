@@ -1,8 +1,8 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
-import { changePassword, hitRateLimit, limits, rateLimitKey, retryIn, sendVerificationEmail, updateProfile, UserInputError } from '@postwerk/core';
-import { getDb } from '@postwerk/db';
+import { changePassword, hitRateLimit, limits, rateLimitKey, retryIn, sendVerificationEmail, updateProfile, UserInputError } from '@maas/core';
+import { getDb } from '@maas/db';
 import { record } from '@/lib/audit';
 import { appUrl } from '@/lib/env';
 import { getLocale, getMessages, localizedError } from '@/lib/i18n-server';

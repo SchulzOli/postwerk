@@ -3,7 +3,7 @@
  * requests, DPoP-bound tokens and confidential client authentication.
  * https://atproto.com/specs/oauth
  *
- * Postwerk is a confidential client when it runs on https (it signs token
+ * MarketingAsAService is a confidential client when it runs on https (it signs token
  * requests with its own ES256 key, published as JWKS); during local
  * development on 127.0.0.1 it is a "loopback" public client.
  */
@@ -14,7 +14,7 @@ import { ProviderError, type PrivateJwk } from './types';
 /** Full access to the account's repository, like an app password. */
 export const ATPROTO_SCOPE = 'atproto transition:generic';
 
-/** How Postwerk identifies itself when a user signs in. */
+/** How MarketingAsAService identifies itself when a user signs in. */
 export interface AtprotoClient {
   clientId: string;
   redirectUri: string;
@@ -141,7 +141,7 @@ export async function resolveDid(did: string): Promise<DidDocument> {
     : DID_WEB.test(did)
       ? `https://${did.slice('did:web:'.length)}/.well-known/did.json`
       : undefined;
-  if (!url) throw new ProviderError('This account uses an identity type Postwerk does not support.');
+  if (!url) throw new ProviderError('This account uses an identity type MarketingAsAService does not support.');
   const doc = await getJson<DidDocument>(url, 'The account’s identity');
   if (doc?.id !== did) throw new ProviderError('The account’s identity document does not match the account.');
   return doc;

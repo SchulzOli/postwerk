@@ -15,8 +15,8 @@ import {
   visibleDays,
   visibleRange,
   type CalendarView,
-} from '@postwerk/core/calendar';
-import { catalog } from '@postwerk/providers/catalog';
+} from '@maas/core/calendar';
+import { catalog } from '@maas/providers/catalog';
 import { loadCalendarAction, reschedulePostAction } from '@/app/(app)/posts/actions';
 import type { CalendarData, CalendarPost } from '@/lib/calendar';
 import { useLocale, useMessages } from '@/lib/i18n';
@@ -30,8 +30,8 @@ const HOUR_HEIGHT = 44;
 const POST_MINUTES = 60;
 /** Month view: posts per day before "+ n more". */
 const MONTH_POSTS = 3;
-const DRAG_TYPE = 'application/x-postwerk-post';
-const VIEW_KEY = 'postwerk.calendar.view';
+const DRAG_TYPE = 'application/x-maas-post';
+const VIEW_KEY = 'maas.calendar.view';
 
 interface Props {
   /** Posts the server already loaded around today, so the first views need no request. */

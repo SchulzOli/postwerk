@@ -1,7 +1,7 @@
 {
-  "name": "@postwerk/docs",
+  "name": "@maas/docs",
   "private": true,
-  "description": "Postwerk's documentation website (GitHub Pages).",
+  "description": "MarketingAsAService's documentation website (GitHub Pages).",
   "license": "MIT",
   "type": "module",
   "scripts": {

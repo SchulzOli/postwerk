@@ -1,6 +1,6 @@
 import 'server-only';
-import { listInvites, listMembers } from '@postwerk/core';
-import { getDb } from '@postwerk/db';
+import { listInvites, listMembers } from '@maas/core';
+import { getDb } from '@maas/db';
 import type { TeamData } from '@/components/team';
 import { appUrl } from './env';
 import type { Session } from './session';

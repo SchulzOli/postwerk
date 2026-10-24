@@ -1,5 +1,5 @@
-import type { AuditAction } from '@postwerk/core';
-import { defineMessages } from '@postwerk/core/i18n';
+import type { AuditAction } from '@maas/core';
+import { defineMessages } from '@maas/core/i18n';
 
 /** What an activity phrase can mention. */
 export interface ActivityParams {
@@ -60,6 +60,21 @@ export const activityMessages = defineMessages({
       'post.retried': (p) => `retried “${p.target}”`,
       'plugin.installed': (p) => `installed the ${p.target} theme`,
       'plugin.uninstalled': (p) => `uninstalled the ${p.target} theme`,
+      'brand.updated': () => 'updated the brand kit',
+      'campaign.created': (p) => `created the campaign ${p.target}`,
+      'campaign.updated': (p) => `changed the campaign ${p.target}`,
+      'campaign.deleted': (p) => `deleted the campaign ${p.target}`,
+      'piece.created': (p) => `added ${p.target}`,
+      'piece.approved': (p) => `approved ${p.target}`,
+      'piece.deleted': (p) => `deleted ${p.target}`,
+      'mailing.sent': (p) => `sent ${p.target} by post`,
+      'mailing.deleted': (p) => `deleted the addresses of a mailing${p.target ? ` of ${p.target}` : ''}`,
+      'ads.connected': (p) => `connected the ad account ${p.target}`,
+      'ads.removed': (p) => `removed the ad account ${p.target}`,
+      'ads.launched': (p) => `created the paused ad campaign ${p.target}`,
+      'ads.started': (p) => `started the ad campaign ${p.target}`,
+      'ads.paused': (p) => `paused the ad campaign ${p.target}`,
+      'studio.drafted': (p) => `had the AI studio draft for the campaign ${p.target}`,
     } satisfies Phrases as Phrases,
   },
   de: {
@@ -99,6 +114,21 @@ export const activityMessages = defineMessages({
       'post.retried': (p) => `hat „${p.target}“ erneut versucht`,
       'plugin.installed': (p) => `hat das Design ${p.target} installiert`,
       'plugin.uninstalled': (p) => `hat das Design ${p.target} deinstalliert`,
+      'brand.updated': () => 'hat das Marken-Kit geändert',
+      'campaign.created': (p) => `hat die Kampagne ${p.target} angelegt`,
+      'campaign.updated': (p) => `hat die Kampagne ${p.target} geändert`,
+      'campaign.deleted': (p) => `hat die Kampagne ${p.target} gelöscht`,
+      'piece.created': (p) => `hat ${p.target} hinzugefügt`,
+      'piece.approved': (p) => `hat ${p.target} freigegeben`,
+      'piece.deleted': (p) => `hat ${p.target} gelöscht`,
+      'mailing.sent': (p) => `hat ${p.target} per Post verschickt`,
+      'mailing.deleted': (p) => `hat die Adressen eines Mailings${p.target ? ` von ${p.target}` : ''} gelöscht`,
+      'ads.connected': (p) => `hat das Werbekonto ${p.target} verbunden`,
+      'ads.removed': (p) => `hat das Werbekonto ${p.target} entfernt`,
+      'ads.launched': (p) => `hat die pausierte Werbekampagne ${p.target} angelegt`,
+      'ads.started': (p) => `hat die Werbekampagne ${p.target} gestartet`,
+      'ads.paused': (p) => `hat die Werbekampagne ${p.target} pausiert`,
+      'studio.drafted': (p) => `hat im KI-Studio Entwürfe für die Kampagne ${p.target} erstellen lassen`,
     },
   },
 });

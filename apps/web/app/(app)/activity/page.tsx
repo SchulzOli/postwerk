@@ -1,6 +1,6 @@
 import Link from 'next/link';
-import { listWorkspaceAudit } from '@postwerk/core';
-import { getDb } from '@postwerk/db';
+import { listWorkspaceAudit } from '@maas/core';
+import { getDb } from '@maas/db';
 import { LocalTime } from '@/components/local-time';
 import { describeActivity, isWarning } from '@/lib/activity';
 import { toActivity } from '@/lib/activity-server';

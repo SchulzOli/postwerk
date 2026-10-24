@@ -1,4 +1,4 @@
-import { defineMessages } from '@postwerk/core/i18n';
+import { defineMessages } from '@maas/core/i18n';
 
 /** The account page, account menu and the "confirm your email" banner. */
 export const accountMessages = defineMessages({
@@ -31,7 +31,7 @@ export const accountMessages = defineMessages({
     notifications: 'Notifications',
     notifyFailures: 'Email me when one of my posts fails or only partly goes out',
     mailNotSetUp: 'Email is not set up on this server yet (SMTP_URL), so nothing is sent.',
-    languageHint: 'Also used for the emails Postwerk sends you.',
+    languageHint: 'Also used for the emails MarketingAsAService sends you.',
     // Server action results
     saved: 'Saved.',
     passwordChanged: 'Password changed. Other devices were signed out.',
@@ -79,7 +79,7 @@ export const accountMessages = defineMessages({
     notifications: 'Benachrichtigungen',
     notifyFailures: 'Schick mir eine E-Mail, wenn einer meiner Beiträge fehlschlägt oder nur teilweise rausgeht',
     mailNotSetUp: 'E-Mail ist auf diesem Server noch nicht eingerichtet (SMTP_URL), daher wird nichts gesendet.',
-    languageHint: 'Gilt auch für die E-Mails, die Postwerk dir schickt.',
+    languageHint: 'Gilt auch für die E-Mails, die MarketingAsAService dir schickt.',
     saved: 'Gespeichert.',
     passwordChanged: 'Passwort geändert. Andere Geräte wurden abgemeldet.',
     notifyOn: 'Du bekommst eine E-Mail, wenn ein Beitrag fehlschlägt.',

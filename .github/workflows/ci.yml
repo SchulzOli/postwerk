@@ -13,18 +13,18 @@ jobs:
       postgres:
         image: postgres:17-alpine
         env:
-          POSTGRES_USER: postwerk
-          POSTGRES_PASSWORD: postwerk
-          POSTGRES_DB: postwerk_test
+          POSTGRES_USER: maas
+          POSTGRES_PASSWORD: maas
+          POSTGRES_DB: maas_test
         ports:
           - 5432:5432
         options: >-
-          --health-cmd "pg_isready -U postwerk"
+          --health-cmd "pg_isready -U maas"
           --health-interval 5s
           --health-timeout 5s
           --health-retries 10
     env:
-      TEST_DATABASE_URL: postgres://postwerk:postwerk@localhost:5432/postwerk_test
+      TEST_DATABASE_URL: postgres://maas:maas@localhost:5432/maas_test
       NEXT_TELEMETRY_DISABLED: 1
     steps:
       - uses: actions/checkout@v4
@@ -40,17 +40,20 @@ jobs:
   docker:
     name: Docker images
     runs-on: ubuntu-latest
+    # Compose names images after the project (default: the checkout folder), so fix it to match the tags below.
+    env:
+      COMPOSE_PROJECT_NAME: maas
     steps:
       - uses: actions/checkout@v4
       - name: Build worker image
-        run: docker build --target worker -t postwerk-worker .
+        run: docker build --target worker -t maas-worker .
       - name: Build web image
-        run: docker build --target web -t postwerk-web .
+        run: docker build --target web -t maas-web .
       - name: Start stack and smoke test
         env:
           ENCRYPTION_KEY: MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY=
         run: |
-          docker tag postwerk-worker postwerk-migrate
+          docker tag maas-worker maas-migrate
           docker compose --profile app up -d --no-build
           for i in $(seq 1 30); do
             STATUS=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:3000/login) && [ "$STATUS" = "200" ] && break

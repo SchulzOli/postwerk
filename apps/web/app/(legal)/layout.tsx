@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { localeNames } from '@postwerk/core/i18n';
+import { localeNames } from '@maas/core/i18n';
 import { setLocaleAction } from '@/app/actions/locale';
 import { LegalFooter } from '@/components/legal-footer';
 import { getLocale } from '@/lib/i18n-server';
@@ -11,7 +11,7 @@ export default async function LegalLayout({ children }: { children: React.ReactN
     <div className="legal">
       <header className="row-tight">
         <Link href="/" className="brand grow">
-          Postwerk
+          MarketingAsAService
         </Link>
         <form action={setLocaleAction.bind(null, other)}>
           <button type="submit" className="link small-link" lang={other}>

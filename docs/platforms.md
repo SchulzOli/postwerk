@@ -51,4 +51,4 @@ The developer docs of most networks were not reachable while these modules were 
 3. Create `packages/providers/src/<network>.ts` exporting a `Provider`: spread the catalog entry, add a `connector` (`oauth2`, `form` or `mastodon`), `publish`, and `refresh`/`needsRefresh` if tokens expire. `linkedin.ts` is the reference implementation.
 4. Use `http.ts` helpers so errors map to `ProviderError` (`retryable`, `needsReauth`); pass a `mapError` when the network encodes errors in the body.
 5. Register it in `index.ts` and write tests with `test/helpers.ts` (`mockFetch`).
-6. Write its guide in `docs/networks/` (setup steps, callback URL, scopes and why Postwerk needs each) and add it to the table in [Choose how to offer each network](networks/index.md).
+6. Write its guide in `docs/networks/` (setup steps, callback URL, scopes and why MarketingAsAService needs each) and add it to the table in [Choose how to offer each network](networks/index.md).

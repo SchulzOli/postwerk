@@ -4,9 +4,9 @@ import { blueprint } from './blueprint';
 import { paper } from './paper';
 
 /**
- * Themes that ship with Postwerk. Every new workspace starts with them
+ * Themes that ship with MarketingAsAService. Every new workspace starts with them
  * installed (the first one is the default); they can be uninstalled and
- * reinstalled like any other plugin, and update together with Postwerk.
+ * reinstalled like any other plugin, and update together with MarketingAsAService.
  */
 export const builtinThemes: readonly ThemeManifest[] = [aurora, paper, blueprint];
 

@@ -1,4 +1,4 @@
-import type { PostStatus } from '@postwerk/db/types';
+import type { PostStatus } from '@maas/db/types';
 
 /** Not picked up by the worker yet, so it can still change (core's EDITABLE_STATUSES). */
 export const canEdit = (status: PostStatus) => status === 'draft' || status === 'scheduled' || status === 'failed';

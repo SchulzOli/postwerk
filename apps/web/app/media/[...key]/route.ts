@@ -1,5 +1,5 @@
 import { NextResponse, type NextRequest } from 'next/server';
-import { contentTypeOfKey, getMediaStorage, isMediaKey } from '@postwerk/core';
+import { contentTypeOfKey, getMediaStorage, isMediaKey } from '@maas/core';
 
 /**
  * Serves uploads to browsers and social networks (which fetch them without

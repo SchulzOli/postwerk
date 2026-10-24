@@ -1,7 +1,7 @@
 import { NextResponse, type NextRequest } from 'next/server';
-import { consumeOAuthState, finishBlueskyLogin, getOrRegisterMastodonApp, oauthClientFor, saveConnectedAccounts } from '@postwerk/core';
-import { getDb } from '@postwerk/db';
-import { getProvider, isProviderId, Mastodon, ProviderError, type ConnectedAccount } from '@postwerk/providers';
+import { consumeOAuthState, finishBlueskyLogin, getOrRegisterMastodonApp, oauthClientFor, saveConnectedAccounts } from '@maas/core';
+import { getDb } from '@maas/db';
+import { getProvider, isProviderId, Mastodon, ProviderError, type ConnectedAccount } from '@maas/providers';
 import { record } from '@/lib/audit';
 import { appUrl, redirectUriFor } from '@/lib/env';
 import { getMessages, localizedError } from '@/lib/i18n-server';
@@ -42,7 +42,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     let accounts: ConnectedAccount<unknown>[];
     if (providerId === 'mastodon') {
       const instanceUrl = state.data.instanceUrl!;
-      const app = await getOrRegisterMastodonApp(db, instanceUrl, redirectUri, 'Postwerk', appUrl);
+      const app = await getOrRegisterMastodonApp(db, instanceUrl, redirectUri, 'MarketingAsAService', appUrl);
       const credentials = { instanceUrl, accessToken: await Mastodon.exchangeCode(instanceUrl, app, redirectUri, code) };
       const [profile, maxLength] = await Promise.all([Mastodon.fetchProfile(credentials), Mastodon.fetchMaxLength(instanceUrl)]);
       accounts = [{ profile, credentials, limits: { maxLength } }];

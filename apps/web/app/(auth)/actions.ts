@@ -19,8 +19,8 @@ import {
   sendVerificationEmail,
   UserInputError,
   verifyPassword,
-} from '@postwerk/core';
-import { getDb, users, type Database } from '@postwerk/db';
+} from '@maas/core';
+import { getDb, users, type Database } from '@maas/db';
 import { record } from '@/lib/audit';
 import { appUrl } from '@/lib/env';
 import { getLocale, localizedError } from '@/lib/i18n-server';
@@ -32,7 +32,7 @@ export type FormState = { error?: string; values?: { name?: string; email?: stri
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 // A real hash to compare against when the email is unknown, so timing does not reveal accounts.
-const dummyHash = hashPassword('postwerk-dummy-password');
+const dummyHash = hashPassword('maas-dummy-password');
 
 /** Joins the workspace of an invite link, if one came with the form; returns its id. */
 async function joinInvite(db: Database, form: FormData, userId: string): Promise<string | undefined> {

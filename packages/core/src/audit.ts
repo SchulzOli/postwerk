@@ -1,5 +1,5 @@
 import { and, desc, eq, isNotNull, isNull, lt } from 'drizzle-orm';
-import { auditLog, type Database } from '@postwerk/db';
+import { auditLog, type Database } from '@maas/db';
 
 /** Everything we record. Workspace-less events (sign-ins, password changes) concern only the user. */
 export type AuditAction =
@@ -28,7 +28,22 @@ export type AuditAction =
   | 'post.deleted'
   | 'post.retried'
   | 'plugin.installed'
-  | 'plugin.uninstalled';
+  | 'plugin.uninstalled'
+  | 'brand.updated'
+  | 'campaign.created'
+  | 'campaign.updated'
+  | 'campaign.deleted'
+  | 'piece.created'
+  | 'piece.approved'
+  | 'piece.deleted'
+  | 'mailing.sent'
+  | 'mailing.deleted'
+  | 'ads.connected'
+  | 'ads.removed'
+  | 'ads.launched'
+  | 'ads.started'
+  | 'ads.paused'
+  | 'studio.drafted';
 
 export interface AuditInput {
   action: AuditAction;

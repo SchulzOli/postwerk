@@ -1,6 +1,6 @@
 import 'server-only';
-import { audit, type AuditInput } from '@postwerk/core';
-import { getDb } from '@postwerk/db';
+import { audit, type AuditInput } from '@maas/core';
+import { getDb } from '@maas/db';
 import { clientIp } from './request';
 
 /** Records an audit event with the client's IP address. */

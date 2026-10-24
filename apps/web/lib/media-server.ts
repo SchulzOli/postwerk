@@ -1,7 +1,7 @@
 import 'server-only';
-import { findMedia, postMediaFromUpload } from '@postwerk/core';
-import type { Locale } from '@postwerk/core/i18n';
-import { getDb, type PostMedia } from '@postwerk/db';
+import { findMedia, postMediaFromUpload } from '@maas/core';
+import type { Locale } from '@maas/core/i18n';
+import { getDb, type PostMedia } from '@maas/db';
 import { uploadMessages } from '@/messages/upload';
 import { checkMediaUrl } from './media';
 
@@ -29,8 +29,9 @@ export async function readComposerMedia(raw: string, workspaceId: string, locale
     const altText = typeof item.altText === 'string' ? item.altText.trim().slice(0, MAX_ALT_TEXT) : '';
     if (typeof item.id === 'string') {
       const row = uploads.get(item.id);
-      if (row) media.push(postMediaFromUpload(row, altText));
-      else errors.push(t.uploadMissing);
+      if (!row) errors.push(t.uploadMissing);
+      else if (row.kind === 'audio') errors.push(t.noAudio);
+      else media.push(postMediaFromUpload(row, altText));
     } else if (typeof item.url === 'string') {
       const checked = checkMediaUrl(item.url, locale);
       if ('error' in checked) errors.push(checked.error);

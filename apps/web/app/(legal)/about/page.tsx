@@ -1,5 +1,5 @@
 import { notFound } from 'next/navigation';
-import { bridgeSetup, offeredNetworks, operatorDetails } from '@postwerk/core';
+import { bridgeSetup, offeredNetworks, operatorDetails } from '@maas/core';
 import { getMessages } from '@/lib/i18n-server';
 import { siteName } from '@/lib/legal';
 import { commonMessages } from '@/messages/common';
@@ -48,7 +48,7 @@ export default async function AboutPage() {
       </p>
       <p className="muted">
         {t.contactLine} <a href={`mailto:${operator.email}`}>{operator.email}</a>. {t.sourceCode}:{' '}
-        <a href="https://github.com/SchulzOli/postwerk">github.com/SchulzOli/postwerk</a>
+        <a href="https://github.com/SchulzOli/MarketingAsAService">github.com/SchulzOli/MarketingAsAService</a>
       </p>
     </>
   );

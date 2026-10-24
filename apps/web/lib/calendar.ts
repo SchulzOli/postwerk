@@ -1,5 +1,5 @@
-import type { PostStatus, TargetStatus } from '@postwerk/db/types';
-import type { ProviderId } from '@postwerk/providers/catalog';
+import type { PostStatus, TargetStatus } from '@maas/db/types';
+import type { ProviderId } from '@maas/providers/catalog';
 
 /** A post as the calendar shows it. */
 export interface CalendarPost {

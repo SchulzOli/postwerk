@@ -1,6 +1,6 @@
-import type { AuditAction } from '@postwerk/core';
-import type { Locale } from '@postwerk/core/i18n';
-import { catalog, type ProviderId } from '@postwerk/providers/catalog';
+import type { AuditAction } from '@maas/core';
+import type { Locale } from '@maas/core/i18n';
+import { catalog, type ProviderId } from '@maas/providers/catalog';
 import { activityMessages, type ActivityParams } from '@/messages/activity';
 
 export interface ActivityItem {

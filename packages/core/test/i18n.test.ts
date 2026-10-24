@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { catalog, localizeFields, localizeInfo, Mastodon, ProviderError, validateContent, validationMessages } from '@postwerk/providers';
+import { catalog, localizeFields, localizeInfo, Mastodon, ProviderError, validateContent, validationMessages } from '@maas/providers';
 import { planFlow } from '../src/flow';
 import { errorText, joinList, matchLocale } from '../src/i18n';
 import { inviteMail, postFailedMail, resetPasswordMail } from '../src/mail-templates';
@@ -49,7 +49,7 @@ describe('localized errors', () => {
     expect(new MediaError((m) => m.empty).localize('de')).toBe('Die Datei ist leer.');
   });
 
-  it('show connection problems in German where Postwerk wrote them', () => {
+  it('show connection problems in German where MarketingAsAService wrote them', () => {
     const error = (() => {
       try {
         Mastodon.normalizeInstanceUrl('http://example.com');
@@ -106,7 +106,7 @@ describe('German messages', () => {
 
   it('write emails', () => {
     const reset = resetPasswordMail('a@example.com', 'Anna', 'https://x.test/r', 'de');
-    expect(reset.subject).toBe('Setze dein Postwerk-Passwort zurück');
+    expect(reset.subject).toBe('Setze dein Passwort für MarketingAsAService zurück');
     expect(reset.text).toContain('Hallo Anna,');
     expect(reset.html).toContain('<html lang="de">');
     expect(reset.html).toContain('Oder öffne diesen Link:');

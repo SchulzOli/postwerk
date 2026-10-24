@@ -1,6 +1,6 @@
 import { and, eq } from 'drizzle-orm';
-import { posts, users, workspaceMembers, type Database } from '@postwerk/db';
-import { getProviderInfo } from '@postwerk/providers';
+import { posts, users, workspaceMembers, type Database } from '@maas/db';
+import { getProviderInfo } from '@maas/providers';
 import { isLocale } from './i18n';
 import { trySendMail } from './mail';
 import { postFailedMail } from './mail-templates';

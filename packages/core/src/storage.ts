@@ -6,7 +6,7 @@ import { pipeline } from 'node:stream/promises';
 import type { ReadableStream as WebReadableStream } from 'node:stream/web';
 import { presignUrl, signRequest, type SigV4Credentials } from './sigv4';
 
-/** The only file types Postwerk accepts and serves (no SVG or HTML, so uploads can never run script). */
+/** The only file types MarketingAsAService accepts and serves (no SVG or HTML, so uploads can never run script). */
 export const mediaTypes = {
   'image/jpeg': { kind: 'image', ext: 'jpg' },
   'image/png': { kind: 'image', ext: 'png' },
@@ -15,11 +15,17 @@ export const mediaTypes = {
   'video/mp4': { kind: 'video', ext: 'mp4' },
   'video/quicktime': { kind: 'video', ext: 'mov' },
   'video/webm': { kind: 'video', ext: 'webm' },
+  // Radio spots. Browsers name the same files differently.
+  'audio/mpeg': { kind: 'audio', ext: 'mp3' },
+  'audio/mp4': { kind: 'audio', ext: 'm4a' },
+  'audio/x-m4a': { kind: 'audio', ext: 'm4a' },
+  'audio/wav': { kind: 'audio', ext: 'wav' },
+  'audio/x-wav': { kind: 'audio', ext: 'wav' },
 } as const;
 
 export type MediaType = keyof typeof mediaTypes;
 
-const KEY = /^[0-9a-f-]{36}\/[0-9a-f-]{36}\.(jpg|png|gif|webp|mp4|mov|webm)$/;
+const KEY = /^[0-9a-f-]{36}\/[0-9a-f-]{36}\.(jpg|png|gif|webp|mp4|mov|webm|mp3|m4a|wav)$/;
 
 /** Storage keys look like "<workspace id>/<uuid>.<ext>"; anything else is refused. */
 export function isMediaKey(key: string): boolean {

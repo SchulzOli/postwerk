@@ -1,4 +1,4 @@
-# Contributing to Postwerk
+# Contributing to MarketingAsAService
 
 Thanks for helping! Bug reports, ideas, translations and code are all welcome.
 
@@ -49,13 +49,13 @@ Conventions:
 - **UI copy** is short and plain, and error messages say what to do next.
 - **Schema changes** need a migration: change `packages/db/src/schema.ts`, run `npm run db:generate`, and commit the SQL.
 - **New networks** follow `docs/platforms.md` → "Adding a network"; `packages/providers/src/linkedin.ts` is the reference implementation.
-- **Documentation** lives in `docs/` and is published to [schulzoli.github.io/postwerk](https://schulzoli.github.io/postwerk/). Preview it with `cd docs && npm install && npm run dev`.
+- **Documentation** lives in `docs/` and is published to [schulzoli.github.io/MarketingAsAService](https://schulzoli.github.io/MarketingAsAService/). Preview it with `cd docs && npm install && npm run dev`.
 
 ## Pull requests
 
 - Keep each pull request focused on one change, with tests for new behavior.
 - Describe what changed and why. For UI changes, add a screenshot.
-- By contributing, you agree that your contribution is licensed under the [MIT License](LICENSE), like the rest of Postwerk.
+- By contributing, you agree that your contribution is licensed under the [MIT License](LICENSE), like the rest of MarketingAsAService.
 
 ## Code of conduct
 

@@ -1,5 +1,5 @@
 import { relations, sql } from 'drizzle-orm';
-import { boolean, index, integer, jsonb, pgEnum, pgTable, primaryKey, text, timestamp, uniqueIndex, uuid } from 'drizzle-orm/pg-core';
+import { boolean, date, index, integer, jsonb, pgEnum, pgTable, primaryKey, text, timestamp, uniqueIndex, uuid } from 'drizzle-orm/pg-core';
 
 const id = () => uuid('id').primaryKey().defaultRandom();
 const createdAt = () => timestamp('created_at', { withTimezone: true }).notNull().defaultNow();
@@ -125,7 +125,7 @@ export const invites = pgTable(
   (t) => [uniqueIndex('invites_token_idx').on(t.tokenHash), index('invites_workspace_idx').on(t.workspaceId)],
 );
 
-/** Plugins installed in a workspace (themes for now, see @postwerk/core/theme). */
+/** Plugins installed in a workspace (themes for now, see @maas/core/theme). */
 export const plugins = pgTable(
   'plugins',
   {
@@ -133,7 +133,7 @@ export const plugins = pgTable(
     /** The manifest's id, e.g. "paper". */
     pluginId: text('plugin_id').notNull(),
     kind: pluginKind('kind').notNull(),
-    /** Built-in plugins ship with Postwerk and are read from code, so they update with it. */
+    /** Built-in plugins ship with MarketingAsAService and are read from code, so they update with it. */
     builtin: boolean('builtin').notNull().default(false),
     /** The validated manifest of a custom plugin; null for built-ins. */
     manifest: jsonb('manifest'),
@@ -228,7 +228,7 @@ export const bridgeUsage = pgTable(
   (t) => [primaryKey({ columns: [t.workspaceId, t.bridge, t.month] })],
 );
 
-/** Saved publishing flows (graph of steps, see @postwerk/core/flow). */
+/** Saved publishing flows (graph of steps, see @maas/core/flow). */
 export const flows = pgTable('flows', {
   id: id(),
   workspaceId: uuid('workspace_id').notNull().references(() => workspaces.id, { onDelete: 'cascade' }),
@@ -241,9 +241,9 @@ export const flows = pgTable('flows', {
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
 });
 
-export const mediaKind = pgEnum('media_kind', ['image', 'video']);
+export const mediaKind = pgEnum('media_kind', ['image', 'video', 'audio']);
 
-/** Uploaded files (local disk or S3, see @postwerk/core storage). Unused uploads are cleaned up after a day. */
+/** Uploaded files (local disk or S3, see @maas/core storage). Unused uploads are cleaned up after a day. */
 export const media = pgTable(
   'media',
   {
@@ -258,6 +258,285 @@ export const media = pgTable(
     createdAt: createdAt(),
   },
   (t) => [uniqueIndex('media_key_idx').on(t.key), index('media_workspace_idx').on(t.workspaceId, t.createdAt)],
+);
+
+export interface BrandColors {
+  primary: string;
+  secondary: string;
+  accent: string;
+  text: string;
+  background: string;
+}
+
+/** The company's recurring brand character (a mascot or a face of the brand) that appears in every spot, ad and print piece. */
+export interface BrandCharacter {
+  name: string;
+  /** What the character is, e.g. "mascot", "a physiotherapist", "a talking kettle". */
+  role: string;
+  /** How it looks: enough for an illustrator, a casting or an image generator to get it right every time. */
+  look: string;
+  personality: string;
+  /** How it speaks. */
+  voice: string;
+  catchphrase: string;
+  /** What it never does or says. */
+  rules: string;
+  /** Reference pictures (uploaded images); the first is the main one. */
+  imageMediaIds: string[];
+}
+
+/** A workspace's brand: who the company is, how it sounds and looks, and its brand character. Every channel builds on it. */
+export const brandKits = pgTable('brand_kits', {
+  workspaceId: uuid('workspace_id').primaryKey().references(() => workspaces.id, { onDelete: 'cascade' }),
+  companyName: text('company_name').notNull().default(''),
+  tagline: text('tagline').notNull().default(''),
+  description: text('description').notNull().default(''),
+  audience: text('audience').notNull().default(''),
+  tone: text('tone').notNull().default(''),
+  dos: text('dos').notNull().default(''),
+  donts: text('donts').notNull().default(''),
+  colors: jsonb('colors').$type<BrandColors>().notNull(),
+  /** "sans" or "serif", for print pieces and briefings. */
+  font: text('font').notNull().default('sans'),
+  logoMediaId: uuid('logo_media_id').references(() => media.id, { onDelete: 'set null' }),
+  website: text('website').notNull().default(''),
+  email: text('email').notNull().default(''),
+  phone: text('phone').notNull().default(''),
+  address: text('address').notNull().default(''),
+  character: jsonb('character').$type<BrandCharacter>(),
+  /** Every upload the kit uses (logo, character pictures), so media cleanup keeps them. */
+  mediaIds: uuid('media_ids').array().notNull().default(sql`'{}'::uuid[]`),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+});
+
+export const campaignGoal = pgEnum('campaign_goal', ['awareness', 'traffic', 'leads', 'sales', 'event']);
+export const campaignStatus = pgEnum('campaign_status', ['draft', 'planned', 'running', 'paused', 'done']);
+export const pieceKind = pgEnum('piece_kind', ['ad', 'print', 'spot']);
+export const pieceStatus = pgEnum('piece_status', ['draft', 'approved', 'live', 'done']);
+export const pieceSource = pgEnum('piece_source', ['manual', 'ai']);
+
+/** A campaign's planned spend on one channel. */
+export interface ChannelBudget {
+  channel: string;
+  budgetCents: number;
+}
+
+/** A marketing campaign: goal, audience, message, time and budget, across channels (see @maas/core/marketing). */
+export const campaigns = pgTable(
+  'campaigns',
+  {
+    id: id(),
+    workspaceId: uuid('workspace_id').notNull().references(() => workspaces.id, { onDelete: 'cascade' }),
+    name: text('name').notNull(),
+    goal: campaignGoal('goal').notNull().default('awareness'),
+    status: campaignStatus('status').notNull().default('draft'),
+    audience: text('audience').notNull().default(''),
+    /** The one thing people should remember. */
+    message: text('message').notNull().default(''),
+    startsOn: date('starts_on'),
+    endsOn: date('ends_on'),
+    currency: text('currency').notNull().default('EUR'),
+    budgetCents: integer('budget_cents').notNull().default(0),
+    channels: jsonb('channels').$type<ChannelBudget[]>().notNull().default([]),
+    notes: text('notes').notNull().default(''),
+    createdBy: uuid('created_by').references(() => users.id, { onDelete: 'set null' }),
+    createdAt: createdAt(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [index('campaigns_workspace_idx').on(t.workspaceId, t.startsOn)],
+);
+
+/** A campaign's ad, print piece or spot; its content's shape depends on kind and format. */
+export const pieces = pgTable(
+  'pieces',
+  {
+    id: id(),
+    workspaceId: uuid('workspace_id').notNull().references(() => workspaces.id, { onDelete: 'cascade' }),
+    campaignId: uuid('campaign_id').notNull().references(() => campaigns.id, { onDelete: 'cascade' }),
+    kind: pieceKind('kind').notNull(),
+    format: text('format').notNull(),
+    title: text('title').notNull(),
+    content: jsonb('content').$type<Record<string, unknown>>().notNull(),
+    status: pieceStatus('status').notNull().default('draft'),
+    /** Written by a person, or drafted by the AI studio (needs a person's approval). */
+    source: pieceSource('source').notNull().default('manual'),
+    /** Uploads the piece uses, so media cleanup keeps them. */
+    mediaIds: uuid('media_ids').array().notNull().default(sql`'{}'::uuid[]`),
+    approvedBy: uuid('approved_by').references(() => users.id, { onDelete: 'set null' }),
+    approvedAt: timestamp('approved_at', { withTimezone: true }),
+    createdAt: createdAt(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [index('pieces_campaign_idx').on(t.campaignId)],
+);
+
+/** Results of a campaign on a channel, entered by people (print, radio…) or synced from ad platforms. */
+export const campaignResults = pgTable(
+  'campaign_results',
+  {
+    id: id(),
+    workspaceId: uuid('workspace_id').notNull().references(() => workspaces.id, { onDelete: 'cascade' }),
+    campaignId: uuid('campaign_id').notNull().references(() => campaigns.id, { onDelete: 'cascade' }),
+    channel: text('channel').notNull(),
+    /** The day (or the end of the period) the numbers are for. */
+    day: date('day').notNull(),
+    reach: integer('reach').notNull().default(0),
+    clicks: integer('clicks').notNull().default(0),
+    leads: integer('leads').notNull().default(0),
+    sales: integer('sales').notNull().default(0),
+    revenueCents: integer('revenue_cents').notNull().default(0),
+    spendCents: integer('spend_cents').notNull().default(0),
+    note: text('note').notNull().default(''),
+    /** Where the numbers came from: "manual", or an ad platform's id for synced rows. */
+    source: text('source').notNull().default('manual'),
+    createdBy: uuid('created_by').references(() => users.id, { onDelete: 'set null' }),
+    createdAt: createdAt(),
+  },
+  (t) => [index('campaign_results_campaign_idx').on(t.campaignId, t.day)],
+);
+
+export const mailingStatus = pgEnum('mailing_status', ['sending', 'done']);
+export const letterStatus = pgEnum('letter_status', ['queued', 'uploading', 'submitted', 'sent', 'failed']);
+
+/** A letter piece sent by post to a list of recipients, through a letter service (Pingen). */
+export const mailings = pgTable(
+  'mailings',
+  {
+    id: id(),
+    workspaceId: uuid('workspace_id').notNull().references(() => workspaces.id, { onDelete: 'cascade' }),
+    campaignId: uuid('campaign_id').notNull().references(() => campaigns.id, { onDelete: 'cascade' }),
+    pieceId: uuid('piece_id').notNull().references(() => pieces.id, { onDelete: 'cascade' }),
+    /** The letter service's product: "fast" or "cheap". */
+    deliveryProduct: text('delivery_product').notNull(),
+    color: boolean('color').notNull().default(true),
+    /** Language of the letters' date line and country names. */
+    locale: text('locale').notNull().default('de'),
+    status: mailingStatus('status').notNull().default('sending'),
+    createdBy: uuid('created_by').references(() => users.id, { onDelete: 'set null' }),
+    createdAt: createdAt(),
+    finishedAt: timestamp('finished_at', { withTimezone: true }),
+  },
+  (t) => [index('mailings_piece_idx').on(t.pieceId)],
+);
+
+/** One recipient's letter in a mailing. The address is kept until the mailing is deleted. */
+export const mailingLetters = pgTable(
+  'mailing_letters',
+  {
+    id: id(),
+    mailingId: uuid('mailing_id').notNull().references(() => mailings.id, { onDelete: 'cascade' }),
+    workspaceId: uuid('workspace_id').notNull().references(() => workspaces.id, { onDelete: 'cascade' }),
+    name: text('name').notNull(),
+    /** Street, postcode and town, country. */
+    lines: jsonb('lines').$type<string[]>().notNull(),
+    /** ISO 3166 code, for prices. */
+    country: text('country').notNull(),
+    status: letterStatus('status').notNull().default('queued'),
+    attempts: integer('attempts').notNull().default(0),
+    /** The letter service's id and its own status word ("valid", "sent", "action_required"…). */
+    serviceId: text('service_id'),
+    serviceStatus: text('service_status'),
+    priceCents: integer('price_cents'),
+    priceCurrency: text('price_currency'),
+    error: text('error'),
+    createdAt: createdAt(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [index('mailing_letters_mailing_idx').on(t.mailingId), index('mailing_letters_status_idx').on(t.status, t.updatedAt)],
+);
+
+export const adPlatform = pgEnum('ad_platform', ['google_ads', 'meta_ads']);
+export const adLaunchStatus = pgEnum('ad_launch_status', ['paused', 'running', 'ended']);
+
+/** An ad account a workspace connected (a Google Ads customer, a Meta ad account). */
+export const adAccounts = pgTable(
+  'ad_accounts',
+  {
+    id: id(),
+    workspaceId: uuid('workspace_id').notNull().references(() => workspaces.id, { onDelete: 'cascade' }),
+    platform: adPlatform('platform').notNull(),
+    /** The platform's account id. */
+    externalId: text('external_id').notNull(),
+    name: text('name').notNull(),
+    currency: text('currency').notNull(),
+    timeZone: text('time_zone'),
+    test: boolean('test').notNull().default(false),
+    /** Meta: Facebook Pages ads can run as. */
+    pages: jsonb('pages').$type<{ id: string; name: string }[]>().notNull().default([]),
+    /** Encrypted with encryptJson. */
+    credentialsEnc: text('credentials_enc').notNull(),
+    status: accountStatus('status').notNull().default('active'),
+    connectedBy: uuid('connected_by').references(() => users.id, { onDelete: 'set null' }),
+    createdAt: createdAt(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [uniqueIndex('ad_accounts_external_idx').on(t.workspaceId, t.platform, t.externalId)],
+);
+
+/** An ad piece running as a campaign on an ad platform. */
+export const adLaunches = pgTable(
+  'ad_launches',
+  {
+    id: id(),
+    workspaceId: uuid('workspace_id').notNull().references(() => workspaces.id, { onDelete: 'cascade' }),
+    pieceId: uuid('piece_id').notNull().references(() => pieces.id, { onDelete: 'cascade' }),
+    adAccountId: uuid('ad_account_id').notNull().references(() => adAccounts.id, { onDelete: 'cascade' }),
+    /** The campaign's id on the platform, and where to see it there. */
+    externalId: text('external_id').notNull(),
+    url: text('url').notNull(),
+    status: adLaunchStatus('status').notNull().default('paused'),
+    /** The most it may spend, in the account currency. */
+    budgetCents: integer('budget_cents').notNull(),
+    currency: text('currency').notNull(),
+    startsOn: date('starts_on').notNull(),
+    endsOn: date('ends_on').notNull(),
+    countries: jsonb('countries').$type<string[]>().notNull(),
+    /** The last problem with the platform (starting, pausing, reading numbers). */
+    error: text('error'),
+    syncedAt: timestamp('synced_at', { withTimezone: true }),
+    createdBy: uuid('created_by').references(() => users.id, { onDelete: 'set null' }),
+    createdAt: createdAt(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [uniqueIndex('ad_launches_piece_idx').on(t.pieceId)],
+);
+
+/** Tokens an AI studio run used (the provider bills these). */
+export interface StudioUsage {
+  inputTokens: number;
+  outputTokens: number;
+  cacheReadTokens: number;
+  cacheWriteTokens: number;
+}
+
+/** A format the AI studio could not draft, and why ("refused", "cut", "failed"). */
+export interface StudioFailure {
+  format: string;
+  reason: string;
+}
+
+/** One request to the AI studio: what it drafted into a campaign (as pieces), its ideas for posts, and the tokens it used. */
+export const studioRuns = pgTable(
+  'studio_runs',
+  {
+    id: id(),
+    workspaceId: uuid('workspace_id').notNull().references(() => workspaces.id, { onDelete: 'cascade' }),
+    campaignId: uuid('campaign_id').notNull().references(() => campaigns.id, { onDelete: 'cascade' }),
+    /** What was asked for: "ad:search", "print:flyer_a6", "spot:radio_30", "posts". */
+    formats: jsonb('formats').$type<string[]>().notNull(),
+    variants: integer('variants').notNull(),
+    language: text('language').notNull(),
+    notes: text('notes').notNull().default(''),
+    model: text('model').notNull(),
+    /** The drafted pieces (they may be deleted since). */
+    pieceIds: jsonb('piece_ids').$type<string[]>().notNull().default([]),
+    postIdeas: jsonb('post_ideas').$type<string[]>().notNull().default([]),
+    failures: jsonb('failures').$type<StudioFailure[]>().notNull().default([]),
+    usage: jsonb('usage').$type<StudioUsage>().notNull(),
+    createdBy: uuid('created_by').references(() => users.id, { onDelete: 'set null' }),
+    createdAt: createdAt(),
+  },
+  (t) => [index('studio_runs_workspace_idx').on(t.workspaceId, t.createdAt)],
 );
 
 /** Positions of canvas nodes the user moved (networks, accounts, panels), per workspace. */
@@ -283,6 +562,8 @@ export const posts = pgTable(
     /** Per-network versions of the text ("customize for LinkedIn"), keyed by provider id. */
     variants: jsonb('variants').$type<Partial<Record<string, string>>>().notNull().default({}),
     flowId: uuid('flow_id').references(() => flows.id, { onDelete: 'set null' }),
+    /** The campaign the post belongs to, if any. */
+    campaignId: uuid('campaign_id').references(() => campaigns.id, { onDelete: 'set null' }),
     status: postStatus('status').notNull().default('draft'),
     scheduledAt: timestamp('scheduled_at', { withTimezone: true }),
     createdAt: createdAt(),
@@ -377,6 +658,36 @@ export type Plugin = typeof plugins.$inferSelect;
 export type AuditEntry = typeof auditLog.$inferSelect;
 export type Invite = typeof invites.$inferSelect;
 export type Media = typeof media.$inferSelect;
+export type BrandKit = typeof brandKits.$inferSelect;
+export type Campaign = typeof campaigns.$inferSelect;
+export type Piece = typeof pieces.$inferSelect;
+export type CampaignResult = typeof campaignResults.$inferSelect;
+export type Mailing = typeof mailings.$inferSelect;
+export type MailingLetter = typeof mailingLetters.$inferSelect;
+export type AdAccount = typeof adAccounts.$inferSelect;
+export type AdLaunch = typeof adLaunches.$inferSelect;
+export type StudioRun = typeof studioRuns.$inferSelect;
 export type MemberRole = (typeof memberRole.enumValues)[number];
 export type PostStatus = (typeof postStatus.enumValues)[number];
 export type TargetStatus = (typeof targetStatus.enumValues)[number];
+
+export const campaignsRelations = relations(campaigns, ({ many }) => ({
+  pieces: many(pieces),
+  results: many(campaignResults),
+}));
+
+export const piecesRelations = relations(pieces, ({ one }) => ({
+  campaign: one(campaigns, { fields: [pieces.campaignId], references: [campaigns.id] }),
+}));
+
+export const mailingsRelations = relations(mailings, ({ many }) => ({
+  letters: many(mailingLetters),
+}));
+
+export const mailingLettersRelations = relations(mailingLetters, ({ one }) => ({
+  mailing: one(mailings, { fields: [mailingLetters.mailingId], references: [mailings.id] }),
+}));
+
+export const campaignResultsRelations = relations(campaignResults, ({ one }) => ({
+  campaign: one(campaigns, { fields: [campaignResults.campaignId], references: [campaigns.id] }),
+}));

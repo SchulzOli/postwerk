@@ -1,5 +1,5 @@
 import { and, asc, eq } from 'drizzle-orm';
-import { bridgeProfiles, socialAccounts, type Database, type oauthStates } from '@postwerk/db';
+import { bridgeProfiles, socialAccounts, type Database, type oauthStates } from '@maas/db';
 import {
   getBridge,
   getProviderInfo,
@@ -14,7 +14,7 @@ import {
   type ProviderId,
   type PublishContext,
   type PublishResult,
-} from '@postwerk/providers';
+} from '@maas/providers';
 import { createOAuthState, deleteAccount } from './accounts';
 import { recordBridgeUsage } from './bridge-usage';
 import { isProviderAvailable } from './clients';
@@ -95,7 +95,7 @@ async function freeProfile(db: Database, setup: { bridge: Bridge; config: Bridge
   for (const row of rows) {
     if ((await setup.bridge.listAccounts(setup.config, row.profileId, network)).length === 0) return row.profileId;
   }
-  const profileId = await setup.bridge.createProfile(setup.config, `${workspace.name} · Postwerk${rows.length > 0 ? ` ${rows.length + 1}` : ''}`);
+  const profileId = await setup.bridge.createProfile(setup.config, `${workspace.name} · MarketingAsAService${rows.length > 0 ? ` ${rows.length + 1}` : ''}`);
   await db.insert(bridgeProfiles).values({ workspaceId: workspace.id, bridge: setup.bridge.id, profileId });
   return profileId;
 }

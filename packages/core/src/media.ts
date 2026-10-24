@@ -1,7 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import { and, eq, inArray, sql } from 'drizzle-orm';
-import { media, type Database, type Media, type PostMedia } from '@postwerk/db';
-import { formatBytes, type MediaItem, type PublishContext } from '@postwerk/providers';
+import { media, type Database, type Media, type PostMedia } from '@maas/db';
+import { formatBytes, type MediaItem, type PublishContext } from '@maas/providers';
 import { getMediaStorage, mediaTypes, type MediaStorage, type MediaType } from './storage';
 import { LocalizedError } from './i18n';
 import { mediaMessages } from './messages';
@@ -15,10 +15,12 @@ export class MediaError extends LocalizedError {
 
 type Env = Record<string, string | undefined>;
 
-/** Largest files Postwerk stores; networks may accept less (see the catalog). */
+/** Largest files MarketingAsAService stores; networks may accept less (see the catalog). */
 export function uploadLimits(env: Env = process.env) {
-  return { image: 20 * 1024 * 1024, video: Number(env.MEDIA_MAX_VIDEO_MB || 512) * 1024 * 1024 };
+  return { image: 20 * 1024 * 1024, video: Number(env.MEDIA_MAX_VIDEO_MB || 512) * 1024 * 1024, audio: 100 * 1024 * 1024 };
 }
+
+type MediaKind = 'image' | 'video' | 'audio';
 
 const startsWith = (bytes: Uint8Array, prefix: number[], offset = 0) => prefix.every((byte, index) => bytes[offset + index] === byte);
 const ascii = (text: string) => [...text].map((char) => char.charCodeAt(0));
@@ -29,8 +31,14 @@ export function sniffMediaType(head: Uint8Array): MediaType | undefined {
   if (startsWith(head, [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a])) return 'image/png';
   if (startsWith(head, ascii('GIF87a')) || startsWith(head, ascii('GIF89a'))) return 'image/gif';
   if (startsWith(head, ascii('RIFF')) && startsWith(head, ascii('WEBP'), 8)) return 'image/webp';
+  if (startsWith(head, ascii('RIFF')) && startsWith(head, ascii('WAVE'), 8)) return 'audio/wav';
   if (startsWith(head, [0x1a, 0x45, 0xdf, 0xa3])) return 'video/webm';
-  if (startsWith(head, ascii('ftyp'), 4)) return startsWith(head, ascii('qt  '), 8) ? 'video/quicktime' : 'video/mp4';
+  if (startsWith(head, ascii('ftyp'), 4)) {
+    if (startsWith(head, ascii('M4A '), 8)) return 'audio/mp4';
+    return startsWith(head, ascii('qt  '), 8) ? 'video/quicktime' : 'video/mp4';
+  }
+  // MP3: an ID3 tag, or straight into an MPEG audio frame.
+  if (startsWith(head, ascii('ID3')) || (head[0] === 0xff && (head[1]! & 0xe0) === 0xe0)) return 'audio/mpeg';
   return undefined;
 }
 
@@ -40,7 +48,10 @@ const SNIFF_BYTES = 12;
  * Passes the upload through while checking that it really is the declared
  * kind of file and exactly `size` bytes long.
  */
-function checkedUpload(body: ReadableStream<Uint8Array>, kind: 'image' | 'video', size: number): ReadableStream<Uint8Array> {
+/** Whether the bytes fit the declared kind. Audio in an MP4 container may carry a video brand. */
+const fitsKind = (type: MediaType, kind: MediaKind) => mediaTypes[type].kind === kind || (kind === 'audio' && type === 'video/mp4');
+
+function checkedUpload(body: ReadableStream<Uint8Array>, kind: MediaKind, size: number): ReadableStream<Uint8Array> {
   let received = 0;
   let head = new Uint8Array(0);
   let sniffed = false;
@@ -53,7 +64,7 @@ function checkedUpload(body: ReadableStream<Uint8Array>, kind: 'image' | 'video'
           head = new Uint8Array([...head, ...chunk.subarray(0, SNIFF_BYTES)]);
           if (head.length >= SNIFF_BYTES || received === size) {
             const type = sniffMediaType(head);
-            if (!type || mediaTypes[type].kind !== kind) throw new MediaError((m) => m.notMedia);
+            if (!type || !fitsKind(type, kind)) throw new MediaError((m) => m.notMedia);
             sniffed = true;
           }
         }
@@ -103,7 +114,9 @@ export async function findMedia(db: Database, workspaceId: string, ids: string[]
   return new Map(rows.map((row) => [row.id, row]));
 }
 
+/** An uploaded image or video as a post attachment (audio files only belong to spots). */
 export function postMediaFromUpload(row: Media, altText?: string): PostMedia {
+  if (row.kind === 'audio') throw new MediaError((m) => m.noAudio);
   return { url: `/media/${row.key}`, kind: row.kind, mediaId: row.id, key: row.key, mimeType: row.mimeType, size: row.size, ...(altText && { altText }) };
 }
 
@@ -141,7 +154,7 @@ export async function mediaForPublishing(
   };
 }
 
-/** Deletes uploads that no post uses and that are older than `olderThanMs` (default one day). */
+/** Deletes uploads that no post and no brand kit uses and that are older than `olderThanMs` (default one day). */
 export async function cleanupUnusedMedia(db: Database, storage: MediaStorage = getMediaStorage(), olderThanMs = 24 * 60 * 60_000): Promise<number> {
   const cutoff = new Date(Date.now() - olderThanMs).toISOString();
   const deleted = await db.execute<{ key: string }>(sql`
@@ -150,6 +163,8 @@ export async function cleanupUnusedMedia(db: Database, storage: MediaStorage = g
       AND NOT EXISTS (
         SELECT 1 FROM posts p WHERE p.media @> jsonb_build_array(jsonb_build_object('mediaId', m.id::text))
       )
+      AND NOT EXISTS (SELECT 1 FROM brand_kits b WHERE m.id = ANY(b.media_ids))
+      AND NOT EXISTS (SELECT 1 FROM pieces pc WHERE m.id = ANY(pc.media_ids))
     RETURNING m.key
   `);
   for (const { key } of deleted) await storage.delete(key).catch((error: unknown) => console.error('could not delete media file', key, error));

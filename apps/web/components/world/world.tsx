@@ -20,11 +20,11 @@ import {
   type Viewport,
 } from '@xyflow/react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { planFlow, type FlowGraph, type FlowPlan, type FlowStep } from '@postwerk/core/flow';
-import type { ColorMode, ThemeCanvas } from '@postwerk/core/theme';
-import { catalog } from '@postwerk/providers/catalog';
-import { countText } from '@postwerk/providers/text';
-import { textLimit } from '@postwerk/providers/validate';
+import { planFlow, type FlowGraph, type FlowPlan, type FlowStep } from '@maas/core/flow';
+import type { ColorMode, ThemeCanvas } from '@maas/core/theme';
+import { catalog } from '@maas/providers/catalog';
+import { countText } from '@maas/providers/text';
+import { textLimit } from '@maas/providers/validate';
 import { loadPostAction } from '@/app/(app)/posts/actions';
 import { createFlowAction, deleteFlowAction, saveFlowAction, savePositionsAction } from '@/app/(world)/canvas/actions';
 import type { ComposerInitial } from '@/components/composer';
@@ -52,7 +52,7 @@ const patterns: Record<Exclude<ThemeCanvas['pattern'], 'none'>, BackgroundVarian
 };
 const edgeTypes: Record<ThemeCanvas['edges'], string> = { smoothstep: 'smoothstep', bezier: 'default', step: 'step', straight: 'straight' };
 /** Minimap color per node type (theme tokens). */
-const tints: Partial<Record<string, string>> = { pluginInstall: 'plugin', activity: 'account', members: 'account', calendar: 'posts', bridgeUsage: 'account' };
+const tints: Partial<Record<string, string>> = { pluginInstall: 'plugin', activity: 'account', members: 'account', calendar: 'posts', bridgeUsage: 'account', brand: 'plugin', campaigns: 'step' };
 
 function serializeFlow(flowId: string, nodes: WorldNode[], edges: Edge[]): FlowGraph {
   const steps = nodes
@@ -105,6 +105,10 @@ function label(node: WorldNode, t: (typeof canvasMessages)['en']): string {
       return t.destinations.members;
     case 'bridgeUsage':
       return t.destinations.bridgeUsage;
+    case 'brand':
+      return t.destinations.brand;
+    case 'campaigns':
+      return t.destinations.campaigns;
     default:
       return '';
   }
@@ -515,7 +519,7 @@ function WorldCanvas({ data }: { data: WorldData }) {
         />
 
         <Panel position="top-left" className="world-toolbar">
-          <strong className="brand">Postwerk</strong>
+          <strong className="brand">MarketingAsAService</strong>
           <nav aria-label={t.regionsLabel}>
             {regionKeys.map((key) => (
               <a key={key} href={`#n=${ids.region(key)}`}>

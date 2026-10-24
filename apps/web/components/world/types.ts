@@ -1,10 +1,10 @@
-import type { FlowGraph } from '@postwerk/core/flow';
-import type { ColorMode, ThemeCanvas, ThemeManifest } from '@postwerk/core/theme';
+import type { FlowGraph } from '@maas/core/flow';
+import type { ColorMode, ThemeCanvas, ThemeManifest } from '@maas/core/theme';
 import type { TeamData } from '@/components/team';
 import type { ActivityItem } from '@/lib/activity';
 import type { CalendarData } from '@/lib/calendar';
 import type { FormField, PostStatus, TargetStatus } from './shared-types';
-import type { ProviderId, ProviderInfo } from '@postwerk/providers/catalog';
+import type { ProviderId, ProviderInfo } from '@maas/providers/catalog';
 
 export interface NetworkData {
   info: ProviderInfo;
@@ -73,6 +73,30 @@ export interface BridgeUsageData {
   price: { amount: number; currency: string } | null;
 }
 
+/** The brand kit, as the canvas shows it. */
+export interface BrandData {
+  companyName: string;
+  tagline: string;
+  colors: { primary: string; secondary: string; accent: string; text: string; background: string };
+  logoUrl: string | null;
+  character: { name: string; role: string; catchphrase: string; imageUrl: string | null } | null;
+}
+
+/** A campaign, as the canvas lists it. */
+export interface CampaignData {
+  id: string;
+  name: string;
+  status: 'draft' | 'planned' | 'running' | 'paused' | 'done';
+  message: string;
+  startsOn: string | null;
+  endsOn: string | null;
+  currency: string;
+  budgetCents: number;
+  spendCents: number;
+  pieceCount: number;
+  postCount: number;
+}
+
 export interface WorldData {
   user: { name: string; email: string };
   /** Show the "confirm your email" reminder. */
@@ -95,6 +119,8 @@ export interface WorldData {
   /** Latest workspace activity; null for members who may not see it (editors). */
   activity: ActivityItem[] | null;
   bridgeUsage: BridgeUsageData | null;
+  brand: BrandData;
+  campaigns: CampaignData[];
   /** The server's about and legal pages that are set up. */
   legal: { page: 'about' | 'privacy' | 'terms' | 'imprint' | 'data-deletion'; href: string }[];
   /** This server's public address (APP_URL). */

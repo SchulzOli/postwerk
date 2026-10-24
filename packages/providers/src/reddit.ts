@@ -9,7 +9,7 @@ const TOKEN_URL = 'https://www.reddit.com/api/v1/access_token';
 const API = 'https://oauth.reddit.com';
 const SCOPE = 'identity submit';
 /** Reddit throttles or blocks requests without a descriptive user agent. */
-export const REDDIT_USER_AGENT = 'web:postwerk:v0.1 (by /u/postwerk)';
+export const REDDIT_USER_AGENT = 'web:marketingasaservice:v0.1 (by /u/marketingasaservice)';
 
 /** Posts need nothing beyond the token: the subreddit is chosen per post. */
 export type RedditCredentials = OAuthTokens;

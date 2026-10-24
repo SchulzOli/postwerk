@@ -2,9 +2,9 @@
 
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
-import { createPost, deletePost, reschedulePost, retryPost, updatePost } from '@postwerk/core';
-import { getDb } from '@postwerk/db';
-import { isProviderId, type ProviderId } from '@postwerk/providers';
+import { createPost, deletePost, reschedulePost, retryPost, updatePost } from '@maas/core';
+import { getDb } from '@maas/db';
+import { isProviderId, type ProviderId } from '@maas/providers';
 import { record } from '@/lib/audit';
 import { getLocale, getMessages } from '@/lib/i18n-server';
 import type { ComposerInitial } from '@/components/composer';
@@ -60,6 +60,7 @@ export async function submitPost(_: ComposeState, form: FormData): Promise<Compo
   }
 
   const flowId = String(form.get('flowId') ?? '') || undefined;
+  const campaignId = String(form.get('campaignId') ?? '') || null;
   const input = {
     workspaceId: workspace.id,
     text,
@@ -67,6 +68,7 @@ export async function submitPost(_: ComposeState, form: FormData): Promise<Compo
     options: readOptions(form),
     variants: readVariants(form),
     ...(flowId ? { flowId } : { accountIds }),
+    campaignId,
     scheduledAt,
     locale,
   };

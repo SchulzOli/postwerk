@@ -1,6 +1,6 @@
 import { sql } from 'drizzle-orm';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
-import { createDb, plugins, users, workspaceMembers, workspaces, type Database } from '@postwerk/db';
+import { createDb, plugins, users, workspaceMembers, workspaces, type Database } from '@maas/db';
 import { runMigrations } from '../../db/src/migrate';
 import {
   activeTheme,

@@ -17,7 +17,7 @@ const ok = (result: unknown) => ({ ok: true, result });
 const fail = (status: number, description: string, extra: Record<string, unknown> = {}) => () =>
   new Response(JSON.stringify({ ok: false, error_code: status, description, ...extra }), { status });
 
-const bot = { id: 42, is_bot: true, username: 'postwerk_bot' };
+const bot = { id: 42, is_bot: true, username: 'maas_bot' };
 const channel = { id: -1001234567890, type: 'channel', title: 'Praxis News', username: 'praxisnews' };
 const admin = { status: 'administrator', can_post_messages: true };
 

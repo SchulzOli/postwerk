@@ -1,7 +1,7 @@
 import { NextResponse, type NextRequest } from 'next/server';
-import { consumeOAuthState, finishBridgeConnect, saveConnectedAccounts } from '@postwerk/core';
-import { getDb } from '@postwerk/db';
-import { getProviderInfo, isBridgeId, ProviderError } from '@postwerk/providers';
+import { consumeOAuthState, finishBridgeConnect, saveConnectedAccounts } from '@maas/core';
+import { getDb } from '@maas/db';
+import { getProviderInfo, isBridgeId, ProviderError } from '@maas/providers';
 import { record } from '@/lib/audit';
 import { appUrl } from '@/lib/env';
 import { getMessages, localizedError } from '@/lib/i18n-server';

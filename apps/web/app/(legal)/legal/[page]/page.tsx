@@ -9,7 +9,7 @@ import {
   operatorDetails,
   type LegalPage,
   type Operator,
-} from '@postwerk/core';
+} from '@maas/core';
 import { getMessages } from '@/lib/i18n-server';
 import { siteName } from '@/lib/legal';
 import { commonMessages } from '@/messages/common';
@@ -116,6 +116,7 @@ function Privacy({ t, operator }: { t: Texts; operator: Operator }) {
           <li>{text.account}</li>
           <li>{text.content}</li>
           <li>{text.accounts}</li>
+          {processors.some((processor) => processor.kind === 'letters') && <li>{text.letters}</li>}
           <li>{text.security(AUDIT_IP_DAYS)}</li>
           <li>{text.cookies}</li>
           <li>{text.emails}</li>

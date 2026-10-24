@@ -1,8 +1,8 @@
 /**
- * Bridges: aggregator APIs that publish to networks on Postwerk's behalf, so
+ * Bridges: aggregator APIs that publish to networks on MarketingAsAService's behalf, so
  * people can use a network without the server admin registering a developer
  * app (and passing its review). The aggregator holds the network tokens;
- * Postwerk stores only which aggregator account a social account is.
+ * MarketingAsAService stores only which aggregator account a social account is.
  */
 import type { PostContent, ProviderId, PublishContext, PublishResult } from './types';
 
@@ -18,7 +18,7 @@ export interface BridgeConfig {
   baseUrl: string;
 }
 
-/** What Postwerk keeps for an account connected through a bridge (stored encrypted like any credentials). */
+/** What MarketingAsAService keeps for an account connected through a bridge (stored encrypted like any credentials). */
 export interface BridgeCredentials {
   via: BridgeId;
   /** The bridge's id of the account. */
@@ -46,9 +46,9 @@ export interface Bridge {
   /** Who runs it, for the server's privacy page (a processor of posts and account access). */
   company: string;
   privacyUrl: string;
-  /** Postwerk networks the bridge can publish to, with the bridge's platform name for each. */
+  /** MarketingAsAService networks the bridge can publish to, with the bridge's platform name for each. */
   platforms: Partial<Record<ProviderId, string>>;
-  /** Creates a profile (a group of accounts; Postwerk uses them per workspace) and returns its id. */
+  /** Creates a profile (a group of accounts; MarketingAsAService uses them per workspace) and returns its id. */
   createProfile(config: BridgeConfig, name: string): Promise<string>;
   /** Where to send the browser to connect an account (the bridge's hosted sign-in and selection pages). */
   connectUrl(config: BridgeConfig, input: { profileId: string; network: ProviderId; redirectUrl: string; reconnectAccountId?: string }): Promise<string>;

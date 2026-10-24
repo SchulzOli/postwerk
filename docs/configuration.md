@@ -1,6 +1,6 @@
 # Configuration
 
-Postwerk reads its settings from environment variables, for Docker usually from `.env` (copy [`.env.example`](https://github.com/SchulzOli/postwerk/blob/main/.env.example)). Web app and worker need the same values. Restart both after a change.
+MarketingAsAService reads its settings from environment variables, for Docker usually from `.env` (copy [`.env.example`](https://github.com/SchulzOli/MarketingAsAService/blob/main/.env.example)). Web app and worker need the same values. Restart both after a change.
 
 ## Basics
 
@@ -23,14 +23,14 @@ Postwerk reads its settings from environment variables, for Docker usually from 
 | `S3_ENDPOINT`, `S3_REGION`, `S3_BUCKET`, `S3_ACCESS_KEY_ID`, `S3_SECRET_ACCESS_KEY`, `S3_FORCE_PATH_STYLE` | S3 storage (AWS, MinIO, Cloudflare R2, Backblaze, Hetzner…) |
 | `S3_PUBLIC_URL` | Public address of the bucket or a CDN; without it, files are shared with presigned links |
 
-Instagram, Threads, TikTok and Pinterest download media from Postwerk, so `APP_URL` (or `S3_PUBLIC_URL`) must be reachable from the internet for them.
+Instagram, Threads, TikTok and Pinterest download media from MarketingAsAService, so `APP_URL` (or `S3_PUBLIC_URL`) must be reachable from the internet for them.
 
 ## Email
 
 | Variable | What it does |
 |---|---|
 | `SMTP_URL` | `smtp://user:pass@host:587` (STARTTLS) or `smtps://user:pass@host:465`. Without it, emails are written to the server log |
-| `MAIL_FROM` | Sender, e.g. `Postwerk <postwerk@example.com>` |
+| `MAIL_FROM` | Sender, e.g. `MarketingAsAService <maas@example.com>` |
 
 ## About and legal pages
 
@@ -56,6 +56,32 @@ Details: [About and legal pages](legal.md).
 | `HIDE_NETWORKS` | Comma-separated network ids you don't offer at all, e.g. `x,tiktok` |
 
 Network ids: `mastodon`, `bluesky`, `facebook`, `instagram`, `threads`, `linkedin`, `linkedin_page`, `x`, `tiktok`, `youtube`, `google_business`, `pinterest`, `reddit`, `telegram`, `discord`. Which to pick: [Choose how to offer each network](networks/index.md).
+
+## Paid ads
+
+| Variable | What it does |
+|---|---|
+| `GOOGLE_ADS_DEVELOPER_TOKEN` | Turns on [Google Ads](marketing/ads.md#set-up-google-ads) (search and YouTube video ads), with the Google app from `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` |
+| `GOOGLE_ADS_LOGIN_CUSTOMER_ID` | The manager account (MCC) the ad accounts are reached through, if any |
+| `ENABLE_META_ADS` | `true` turns on [Meta Ads](marketing/ads.md#set-up-meta-ads) (Facebook and Instagram ads), with the Facebook app from `FACEBOOK_CLIENT_ID` / `FACEBOOK_CLIENT_SECRET` |
+| `GOOGLE_ADS_API_URL`, `META_GRAPH_URL` | The platforms' API addresses; only for tests against fake servers |
+
+## AI studio
+
+| Variable | What it does |
+|---|---|
+| `ANTHROPIC_API_KEY` | Turns on the [AI studio](marketing/ai-studio.md): Claude drafts ads, print pieces, spots and post ideas into campaigns, billed to your Anthropic account |
+| `AI_MODEL` | The Claude model the studio uses (default `claude-opus-5-5`) |
+| `ANTHROPIC_BASE_URL` | Anthropic's API address; only for tests against a fake server |
+
+## Letters by post
+
+| Variable | What it does |
+|---|---|
+| `PINGEN_CLIENT_ID`, `PINGEN_CLIENT_SECRET` | Sends letter pieces by post through [Pingen](marketing/print.md#send-letters-with-pingen), billed to your Pingen account |
+| `PINGEN_ORGANISATION_ID` | The Pingen organisation to send from (default: the first one) |
+| `PINGEN_STAGING` | `true` uses Pingen's test environment; letters are checked but never sent |
+| `PINGEN_API_URL` | Pingen's API address; only for tests against a fake server |
 
 ## Tests
 

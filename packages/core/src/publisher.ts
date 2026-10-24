@@ -1,6 +1,6 @@
 import { and, eq, inArray, lt, ne, sql } from 'drizzle-orm';
-import { posts, postTargets, socialAccounts, type Database, type PostStatus } from '@postwerk/db';
-import { getProvider, ProviderError } from '@postwerk/providers';
+import { posts, postTargets, socialAccounts, type Database, type PostStatus } from '@maas/db';
+import { getProvider, ProviderError } from '@maas/providers';
 import { blueskyKeyset } from './bluesky';
 import { publishViaBridge } from './bridge';
 import { oauthClientFor } from './clients';
@@ -106,7 +106,7 @@ async function currentCredentials(db: Database, accountId: string, now: Date): P
     const provider = getProvider(account.provider);
     if (!provider.refresh || !provider.needsRefresh?.(credentials, now.getTime())) return credentials;
 
-    // Bluesky sessions refresh with Postwerk's own signing key; other networks with the operator's app.
+    // Bluesky sessions refresh with MarketingAsAService's own signing key; other networks with the operator's app.
     const client = account.provider === 'bluesky' ? await blueskyKeyset(db) : oauthClientFor(account.provider);
     const refreshed = await provider.refresh(credentials, client);
     await tx.update(socialAccounts).set({ credentialsEnc: encryptJson(refreshed), updatedAt: now }).where(eq(socialAccounts.id, account.id));

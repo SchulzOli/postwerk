@@ -1,6 +1,6 @@
 import { eq, sql } from 'drizzle-orm';
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import { createDb, posts, socialAccounts, users, workspaces, type Database } from '@postwerk/db';
+import { createDb, posts, socialAccounts, users, workspaces, type Database } from '@maas/db';
 import { runMigrations } from '../../db/src/migrate';
 import { deleteAccount, getOrRegisterMastodonApp, saveAccount } from '../src/accounts';
 import { decryptJson } from '../src/crypto';
@@ -290,10 +290,10 @@ describe.skipIf(!url)('publishing (Postgres)', () => {
       vi.fn(async () => Response.json({ client_id: `cid-${++registrations}`, client_secret: 'secret' })),
     );
     try {
-      const first = await getOrRegisterMastodonApp(db, 'https://social.example', 'https://app/cb', 'Postwerk');
-      expect(await getOrRegisterMastodonApp(db, 'https://social.example', 'https://app/cb', 'Postwerk')).toEqual(first);
+      const first = await getOrRegisterMastodonApp(db, 'https://social.example', 'https://app/cb', 'MarketingAsAService');
+      expect(await getOrRegisterMastodonApp(db, 'https://social.example', 'https://app/cb', 'MarketingAsAService')).toEqual(first);
       await db.execute(sql`UPDATE mastodon_apps SET client_secret_enc = 'v1.broken'`);
-      const second = await getOrRegisterMastodonApp(db, 'https://social.example', 'https://app/cb', 'Postwerk');
+      const second = await getOrRegisterMastodonApp(db, 'https://social.example', 'https://app/cb', 'MarketingAsAService');
       expect(second).toEqual({ clientId: 'cid-2', clientSecret: 'secret' });
       expect(registrations).toBe(2);
     } finally {

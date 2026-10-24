@@ -35,12 +35,17 @@ describe('legal pages', () => {
         S3_ENDPOINT: 'https://fsn1.your-objectstorage.com',
         SMTP_URL: 'smtp://user:secret@smtp.example.com:587',
         ZERNIO_API_KEY: 'zk',
+        PINGEN_CLIENT_ID: 'id',
+        PINGEN_CLIENT_SECRET: 'secret',
+        ANTHROPIC_API_KEY: 'sk',
       }),
     ).toEqual([
       { kind: 'hosting', name: 'Hetzner Online GmbH, Germany' },
       { kind: 'storage', name: 'fsn1.your-objectstorage.com' },
       { kind: 'mail', name: 'smtp.example.com' },
       { kind: 'bridge', name: 'Zernio (ARBICHAT, S.L., Palamós (Girona), Spain)', privacyUrl: 'https://zernio.com/privacy-policy' },
+      { kind: 'letters', name: 'Pingen AG, Switzerland' },
+      { kind: 'ai', name: 'Anthropic PBC (Claude), USA', privacyUrl: 'https://www.anthropic.com/legal/privacy' },
     ]);
   });
 

@@ -1,6 +1,6 @@
 import 'server-only';
-import type { AuditAction } from '@postwerk/core';
-import type { AuditEntry } from '@postwerk/db';
+import type { AuditAction } from '@maas/core';
+import type { AuditEntry } from '@maas/db';
 import type { ActivityItem } from './activity';
 
 /** Shapes an audit row (with its user) for the activity views. */

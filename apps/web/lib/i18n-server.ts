@@ -1,7 +1,7 @@
 import 'server-only';
 import { cookies, headers } from 'next/headers';
 import { cache } from 'react';
-import { defaultLocale, errorText, isLocale, matchLocale, type Catalog, type Locale, type Messages } from '@postwerk/core/i18n';
+import { defaultLocale, errorText, isLocale, matchLocale, type Catalog, type Locale, type Messages } from '@maas/core/i18n';
 import { LOCALE_COOKIE } from './locale';
 import { getSession } from './session';
 

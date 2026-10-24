@@ -1,4 +1,4 @@
-import { legalPages, operatorDetails, type LegalPage } from '@postwerk/core';
+import { legalPages, operatorDetails, type LegalPage } from '@maas/core';
 import { appUrl } from './env';
 
 /** This server's name on its public pages: the host of APP_URL. */

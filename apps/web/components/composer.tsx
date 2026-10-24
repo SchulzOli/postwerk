@@ -1,11 +1,11 @@
 'use client';
 
 import { useActionState, useEffect, useMemo, useState } from 'react';
-import { baseText, planPost, type FlowGraph } from '@postwerk/core/flow';
-import { catalog, type ProviderId } from '@postwerk/providers/catalog';
-import { localizeInfo } from '@postwerk/providers/messages';
-import { countText } from '@postwerk/providers/text';
-import { textLimit, validateContent } from '@postwerk/providers/validate';
+import { baseText, planPost, type FlowGraph } from '@maas/core/flow';
+import { catalog, type ProviderId } from '@maas/providers/catalog';
+import { localizeInfo } from '@maas/providers/messages';
+import { countText } from '@maas/providers/text';
+import { textLimit, validateContent } from '@maas/providers/validate';
 import type { ComposeState } from '@/app/(app)/posts/actions';
 import { useLocale, useMessages } from '@/lib/i18n';
 import { commonMessages } from '@/messages/common';
@@ -29,6 +29,7 @@ export interface ComposerInitial {
   media: ComposerMedia[];
   accountIds: string[];
   flowId: string;
+  campaignId: string;
   options: Options;
   variants: Record<string, string>;
   /** ISO time if the post is scheduled for later. */
@@ -39,12 +40,18 @@ interface Props {
   accounts: ComposerAccount[];
   /** Saved flows; picking one replaces the manual account selection. */
   flows?: { id: string; name: string; graph: FlowGraph }[];
+  /** Campaigns the post can belong to; finished ones only for posts already in them. */
+  campaigns?: { id: string; name: string; done?: boolean }[];
   action: (state: ComposeState, form: FormData) => Promise<ComposeState>;
   /** Where to go after publishing ('/posts' or '/canvas'). */
   returnTo?: '/posts' | '/canvas';
   initial?: ComposerInitial;
+  /** A new post's campaign at first (started from a campaign). */
+  campaignId?: string;
   /** ISO time a new post is scheduled for at first (planned from the calendar). */
   scheduledAt?: string;
+  /** A new post's text at first (an idea from the AI studio). */
+  text?: string;
   /** Called after a successful save (canvas only; the list view navigates away). */
   onSaved?(): void;
   onCancel?(): void;
@@ -56,13 +63,13 @@ function toLocalInput(iso: string): string {
   return new Date(date.getTime() - date.getTimezoneOffset() * 60_000).toISOString().slice(0, 16);
 }
 
-export function Composer({ accounts, flows = [], action, returnTo = '/posts', initial, scheduledAt: startAt, onSaved, onCancel }: Props) {
+export function Composer({ accounts, flows = [], campaigns = [], action, returnTo = '/posts', initial, campaignId: startCampaign, scheduledAt: startAt, text: startText, onSaved, onCancel }: Props) {
   const [state, formAction, pending] = useActionState(action, {});
   const locale = useLocale();
   const t = useMessages(composerMessages);
   const common = useMessages(commonMessages);
   const editing = Boolean(initial?.postId);
-  const [text, setText] = useState(initial?.text ?? '');
+  const [text, setText] = useState(initial?.text ?? startText ?? '');
   const [attachments, setAttachments] = useState<ComposerMedia[]>(initial?.media ?? []);
   const [options, setOptions] = useState<Options>(initial?.options ?? {});
   const [selected, setSelected] = useState<Set<string>>(
@@ -73,6 +80,8 @@ export function Composer({ accounts, flows = [], action, returnTo = '/posts', in
   const [when, setWhen] = useState<'now' | 'later'>(firstTime ? 'later' : 'now');
   const [localTime, setLocalTime] = useState('');
   const [flowId, setFlowId] = useState(initial?.flowId ?? '');
+  const campaignId = initial?.campaignId || startCampaign || '';
+  const campaignChoices = campaigns.filter((c) => !c.done || c.id === campaignId);
 
   // The local time depends on the browser's time zone, so it is filled in after hydration.
   useEffect(() => {
@@ -160,6 +169,19 @@ export function Composer({ accounts, flows = [], action, returnTo = '/posts', in
       </fieldset>
 
       <input type="hidden" name="returnTo" value={returnTo} />
+      {campaignChoices.length > 0 ? (
+        <label>
+          {t.campaign}
+          <select name="campaignId" defaultValue={campaignId}>
+            <option value="">{t.noCampaign}</option>
+            {campaignChoices.map((c) => (
+              <option key={c.id} value={c.id}>{c.name}</option>
+            ))}
+          </select>
+        </label>
+      ) : (
+        <input type="hidden" name="campaignId" value={campaignId} />
+      )}
       {flows.length > 0 && (
         <label>
           {t.flow}

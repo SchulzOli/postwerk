@@ -1,6 +1,6 @@
 'use client';
 
-import type { Locale } from '@postwerk/core/i18n';
+import type { Locale } from '@maas/core/i18n';
 import { useLocale } from '@/lib/i18n';
 import { intlLocale } from '@/lib/locale';
 

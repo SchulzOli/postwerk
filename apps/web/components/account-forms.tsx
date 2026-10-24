@@ -1,7 +1,7 @@
 'use client';
 
 import { useActionState, useState, useTransition } from 'react';
-import { localeNames, locales, type Locale } from '@postwerk/core/i18n';
+import { localeNames, locales, type Locale } from '@maas/core/i18n';
 import { changePasswordAction, resendVerificationAction, setNotifyFailuresAction, updateNameAction, type AccountState } from '@/app/(app)/account/actions';
 import { setLocaleAction } from '@/app/actions/locale';
 import { useMessages } from '@/lib/i18n';

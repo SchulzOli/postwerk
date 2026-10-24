@@ -1,6 +1,6 @@
 import Link from 'next/link';
-import { isEmailTokenValid } from '@postwerk/core';
-import { getDb } from '@postwerk/db';
+import { isEmailTokenValid } from '@maas/core';
+import { getDb } from '@maas/db';
 import { ResetPasswordForm } from '@/components/password-forms';
 import { getMessages } from '@/lib/i18n-server';
 import { authMessages } from '@/messages/auth';

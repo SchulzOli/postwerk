@@ -15,7 +15,7 @@ export async function generateMetadata() {
 export default async function EditPostPage({ params }: { params: Promise<{ id: string }> }) {
   const { workspace } = await requireSession();
   const { id } = await params;
-  const [{ accounts, flows }, initial, t, common] = await Promise.all([
+  const [{ accounts, flows, campaigns }, initial, t, common] = await Promise.all([
     loadComposerChoices(workspace.id),
     loadComposerInitial(workspace.id, id),
     getMessages(postsMessages),
@@ -37,7 +37,7 @@ export default async function EditPostPage({ params }: { params: Promise<{ id: s
         <h1 className="grow">{t.editPost}</h1>
         <Link href="/posts" className="button secondary">{common.cancel}</Link>
       </div>
-      <Composer accounts={accounts} flows={flows} action={submitPost} initial={initial} />
+      <Composer accounts={accounts} flows={flows} campaigns={campaigns} action={submitPost} initial={initial} />
     </div>
   );
 }

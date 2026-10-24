@@ -1,6 +1,6 @@
 import { and, eq, inArray, sql } from 'drizzle-orm';
-import { mastodonApps, oauthStates, posts, postTargets, socialAccounts, type Database } from '@postwerk/db';
-import { Mastodon, type AccountProfile, type BridgeId, type ConnectedAccount, type ProviderId } from '@postwerk/providers';
+import { mastodonApps, oauthStates, posts, postTargets, socialAccounts, type Database } from '@maas/db';
+import { Mastodon, type AccountProfile, type BridgeId, type ConnectedAccount, type ProviderId } from '@maas/providers';
 import { recordBridgeUsage } from './bridge-usage';
 import { decrypt, encrypt, encryptJson } from './crypto';
 import { generateToken } from './password';

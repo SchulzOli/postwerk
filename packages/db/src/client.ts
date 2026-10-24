@@ -12,10 +12,10 @@ export function createDb(url = process.env.DATABASE_URL) {
   return Object.assign(drizzle(client, { schema }), { close: () => client.end() });
 }
 
-const globalForDb = globalThis as unknown as { postwerkDb?: Database };
+const globalForDb = globalThis as unknown as { maasDb?: Database };
 
 /** Process-wide connection pool (survives Next.js dev hot reloads). */
 export function getDb(): Database {
-  globalForDb.postwerkDb ??= createDb();
-  return globalForDb.postwerkDb;
+  globalForDb.maasDb ??= createDb();
+  return globalForDb.maasDb;
 }

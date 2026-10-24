@@ -13,7 +13,7 @@ labels: bug
 2.
 
 **Setup**
-- Postwerk version or commit:
+- MarketingAsAService version or commit:
 - How you run it (Docker Compose, `npm run dev`, …):
 - Network involved (if any):
 - Browser (for UI problems):

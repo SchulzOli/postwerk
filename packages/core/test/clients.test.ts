@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { provider } from '@postwerk/db';
-import { PROVIDER_IDS } from '@postwerk/providers';
+import { provider } from '@maas/db';
+import { PROVIDER_IDS } from '@maas/providers';
 import { isProviderAvailable, oauthClientFor } from '../src/clients';
 
 describe('operator apps', () => {

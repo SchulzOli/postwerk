@@ -112,7 +112,7 @@ export interface ProviderSetup {
   review?: string;
   /** The network's developer documentation. */
   docsUrl: string;
-  /** Postwerk's step-by-step guide: a path on the docs site (see `guideUrl`). */
+  /** MarketingAsAService's step-by-step guide: a path on the docs site (see `guideUrl`). */
   guide: string;
 }
 
@@ -194,14 +194,14 @@ export interface MastodonConnect {
 
 /**
  * AT Protocol (Bluesky): users sign in on their own server with OAuth; the
- * form is the fallback (app password) for servers Postwerk cannot be an OAuth
+ * form is the fallback (app password) for servers MarketingAsAService cannot be an OAuth
  * client on, or that do not support it.
  */
 export interface AtprotoConnect<C> extends Omit<FormConnect<C>, 'kind'> {
   kind: 'atproto';
 }
 
-/** The signing keys of Postwerk's AT Protocol client; sessions refresh with the key they started with. */
+/** The signing keys of MarketingAsAService's AT Protocol client; sessions refresh with the key they started with. */
 export interface AtprotoKeyset {
   keys: PrivateJwk[];
 }
@@ -216,7 +216,7 @@ export interface PrivateJwk {
   kid?: string;
 }
 
-/** What a network's refresh needs from the server: an operator app, or Postwerk's own AT Protocol keys. */
+/** What a network's refresh needs from the server: an operator app, or MarketingAsAService's own AT Protocol keys. */
 export type ProviderClient = OAuthClient | AtprotoKeyset;
 
 export interface PublishContext {
@@ -225,7 +225,7 @@ export interface PublishContext {
   /** Operator app credentials, for networks that need them at publish time. */
   client?: OAuthClient;
   /**
-   * Reads an uploaded file straight from Postwerk's storage, so networks we
+   * Reads an uploaded file straight from MarketingAsAService's storage, so networks we
    * upload bytes to do not depend on the public URL. Undefined for other media.
    */
   loadMedia?(item: MediaItem): Promise<{ blob: Blob; mimeType: string } | undefined>;
@@ -262,7 +262,7 @@ export class ProviderError extends LocalizedError {
   readonly status?: number;
 
   /**
-   * `de`: the German text, for messages Postwerk writes itself that people
+   * `de`: the German text, for messages MarketingAsAService writes itself that people
    * see while connecting. Errors relayed from a network's API stay English.
    */
   constructor(message: string, options: { retryable?: boolean; needsReauth?: boolean; status?: number; cause?: unknown; de?: string } = {}) {

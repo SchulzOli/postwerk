@@ -1,9 +1,9 @@
 import 'server-only';
 import { cookies } from 'next/headers';
 import { cache } from 'react';
-import { activeTheme, listPlugins, type InstalledPlugin } from '@postwerk/core';
-import type { ColorMode, ThemeManifest } from '@postwerk/core/theme';
-import { getDb } from '@postwerk/db';
+import { activeTheme, listPlugins, type InstalledPlugin } from '@maas/core';
+import type { ColorMode, ThemeManifest } from '@maas/core/theme';
+import { getDb } from '@maas/db';
 import { MODE_COOKIE, parseColorMode } from './color-mode';
 import { getSession } from './session';
 

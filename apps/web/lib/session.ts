@@ -3,12 +3,12 @@ import { and, eq, gt } from 'drizzle-orm';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { cache } from 'react';
-import { createWorkspace, generateToken, hashToken, isLocale, listUserWorkspaces } from '@postwerk/core';
-import { getDb, sessions, users } from '@postwerk/db';
+import { createWorkspace, generateToken, hashToken, isLocale, listUserWorkspaces } from '@maas/core';
+import { getDb, sessions, users } from '@maas/db';
 import { authMessages } from '@/messages/auth';
 import { secureCookies } from './env';
 
-const COOKIE = 'postwerk_session';
+const COOKIE = 'maas_session';
 const SESSION_TTL_MS = 30 * 24 * 60 * 60_000;
 
 export async function createSession(userId: string, workspaceId?: string) {

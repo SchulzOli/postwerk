@@ -1,4 +1,4 @@
-import { defineMessages } from '@postwerk/core/i18n';
+import { defineMessages } from '@maas/core/i18n';
 
 /** The post composer (list view and canvas). The media picker has its own catalog (`upload`). */
 export const composerMessages = defineMessages({
@@ -10,6 +10,8 @@ export const composerMessages = defineMessages({
     removeFailedUploads: 'Remove the files that could not be uploaded to continue.',
     flow: 'Flow',
     noFlow: 'No flow — choose accounts below',
+    campaign: 'Campaign',
+    noCampaign: 'No campaign',
     flowPublishesTo: 'The flow publishes to',
     flowAccountGone: 'The flow uses an account that was disconnected.',
     afterMinutes: (minutes: number) => ` · after ${minutes} min`,
@@ -36,6 +38,8 @@ export const composerMessages = defineMessages({
     removeFailedUploads: 'Entferne die Dateien, die nicht hochgeladen werden konnten, um weiterzumachen.',
     flow: 'Flow',
     noFlow: 'Kein Flow – wähle unten Konten aus',
+    campaign: 'Kampagne',
+    noCampaign: 'Keine Kampagne',
     flowPublishesTo: 'Der Flow veröffentlicht auf',
     flowAccountGone: 'Der Flow nutzt ein Konto, das getrennt wurde.',
     afterMinutes: (minutes) => ` · nach ${minutes} Min.`,

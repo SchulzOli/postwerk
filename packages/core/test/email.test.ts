@@ -1,6 +1,6 @@
 import { eq, sql } from 'drizzle-orm';
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import { createDb, emailTokens, sessions, users, workspaceMembers, workspaces, type Database } from '@postwerk/db';
+import { createDb, emailTokens, sessions, users, workspaceMembers, workspaces, type Database } from '@maas/db';
 import { runMigrations } from '../../db/src/migrate';
 import { saveAccount } from '../src/accounts';
 import { setMailTransport, type Mail } from '../src/mail';
@@ -12,7 +12,7 @@ import { runPublishCycle, type FinishedPost } from '../src/publisher';
 import { changePassword, isEmailTokenValid, requestPasswordReset, resetPassword, sendVerificationEmail, updateProfile, verifyEmail } from '../src/users';
 
 const url = process.env.TEST_DATABASE_URL;
-const APP = 'https://postwerk.test';
+const APP = 'https://maas.test';
 
 describe('mail templates', () => {
   it('escape user content in the HTML version', () => {
@@ -29,7 +29,7 @@ describe.skipIf(!url)('email flows (Postgres)', () => {
   let sent: Mail[];
   let user: { id: string; name: string; email: string };
 
-  const linkIn = (mail: Mail | undefined) => mail?.text.match(/https:\/\/postwerk\.test\/\S+/)?.[0] ?? '';
+  const linkIn = (mail: Mail | undefined) => mail?.text.match(/https:\/\/maas\.test\/\S+/)?.[0] ?? '';
   const tokenIn = (mail: Mail | undefined) => linkIn(mail).split('/').pop()!;
 
   beforeAll(async () => {
@@ -57,7 +57,7 @@ describe.skipIf(!url)('email flows (Postgres)', () => {
     await sendVerificationEmail(db, user, APP);
     expect(sent).toHaveLength(1);
     expect(sent[0]).toMatchObject({ to: 'ada@example.com', subject: 'Confirm your email address' });
-    expect(linkIn(sent[0])).toMatch(/^https:\/\/postwerk\.test\/verify-email\//);
+    expect(linkIn(sent[0])).toMatch(/^https:\/\/maas\.test\/verify-email\//);
 
     const token = tokenIn(sent[0]);
     expect(await verifyEmail(db, token)).toBe(user.id);
@@ -76,7 +76,7 @@ describe.skipIf(!url)('email flows (Postgres)', () => {
     expect(await requestPasswordReset(db, 'nobody@example.com', APP)).toBeUndefined();
     expect(sent).toHaveLength(0);
     expect(await requestPasswordReset(db, ' ADA@example.com ', APP)).toBe(user.id);
-    expect(sent[0]).toMatchObject({ to: 'ada@example.com', subject: 'Reset your Postwerk password' });
+    expect(sent[0]).toMatchObject({ to: 'ada@example.com', subject: 'Reset your MarketingAsAService password' });
   });
 
   it('resets the password once, signs out everywhere and confirms the address', async () => {

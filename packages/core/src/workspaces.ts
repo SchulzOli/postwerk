@@ -1,5 +1,5 @@
 import { and, asc, eq, gt, isNull } from 'drizzle-orm';
-import { invites, sessions, users, workspaceMembers, workspaces, type Database, type MemberRole, type Transaction as Tx } from '@postwerk/db';
+import { invites, sessions, users, workspaceMembers, workspaces, type Database, type MemberRole, type Transaction as Tx } from '@maas/db';
 import { decrypt, encrypt } from './crypto';
 import { LocalizedError } from './i18n';
 import { workspaceMessages } from './messages';

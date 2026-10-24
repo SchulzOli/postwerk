@@ -92,6 +92,48 @@
       "when": 1791309538792,
       "tag": "0012_bridge_usage",
       "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1792865971017,
+      "tag": "0013_brand_kits",
+      "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1792866672443,
+      "tag": "0014_campaigns",
+      "breakpoints": true
+    },
+    {
+      "idx": 15,
+      "version": "7",
+      "when": 1792869776346,
+      "tag": "0015_mailings",
+      "breakpoints": true
+    },
+    {
+      "idx": 16,
+      "version": "7",
+      "when": 1792870129215,
+      "tag": "0016_audio_media",
+      "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "7",
+      "when": 1792871308866,
+      "tag": "0017_ads",
+      "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1792872447389,
+      "tag": "0018_studio",
+      "breakpoints": true
     }
   ]
 }

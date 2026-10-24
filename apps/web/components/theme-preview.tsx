@@ -1,7 +1,7 @@
 'use client';
 
 import type { CSSProperties } from 'react';
-import { modeTokens, type ThemeManifest } from '@postwerk/core/theme';
+import { modeTokens, type ThemeManifest } from '@maas/core/theme';
 import { useMessages } from '@/lib/i18n';
 import { themesMessages } from '@/messages/themes';
 

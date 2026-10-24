@@ -3,7 +3,7 @@ import { headers } from 'next/headers';
 
 /**
  * The client's IP address as reported by the reverse proxy in front of
- * Postwerk (X-Forwarded-For / X-Real-IP). Without a proxy that sets these
+ * MarketingAsAService (X-Forwarded-For / X-Real-IP). Without a proxy that sets these
  * headers it is "unknown" or whatever the client claims — per-IP limits are a
  * second line of defense; per-email limits do not depend on it.
  */

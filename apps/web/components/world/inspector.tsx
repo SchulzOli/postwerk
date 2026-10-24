@@ -1,9 +1,9 @@
 'use client';
 
 import { useActionState, useMemo, useState, useTransition } from 'react';
-import { errorText } from '@postwerk/core/i18n';
-import { parseThemeManifest, type ThemeManifest } from '@postwerk/core/theme';
-import { catalog, guideUrl } from '@postwerk/providers/catalog';
+import { errorText } from '@maas/core/i18n';
+import { parseThemeManifest, type ThemeManifest } from '@maas/core/theme';
+import { catalog, guideUrl } from '@maas/providers/catalog';
 import { connectMastodon, connectWithForm, disconnectAccount, startBridgeConnectAction, startOAuth } from '@/app/(app)/accounts/actions';
 import { BlueskyConnect } from '@/components/bluesky-connect';
 import { chooseThemeAction, installBuiltinPluginAction, installPluginAction, uninstallPluginAction } from '@/app/(world)/canvas/actions';
@@ -566,6 +566,8 @@ export function Inspector({ node, onClose }: { node: WorldNode | undefined; onCl
   const networks = useMessages(networksMessages);
   if (!node || node.type === 'step' || node.type === 'composer' || node.type === 'posts' || node.type === 'calendar' || node.type === 'activity' || node.type === 'members') return null;
   if (node.type === 'bridgeUsage' && !usage) return null;
+  // The brand card links to its own page; the canvas shows everything else on the card.
+  if (node.type === 'brand' || node.type === 'campaigns') return null;
   const title =
     node.type === 'bridgeUsage'
       ? networks.usageTitle(usage!.name)

@@ -16,7 +16,7 @@ describe('setup notes', () => {
   });
 
   it('link every network to an existing guide and heading on the docs site', () => {
-    expect(guideUrl(catalog.instagram)).toBe('https://schulzoli.github.io/postwerk/networks/meta#instagram');
+    expect(guideUrl(catalog.instagram)).toBe('https://schulzoli.github.io/MarketingAsAService/networks/meta#instagram');
     // Headings become anchors like the docs site makes them: lowercase, spaces → "-".
     const slug = (heading: string) => heading.trim().toLowerCase().replace(/[^\w\s-]/g, '').replace(/\s+/g, '-');
     for (const info of providerInfos) {

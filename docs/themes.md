@@ -1,8 +1,8 @@
 # Themes
 
-Postwerk's whole look is a plugin. A **theme** sets the colors, fonts, corner radii, the canvas grid and how connections are drawn — always for **both light and dark mode** — and can add its own CSS on top.
+MarketingAsAService's whole look is a plugin. A **theme** sets the colors, fonts, corner radii, the canvas grid and how connections are drawn — always for **both light and dark mode** — and can add its own CSS on top.
 
-Three themes ship with Postwerk and are installed in every new workspace:
+Three themes ship with MarketingAsAService and are installed in every new workspace:
 
 | | Light | Dark |
 |---|---|---|
@@ -18,7 +18,7 @@ Themes live in the **Plugins** region of the canvas (`/canvas#n=region:plugins`)
 
 - **Everyone picks their own theme**: select a theme card and choose *Use*. With nothing chosen (or after your theme is uninstalled) you get the workspace's first installed theme.
 - **Light, dark or system** is the switch at the top right. It is remembered per browser, so your phone and laptop can differ. Every theme supports both modes.
-- **Workspace owners and admins install and uninstall** themes. Built-in themes can be uninstalled and installed again at any time; they update together with Postwerk. With every theme uninstalled, Postwerk falls back to its plain base look (still light and dark).
+- **Workspace owners and admins install and uninstall** themes. Built-in themes can be uninstalled and installed again at any time; they update together with MarketingAsAService. With every theme uninstalled, MarketingAsAService falls back to its plain base look (still light and dark).
 - **Make your own** with the theme editor (the *Add a theme* card): start from any theme, change what you like, and choose *Install and use*. Installing a theme with the same `id` again updates it, so you can keep tweaking. *Download* gives you the theme file to share; others install it from the same editor.
 
 ## The theme file
@@ -81,7 +81,7 @@ Tokens are CSS variables (written without the leading `--`). Every theme must se
 | `success`, `warn`, `error` | Status colors |
 | `tint-network`, `tint-account`, `tint-flow`, `tint-step`, `tint-composer`, `tint-posts`, `tint-plugin` | Each region's color: borders, node accents, minimap |
 
-These are optional; Postwerk derives sensible defaults:
+These are optional; MarketingAsAService derives sensible defaults:
 
 | Token | Default | Used for |
 |---|---|---|
@@ -108,7 +108,7 @@ Any other name (like `glow` above) is your own token: set it in both modes and u
 
 ### Extra CSS
 
-Your CSS loads after Postwerk's own styles, so the same selectors win. Useful hooks:
+Your CSS loads after MarketingAsAService's own styles, so the same selectors win. Useful hooks:
 
 - Canvas: `.world-root`, `.region` and `.region-networks` … `.region-plugins` (with `header`, `h2`, `p`), `.world-card` (`.network-node`, `.account-node`, `.step-node` with `.step-trigger`, `.step-addText`, `.step-shorten`, `.step-delay`, `.step-target`, `.plugin-node`), `.flow-frame`, `.flow-header`, `.world-panel`, `.world-toolbar`, `.world-account`, `.inspector`, `.is-selected`, edges `.flow-edge`, `.link-edge`, `.feed-edge`.
 - Everywhere: `.brand`, `.topbar`, `.card`, `button` (`.secondary`, `.link`, `.small`), `.badge`, `.chip`, inputs.
@@ -128,7 +128,7 @@ The theme editor checks all of this as you type and shows a live preview of both
 
 ## For developers
 
-- Format, validation and the stylesheet generator: `packages/core/src/theme.ts` (`@postwerk/core/theme`, browser-safe). The built-in themes are in `packages/core/src/themes/` — they use the same format.
+- Format, validation and the stylesheet generator: `packages/core/src/theme.ts` (`@maas/core/theme`, browser-safe). The built-in themes are in `packages/core/src/themes/` — they use the same format.
 - Installed plugins per workspace: `plugins` table; a member's choice: `workspace_members.theme`; functions in `packages/core/src/plugins.ts`.
 - The root layout (`apps/web/app/layout.tsx`) renders `<html data-theme data-mode>` and the active theme's `<style>`; the base tokens and their defaults are at the top of `apps/web/app/globals.css`.
 - To ship another built-in theme, add a file to `packages/core/src/themes/` and list it in `builtinThemes`. New workspaces get it installed; existing ones see it on the canvas with an *Install* button.

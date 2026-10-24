@@ -1,6 +1,6 @@
 import Link from 'next/link';
-import { findInvite } from '@postwerk/core';
-import { getDb } from '@postwerk/db';
+import { findInvite } from '@maas/core';
+import { getDb } from '@maas/db';
 import { AcceptInvite } from '@/components/accept-invite';
 import { getMessages } from '@/lib/i18n-server';
 import { getSession } from '@/lib/session';

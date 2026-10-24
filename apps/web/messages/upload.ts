@@ -1,4 +1,4 @@
-import { defineMessages } from '@postwerk/core/i18n';
+import { defineMessages } from '@maas/core/i18n';
 
 /** Attaching media: the composer's media picker, media links and the upload endpoint. */
 export const uploadMessages = defineMessages({
@@ -36,6 +36,7 @@ export const uploadMessages = defineMessages({
     unreadable: 'The attached media could not be read. Please attach it again.',
     tooManyFiles: (max: number) => `Attach at most ${max} files.`,
     uploadMissing: 'An uploaded file is missing. Remove it and upload it again.',
+    noAudio: 'Audio files cannot be posted. Attach them to a radio spot instead.',
   },
   de: {
     dropHere: 'Zieh Bilder oder Videos hierher oder',
@@ -68,5 +69,6 @@ export const uploadMessages = defineMessages({
     unreadable: 'Die angehängten Medien konnten nicht gelesen werden. Bitte häng sie noch einmal an.',
     tooManyFiles: (max) => `Häng höchstens ${max} Dateien an.`,
     uploadMissing: 'Eine hochgeladene Datei fehlt. Entferne sie und lade sie noch einmal hoch.',
+    noAudio: 'Audiodateien lassen sich nicht posten. Häng sie stattdessen an einen Radiospot.',
   },
 });
