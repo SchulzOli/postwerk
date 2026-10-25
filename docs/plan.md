@@ -141,6 +141,9 @@ A business's marketing runs in campaigns across every channel it uses, with one 
 - **AI studio** (optional, `ANTHROPIC_API_KEY`): Claude drafts ads, print texts, spot scripts and post ideas into a campaign in the brand's voice; drafts need the same approval as any piece
 - Next: picture generation for the brand character (consistent across pieces), TikTok and LinkedIn ads, outdoor booking, an export of a campaign's results
 
+### Autopilot — our marketing runs on its own (next)
+Content is planned, drafted, checked, published and measured without anyone starting it; ads spend within their caps and improve themselves. People set goals, budgets and rules, approve in one short weekly sitting, and act on alerts. The full todo is in section 6 below.
+
 ### Phase 4 — Delight
 - Live post previews per network
 - AI assistant (Claude) in the composer to shorten and adapt one post per network, suggest hashtags, write alt text (campaign drafts and post ideas come from the AI studio)
@@ -176,3 +179,58 @@ Only if other people should connect their accounts through your apps: business v
 ## 5. Relation to `physio-ruhige-naehe`
 
 The physio monorepo currently runs Mixpost Lite (`apps/social`) as a stopgap. Once MarketingAsAService supports Instagram (via the bridge in Phase 2 at the latest), the practice can switch to a MarketingAsAService instance and `apps/social` can be removed.
+
+---
+
+## 6. Autopilot todo: our advertising and social media on their own
+
+The goal for the practice: marketing that runs by itself all year. What stays with people is about 15 minutes a week to approve what comes next, and answers when an alert asks for one.
+
+**Levels.** Each level works on its own, so the practice gets value along the way:
+
+| Level | Who does what | People's time |
+|---|---|---|
+| 1 — today | People start the AI studio, edit and approve every piece, schedule posts, start ads | hours a week |
+| 2 — planned for you | MarketingAsAService plans the month, drafts every post and piece and schedules them; people approve the week in one sitting | ~15 min a week |
+| 3 — autopilot | Recurring series and post variants go out without individual approval; ads pace and optimize themselves within caps; people read the weekly report and act on alerts | alerts only |
+
+New claims, new ad texts, budget increases and letters to people always keep a human approval, also at level 3: health advertising rules apply, and money and personal data are involved.
+
+### A. Set up once (us)
+
+- [ ] **Server:** MarketingAsAService on a public https address with `OPERATOR_*`, SMTP for alerts and a nightly database backup (section 4)
+- [ ] **Switch from Mixpost:** move the practice's posting from `apps/social` to MarketingAsAService (section 5)
+- [ ] **Channels:** Instagram and the Facebook Page, Google Business Profile, LinkedIn; YouTube and TikTok through the bridge until their reviews are through ([guides](networks/index.md))
+- [ ] **Brand kit, complete:** tone of voice, do's and don'ts, colors, logo, and the brand character with 3–6 reference pictures ([brand kit](marketing/index.md#brand-kit))
+- [ ] **Health advertising rules:** have the rules for health advertising (Heilmittelwerbegesetz: no healing promises, no fear, nothing misleading) checked once by someone who knows them, then write them into the brand kit's don'ts, where every draft and check reads them
+- [ ] **Picture library:** 30 or more own photos (practice, team, exercises, the character) uploaded, with the consent of everyone shown
+- [ ] **Year plan:** goals per quarter, a monthly budget per channel, and the seasons' themes (for example new-year resolutions, the running season, back weeks in autumn, gift vouchers in December)
+- [ ] **Ads:** Google Ads account and a developer token with Basic access, a Meta ad account; payment methods; spending limits where the platform has them as the last safety net ([paid ads](marketing/ads.md))
+- [ ] **Conversions:** appointment bookings counted as conversions in Google Ads and Meta (with the website's consent banner), so ads can optimize for patients instead of clicks
+- [ ] **AI:** an Anthropic API key with a monthly spend limit in the Claude Console ([AI studio](marketing/ai-studio.md))
+- [ ] **Letters (optional):** a Pingen account. Patient lists count as health data: write only to people who explicitly agreed ([letters](marketing/print.md#send-letters-with-pingen))
+- [ ] **Roles:** who approves (owner or admin), who gets alerts, and the weekly approval slot
+
+### B. Build (MarketingAsAService)
+
+In this order; each step is useful on its own. Sizes as in the roadmap.
+
+1. [ ] **Approval for posts and an approval queue (S).** Posts get the same draft → approved step as pieces. One page lists everything due next week; approve all, one by one, or from a signed link in the weekly email.
+2. [ ] **Guardrails before anything goes out (S–M).** An automatic check of every post and piece against the brand's don'ts and the health advertising rules (Claude as the reviewer), blocked words, broken links, pictures without consent, budget caps. Anything that fails waits for a person. A kill switch pauses all automation of a workspace.
+3. [ ] **The month planned by AI (M).** On a fixed day the worker asks Claude for next month's plan from the year plan, campaigns, seasons and holidays, and past results: dates, channels, topics and formats. The plan lands as draft posts and pieces on the calendar.
+4. [ ] **Real post drafts, not just ideas (M).** The studio writes complete posts for chosen accounts or flows: per-network versions, hashtags, alt text, and a fitting picture from the tagged library (Claude tags uploads by looking at them). They are scheduled at good times.
+5. [ ] **Series (S).** Recurring formats, such as "exercise of the week" every Tuesday, filled anew each week from an approved template. At level 3 they go out without individual approval.
+6. [ ] **The rhythm in the worker (S).** One schedule per workspace: plan the month (20th), draft the week (Thursday), remind approvers (Friday), publish (daily), report (Monday).
+7. [ ] **Ads that run themselves (M).** Approved ads start at the campaign's start and stop at its end or when the channel's budget is spent, with even daily pacing. Once conversions are counted, ads bid for them instead of clicks. Rules within the caps: pause an ad whose cost per lead stays above the target, shift budget to the better ad, and ask the studio for fresh variants when an ad wears out. Every change is logged and can be undone.
+8. [ ] **Measure what matters (M).** Post numbers from each network's insights API, ad conversions (leads, not only clicks), UTM links on every link, and appointments from the practice's booking system (API or export) as the real result. All of it flows into the campaign's results.
+9. [ ] **Weekly report (S).** Monday email: what ran, what it cost, how many enquiries and appointments, what comes next, and Claude's suggestions. The best posts and ads of the past months go back into the prompts as examples of what works for us.
+10. [ ] **Triggers (S–M).** Free short-notice appointments in the booking system → a post or a small ad push; a new article on the website (RSS) → a post series; holidays and closures → opening hours on Google Business Profile and a post; a new five-star review → a thank-you post draft (checked against the health advertising rules).
+11. [ ] **Pictures of the brand character (M–L).** Generated pictures that keep the character the same from the reference pictures, through an image provider plugged in like the networks. Claude writes the picture descriptions.
+12. [ ] **Inbox (L).** Comments, messages and reviews from all networks in one place, with suggested answers. Health questions are never answered automatically.
+13. [ ] **API and MCP server (M, Phase 5).** A public API so scheduled AI agents can plan and draft through the same rules and approval queue. That is also a shortcut to level 2 before steps 3–6 are built.
+
+### C. Done when
+
+- [ ] A whole month went out with no more than the weekly approval sitting
+- [ ] Ads stayed within budget all month without manual changes, and their cost per appointment is known
+- [ ] The Monday report arrived every week and its suggestions were used

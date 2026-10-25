@@ -66,6 +66,6 @@ To send a letter:
 
 Once every letter of a mailing is with Pingen, the mailing appears in the campaign's results: channel *Mail*, the number of letters as reach and Pingen's prices as spend (when Pingen bills in the campaign's currency).
 
-**Privacy.** Recipients' addresses stay in MarketingAsAService until you delete the mailing (**Delete addresses**). Only write to customers and people who agreed to it, and sign Pingen's data processing agreement.
+**Privacy.** Recipients' addresses stay in MarketingAsAService until you delete the mailing (**Delete addresses**). Only write to customers and people who agreed to it, and sign Pingen's data processing agreement. While letters are set up, the server's [built-in privacy policy](../legal.md) names Pingen and the stored addresses.
 
 Postcards are not sent through Pingen, which only posts letters. Print them at a print shop that also posts them, or post them yourself.

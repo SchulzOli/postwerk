@@ -1,6 +1,6 @@
 # Security policy
 
-MarketingAsAService stores access tokens for people's social media accounts, so we take security reports seriously.
+MarketingAsAService stores access tokens for people's social media and ad accounts, and the API keys of the services a server uses, so we take security reports seriously.
 
 ## Reporting a vulnerability
 

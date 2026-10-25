@@ -21,8 +21,8 @@ export const legalMessages = defineMessages({
 
     about: {
       intro: (p: { site: string; operator: string }) =>
-        `${p.site} is run by ${p.operator}. It uses MarketingAsAService, an open-source tool to plan posts and publish them to social networks.`,
-      how: 'People with an account here connect their own social media accounts, write posts and choose when they go out. MarketingAsAService publishes only what they schedule, and only to the accounts they connected.',
+        `${p.site} is run by ${p.operator}. It uses MarketingAsAService, an open-source tool to plan a business's marketing: posts on social networks, ads, print pieces and letters.`,
+      how: 'People with an account here connect their own social media and ad accounts, write posts and ads, and choose when they go out. MarketingAsAService publishes only what they schedule, creates only the ads they start, and uses only the accounts they connected.',
       networks: 'Networks you can connect here',
       viaBridge: (bridge: string) => `through ${bridge}`,
       noNetworks: 'None yet.',
@@ -66,7 +66,7 @@ export const legalMessages = defineMessages({
       privacyPolicy: 'privacy policy',
       retention: 'How long we keep data',
       retentionText:
-        'Your account and content stay until you delete them or ask us to. When you disconnect a social media account, its access is deleted right away. Uploads that no post uses are deleted after a day; sign-in sessions end after 30 days.',
+        'Your account and content stay until you delete them or ask us to. When you disconnect a social media or ad account, its access is deleted right away. Uploads that no post uses are deleted after a day; sign-in sessions end after 30 days.',
       rights: 'Your rights',
       rightsText:
         'You can ask for access to your data, its correction or deletion, restriction of processing, and a copy to take elsewhere. You can object to processing based on legitimate interest, and you can complain to a data protection authority.',
@@ -77,7 +77,7 @@ export const legalMessages = defineMessages({
       intro: (p: { site: string; operator: string }) => `These terms apply when you use ${p.site}, run by ${p.operator}.`,
       service: 'The service',
       serviceText:
-        'MarketingAsAService lets you plan posts and publish them to the social media accounts you connect. It is provided as it is: we keep it running as well as we can, but cannot promise that every post goes out on time.',
+        'MarketingAsAService lets you plan your marketing and publish it through the accounts and services you connect: posts, ads, print pieces and letters. Ads and letters are billed by those providers to your accounts. It is provided as it is: we keep it running as well as we can, but cannot promise that every post goes out on time.',
       account: 'Your account',
       accountText: 'Keep your password safe. You are responsible for what is published from your account and your workspaces.',
       content: 'Your content',
@@ -125,8 +125,8 @@ export const legalMessages = defineMessages({
     sourceCode: 'Quellcode',
 
     about: {
-      intro: (p) => `${p.site} wird von ${p.operator} betrieben. Es nutzt MarketingAsAService, ein Open-Source-Werkzeug, um Beiträge zu planen und in sozialen Netzwerken zu veröffentlichen.`,
-      how: 'Wer hier ein Konto hat, verbindet eigene Social-Media-Konten, schreibt Beiträge und legt fest, wann sie erscheinen. MarketingAsAService veröffentlicht nur, was geplant wurde, und nur in den verbundenen Konten.',
+      intro: (p) => `${p.site} wird von ${p.operator} betrieben. Es nutzt MarketingAsAService, ein Open-Source-Werkzeug für das Marketing eines Unternehmens: Beiträge in sozialen Netzwerken, Anzeigen, Drucksachen und Briefe.`,
+      how: 'Wer hier ein Konto hat, verbindet eigene Social-Media- und Werbekonten, schreibt Beiträge und Anzeigen und legt fest, wann sie erscheinen. MarketingAsAService veröffentlicht nur, was geplant wurde, legt nur die Anzeigen an, die gestartet werden, und nutzt nur die verbundenen Konten.',
       networks: 'Netzwerke, die du hier verbinden kannst',
       viaBridge: (bridge) => `über ${bridge}`,
       noNetworks: 'Noch keine.',
@@ -170,7 +170,7 @@ export const legalMessages = defineMessages({
       privacyPolicy: 'Datenschutzerklärung',
       retention: 'Wie lange wir Daten speichern',
       retentionText:
-        'Dein Konto und deine Inhalte bleiben, bis du sie löschst oder uns darum bittest. Wenn du ein Social-Media-Konto trennst, wird sein Zugriff sofort gelöscht. Uploads, die kein Beitrag nutzt, werden nach einem Tag gelöscht; Anmeldungen enden nach 30 Tagen.',
+        'Dein Konto und deine Inhalte bleiben, bis du sie löschst oder uns darum bittest. Wenn du ein Social-Media- oder Werbekonto trennst, wird sein Zugriff sofort gelöscht. Uploads, die kein Beitrag nutzt, werden nach einem Tag gelöscht; Anmeldungen enden nach 30 Tagen.',
       rights: 'Deine Rechte',
       rightsText:
         'Du kannst Auskunft über deine Daten verlangen, ihre Berichtigung oder Löschung, die Einschränkung der Verarbeitung und eine Kopie zur Mitnahme. Du kannst einer Verarbeitung aufgrund berechtigten Interesses widersprechen und dich bei einer Datenschutz-Aufsichtsbehörde beschweren.',
@@ -181,7 +181,7 @@ export const legalMessages = defineMessages({
       intro: (p) => `Diese Bedingungen gelten, wenn du ${p.site} nutzt, betrieben von ${p.operator}.`,
       service: 'Der Dienst',
       serviceText:
-        'Mit MarketingAsAService planst du Beiträge und veröffentlichst sie in den Social-Media-Konten, die du verbindest. Wir stellen den Dienst so bereit, wie er ist: Wir halten ihn so gut wie möglich am Laufen, können aber nicht versprechen, dass jeder Beitrag pünktlich erscheint.',
+        'Mit MarketingAsAService planst du dein Marketing und veröffentlichst es über die Konten und Dienste, die du verbindest: Beiträge, Anzeigen, Drucksachen und Briefe. Anzeigen und Briefe rechnen diese Anbieter über deine Konten ab. Wir stellen den Dienst so bereit, wie er ist: Wir halten ihn so gut wie möglich am Laufen, können aber nicht versprechen, dass jeder Beitrag pünktlich erscheint.',
       account: 'Dein Konto',
       accountText: 'Halte dein Passwort geheim. Du bist verantwortlich für das, was aus deinem Konto und deinen Arbeitsbereichen veröffentlicht wird.',
       content: 'Deine Inhalte',
