@@ -60,6 +60,7 @@ export default defineConfig({
           { text: 'Video and radio spots', link: '/marketing/spots' },
           { text: 'Paid ads', link: '/marketing/ads' },
           { text: 'AI studio', link: '/marketing/ai-studio' },
+          { text: 'Business Central extensions', link: '/marketing/business-central' },
         ],
       },
       {
