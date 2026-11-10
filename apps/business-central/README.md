@@ -11,6 +11,7 @@ app.json           The app: name, version, object numbers (50100–50199), Busin
 src/               One object per file, in a folder per area: MaaSSetup.Table.al
 Translations/      German texts (…de-DE.xlf); the compiler writes the English …g.xlf
 scripts/build.sh   Compiles the app and checks the translation, as CI does
+mockups/           The planned screens as HTML, for the pictures in the docs
 ```
 
 This is an AL project, not an npm workspace: `npm run build` and `npm test` at the repository's root leave it alone.
@@ -29,6 +30,10 @@ CI compiles the app against Business Central 26 with CodeCop, UICop and PerTenan
 dotnet tool install --global Microsoft.Dynamics.BusinessCentral.Development.Tools --prerelease
 scripts/build.sh
 ```
+
+## Mockups
+
+`mockups/` holds the planned screens as plain HTML with one stylesheet. They are drawings of the definition, not captures from Business Central, and each one says so in its corner. To change a picture in the docs, edit the page, open it in a browser at 1280 × 800 and save a capture as `docs/screenshots/business-central-<page>.png`. Replace a mockup with a real capture once its screen is built.
 
 ## Conventions
 
