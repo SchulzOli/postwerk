@@ -18,26 +18,6 @@ Business Central knows who the customers are and what they bought. MarketingAsAS
 
 Later, once the steps above are in use: a post or piece draft from an item (name, description, picture, price), and booking ad spend and postage as costs in Business Central.
 
-### How it will look
-
-These pictures are mockups drawn from this definition, not captures from Business Central. They show where each step lands; names and numbers are examples.
-
-**Setup (step 1).** The server's address and the API key, with the workspace it connects to.
-
-![Mockup: the MarketingAsAService Setup page in Business Central](screenshots/business-central-setup.png)
-
-**Campaign card (steps 2 and 4).** The FactBox shows what the campaign cost and brought in MarketingAsAService, and the sales and revenue Business Central sent from its invoices.
-
-![Mockup: a campaign card with the MarketingAsAService FactBox](screenshots/business-central-campaign.png)
-
-**Send a letter to a segment (step 3).** The approved letter, who is left out, and the price before anything is sent.
-
-![Mockup: the Send Letter dialog on a segment](screenshots/business-central-send-letter.png)
-
-**Letters (step 3).** Where each contact's letter stands, and what went wrong with the ones that failed.
-
-![Mockup: the letters of a mailing with their status](screenshots/business-central-letters.png)
-
 ## Who keeps what
 
 - **Business Central** keeps people, addresses, items and sales. **MarketingAsAService** keeps the brand, the content, approvals, delivery and the marketing numbers. Nothing is copied that the other side does not need.
@@ -92,7 +72,6 @@ apps/business-central
   src/               One object per file, in a folder per area: MaaSSetup.Table.al
   Translations/      German texts (…de-DE.xlf); the compiler writes the English …g.xlf
   scripts/build.sh   Compiles the app and checks the translation, as CI does
-  mockups/           The planned screens as HTML; the pictures above come from them
 ```
 
 To work on it, open the folder in VS Code with the [AL Language extension](https://marketplace.visualstudio.com/items?itemName=ms-dynamics-smb.al), download symbols from a sandbox and publish with F5. To check it without a sandbox:
