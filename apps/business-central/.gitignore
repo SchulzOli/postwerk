@@ -1,0 +1,10 @@
+# Symbols and build output
+.alpackages/
+.alcache/
+.snapshots/
+*.app
+# The compiler rewrites this from the source on every build
+Translations/*.g.xlf
+# Personal sandbox settings
+.vscode/launch.json
+rad.json

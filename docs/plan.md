@@ -42,6 +42,7 @@ apps/worker     Publishing loop: claims due posts and publishes them
 packages/core   Business logic: posts, accounts, publishing, crypto, auth helpers
 packages/db     Drizzle ORM schema + migrations (Postgres)
 packages/providers   One module per network behind a common Provider interface
+apps/business-central   MarketingApp4BusinessCentral: an extension for Business Central (AL), defined, not built yet
 ```
 
 **Data model (Phase 0):** users → workspace_members → workspaces → social_accounts; posts → post_targets (one per post × account, so each network is published and retried independently).
@@ -144,6 +145,16 @@ A business's marketing runs in campaigns across every channel it uses, with one 
 ### Autopilot — our marketing runs on its own (next)
 Content is planned, drafted, checked, published and measured without anyone starting it; ads spend within their caps and improve themselves. People set goals, budgets and rules, approve in one short weekly sitting, and act on alerts. The full todo is in section 6 below.
 
+### MarketingApp4BusinessCentral — marketing from the ERP (defined)
+An extension for Microsoft Dynamics 365 Business Central that connects a company to a workspace. Business Central keeps contacts, segments and sales; MarketingAsAService makes, approves and delivers the marketing. The definition and build order are in [MarketingApp4BusinessCentral](business-central.md).
+
+- ✅ The project in `apps/business-central` (AL, Business Central 26+, English and German), compiled in CI, with the setup page
+- Connect with an API key per workspace. This is the first part of the public API from Phase 5.
+- Campaigns linked to Business Central's campaigns, with budget, spend and leads on the campaign card
+- Letters by post to a segment's contacts, from an approved letter, with an interaction per contact
+- Sales and revenue from posted invoices into the campaign's results
+- Company details into the brand kit
+
 ### Phase 4 — Delight
 - Live post previews per network
 - AI assistant (Claude) in the composer to shorten and adapt one post per network, suggest hashtags, write alt text (campaign drafts and post ideas come from the AI studio)
@@ -157,7 +168,7 @@ Content is planned, drafted, checked, published and measured without anyone star
 - Billing (Stripe), plans by connected accounts
 - GDPR: EU hosting, DPA, data export & deletion, privacy policy (needed for platform reviews anyway)
 - Observability (structured logs, metrics, alerts), backups, token-refresh jobs, webhook ingestion
-- Public REST API + MCP server so agents can schedule posts
+- Public REST API + MCP server so agents can schedule posts ([MarketingApp4BusinessCentral](business-central.md) is its first client and brings API keys and the first calls)
 
 ---
 

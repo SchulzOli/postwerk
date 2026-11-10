@@ -36,6 +36,7 @@ Integration tests need Postgres and `TEST_DATABASE_URL` (see `.env.example`); wi
 
 - `apps/web` is the Next.js app: the canvas (`components/world/`), list pages and server actions.
 - `apps/worker` is the publishing loop.
+- `apps/business-central` is MarketingApp4BusinessCentral, an extension for Business Central in AL with its own check ([its README](apps/business-central/README.md)).
 - `packages/core` holds the business logic; web and worker only call into it.
 - `packages/db` has the Drizzle schema and SQL migrations.
 - `packages/providers` has one file per network behind a common `Provider` interface.

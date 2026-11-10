@@ -98,6 +98,7 @@ apps/worker          Worker: publishes due posts, sends letters, reads ad number
 packages/core        Posts, accounts, flows, campaigns, print, ads, AI studio, theme plugins, publishing loop, encryption
 packages/db          Drizzle schema + SQL migrations
 packages/providers   Network and ad platform integrations behind common interfaces
+apps/business-central   MarketingApp4BusinessCentral: extension for Dynamics 365 Business Central (AL; defined, not built yet)
 docs/                Documentation website: guides per network, marketing, plan, screenshots
 ```
 

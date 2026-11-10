@@ -1,0 +1,34 @@
+{
+  "id": "0a9b2ca6-7b9a-465f-bf39-7e21b0621cac",
+  "name": "MarketingApp4BusinessCentral",
+  "publisher": "MarketingAsAService",
+  "version": "0.1.0.0",
+  "brief": "Marketing from Business Central: campaigns, letters by post and results with MarketingAsAService.",
+  "description": "Connects a company in Business Central to a MarketingAsAService workspace. Contacts, segments, campaigns and sales stay in Business Central; MarketingAsAService makes, approves and delivers the marketing and reports what it brought.",
+  "privacyStatement": "https://schulzoli.github.io/MarketingAsAService/business-central#personal-data",
+  "EULA": "https://github.com/SchulzOli/MarketingAsAService/blob/main/LICENSE",
+  "help": "https://schulzoli.github.io/MarketingAsAService/business-central",
+  "url": "https://github.com/SchulzOli/MarketingAsAService",
+  "contextSensitiveHelpUrl": "https://schulzoli.github.io/MarketingAsAService/",
+  "dependencies": [],
+  "screenshots": [],
+  "platform": "26.0.0.0",
+  "application": "26.0.0.0",
+  "idRanges": [
+    {
+      "from": 50100,
+      "to": 50199
+    }
+  ],
+  "resourceExposurePolicy": {
+    "allowDebugging": true,
+    "allowDownloadingSource": true,
+    "includeSourceInSymbolFile": true
+  },
+  "runtime": "15.0",
+  "target": "Cloud",
+  "features": [
+    "NoImplicitWith",
+    "TranslationFile"
+  ]
+}

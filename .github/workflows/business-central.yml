@@ -1,0 +1,58 @@
+name: Business Central app
+
+# Compiles MarketingApp4BusinessCentral (apps/business-central) against the
+# Business Central version in its app.json, with Microsoft's code analyzers,
+# and checks that every text has a German translation.
+
+on:
+  push:
+    branches: [main]
+    paths: ['apps/business-central/**', '.github/workflows/business-central.yml']
+  pull_request:
+    paths: ['apps/business-central/**', '.github/workflows/business-central.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: business-central-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Compile and check translations
+    runs-on: ubuntu-latest
+    env:
+      DOTNET_NOLOGO: 1
+      DOTNET_CLI_TELEMETRY_OPTOUT: 1
+      # The AL compiler and analyzers; raise it to compile with a newer one.
+      AL_TOOLS_VERSION: 30.0.44.47290-beta
+    defaults:
+      run:
+        working-directory: apps/business-central
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+      - name: Install the AL compiler
+        run: dotnet tool install --global Microsoft.Dynamics.BusinessCentral.Development.Tools --version "$AL_TOOLS_VERSION"
+      - name: Test the translation check
+        run: node --test scripts/*.test.mjs
+      - name: Keep Microsoft's symbols between runs
+        uses: actions/cache@v4
+        with:
+          path: apps/business-central/.alpackages
+          key: al-symbols-${{ hashFiles('apps/business-central/app.json') }}
+      - name: Compile and check translations
+        run: scripts/build.sh
+      - name: Keep the app
+        uses: actions/upload-artifact@v4
+        with:
+          name: MarketingApp4BusinessCentral
+          path: apps/business-central/*.app
+          if-no-files-found: error
