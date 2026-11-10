@@ -63,10 +63,6 @@ export default defineConfig({
         ],
       },
       {
-        text: 'Integrations',
-        items: [{ text: 'Business Central', link: '/business-central' }],
-      },
-      {
         text: 'Project',
         items: [
           { text: 'Roadmap', link: '/plan' },
