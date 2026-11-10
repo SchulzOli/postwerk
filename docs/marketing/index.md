@@ -14,6 +14,8 @@ MarketingAsAService covers more than social media posts. A business's marketing 
 
 An optional [AI studio](ai-studio.md) has Claude draft any of these for a campaign. It is separate: everything also works by hand.
 
+Planned: [MarketingApp4BusinessCentral](business-central.md) sets all of this up for marketing a Business Central extension, with the AppSource listing as a channel of its own.
+
 ## Brand kit
 
 **Brand** in the navigation holds what every piece builds on:

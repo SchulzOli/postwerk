@@ -144,6 +144,16 @@ A business's marketing runs in campaigns across every channel it uses, with one 
 ### Autopilot — our marketing runs on its own (next)
 Content is planned, drafted, checked, published and measured without anyone starting it; ads spend within their caps and improve themselves. People set goals, budgets and rules, approve in one short weekly sitting, and act on alerts. The full todo is in section 6 below.
 
+### MarketingApp4BusinessCentral — marketing a Business Central extension (defined)
+MarketingAsAService set up for the publisher of an extension for Microsoft Dynamics 365 Business Central: get it found, tried and bought. A part of the platform, turned on per workspace. Definition, mockups and build order: [MarketingApp4BusinessCentral](marketing/business-central.md).
+
+- Extension profile: what it does, who it is for, where it runs; a workspace can hold several
+- The AppSource listing as a channel and a piece, with Microsoft's limits, checks and approval
+- Listing screenshots at 1280 × 720 from a capture, a headline and a caption
+- Campaign templates: launch, new version, release wave, event, customer story
+- Drafts by the AI studio from the extension profile
+- Visits, installs and leads from the marketplace in the campaign's results
+
 ### Phase 4 — Delight
 - Live post previews per network
 - AI assistant (Claude) in the composer to shorten and adapt one post per network, suggest hashtags, write alt text (campaign drafts and post ideas come from the AI studio)
