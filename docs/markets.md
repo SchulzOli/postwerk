@@ -8,16 +8,16 @@ Markets are plugins like [themes](themes.md): a JSON file, checked when it is in
 |---|---|---|---|
 | **Business Central extensions** (`business-central`, built in) | An extension for Microsoft Dynamics 365 Business Central | AppSource | [MarketingApp4BusinessCentral](marketing/business-central.md) |
 
-> **Status:** the format, its checks and the storage are built (`@maas/core/market`). Installing markets in the app, product profiles, listings and templates are not built yet; the [build order](marketing/business-central.md#build-order) says what comes next.
+Installing markets, product profiles, marketplace listings, listing screenshots, templates and AI drafts all work with any market. [MarketingApp4BusinessCentral](marketing/business-central.md) shows them with the built-in market.
 
 ## Using target markets
 
 - **Owners and admins install markets** under **Brand → Target markets**: a built-in one with one click, or their own from a file. New workspaces start without any, since most businesses do not sell in a marketplace.
 - **Each product belongs to one market.** A workspace can hold several products per market, for example two Business Central extensions.
-- **A campaign belongs to one product.** Its templates, listing, AI drafts and result labels come from the product's market.
+- **A campaign can market one product.** Its templates, listing, AI drafts and result labels come from the product's market.
 - **Uninstalling a market** hides its tools; products and campaigns stay and come back when it is installed again.
 
-![Mockup: two target markets installed in a workspace](screenshots/markets.png)
+![Two target markets installed in a workspace](screenshots/markets.png)
 
 ## The market file
 
@@ -153,4 +153,5 @@ A template fills in a new campaign. Every template uses the market's marketplace
 - Format, checks and the listing check: `packages/core/src/market.ts` (browser-safe, also exported as `@maas/core/market`)
 - Built-in markets: `packages/core/src/markets/`; add one there and to `builtinMarkets`. Its source of every limit goes in the file's comment.
 - Storage: the `plugins` table with `kind = 'market'`; `listMarkets`, `installBuiltinMarket`, `installMarket` and `uninstallMarket` in `packages/core/src/plugins.ts`
-- Error messages in English and German: `marketMessages` in `packages/core/src/messages.ts`
+- Products, listing checks and templates: `packages/core/src/products.ts` and `templates.ts`; the screens are in `apps/web/app/(app)/brand/` and `components/listing-editor.tsx`
+- Error messages in English and German: `marketMessages` and `productMessages` in `packages/core/src/messages.ts`

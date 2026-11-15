@@ -43,7 +43,10 @@ export type AuditAction =
   | 'ads.launched'
   | 'ads.started'
   | 'ads.paused'
-  | 'studio.drafted';
+  | 'studio.drafted'
+  | 'product.created'
+  | 'product.updated'
+  | 'product.deleted';
 
 export interface AuditInput {
   action: AuditAction;

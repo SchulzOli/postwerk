@@ -7,9 +7,9 @@
  */
 import Anthropic from '@anthropic-ai/sdk';
 import { and, desc, eq, inArray } from 'drizzle-orm';
-import { campaigns, pieces, studioRuns, type Campaign, type Database, type Piece, type StudioFailure, type StudioRun, type StudioUsage } from '@maas/db';
+import { campaigns, pieces, studioRuns, type Campaign, type Database, type Piece, type Product, type StudioFailure, type StudioRun, type StudioUsage } from '@maas/db';
 import { brandBrief, getBrandKit } from './brand';
-import { cleanAdContent, cleanPrintContent, cleanSpotContent, createPiece } from './campaigns';
+import { cleanAdContent, cleanListingContent, cleanPrintContent, cleanSpotContent, createPiece } from './campaigns';
 import { LocalizedError } from './i18n';
 import {
   AD_CALLS_TO_ACTION,
@@ -36,7 +36,9 @@ import {
   type SpotFormat,
   type TextRule,
 } from './marketing';
+import type { MarketManifest } from './market';
 import { studioMessages } from './messages';
+import { campaignMarket } from './products';
 
 export const DEFAULT_STUDIO_MODEL = 'claude-opus-5-5';
 const POST_CHARS = 280;
@@ -115,8 +117,27 @@ Writing
 - When several drafts are asked for, give each a different angle (for example a benefit, a problem it solves, an offer, a feeling, the brand character), not the same idea reworded.
 - Each draft gets a title for the team's overview: at most 60 characters, naming its angle, in the same language as the texts.`;
 
-/** The brand and the campaign: shared by every request of a run. */
-export function studioContext(brief: string, campaign: Pick<Campaign, 'name' | 'goal' | 'audience' | 'message' | 'startsOn' | 'endsOn'>, language: string, notes: string): string {
+/** What the campaign markets in a target market, with the market's guidance and the marketplace's rules. */
+export function productBrief(product: Pick<Product, 'name' | 'profile'>, market: MarketManifest): string {
+  const field = (id: string) => market.product.fields.find((entry) => entry.id === id);
+  const value = (id: string, raw: string | string[]) => {
+    const options = field(id)?.options;
+    const list = Array.isArray(raw) ? raw : [raw];
+    return list.map((entry) => options?.find((option) => option.id === entry)?.label.en ?? entry).join(id === 'features' ? '; ' : ', ');
+  };
+  const lines = [`Product: ${product.name} (${market.product.name.en}, sold on ${market.marketplace.name})`];
+  for (const [id, raw] of Object.entries(product.profile)) {
+    const label = field(id)?.label.en ?? { does: 'What it does', audience: 'Who it is for', features: 'What it can do', countries: 'Countries', languages: 'Languages', price: 'Price', help: 'Help', privacy: 'Privacy policy', support: 'Support', video: 'Demo video' }[id] ?? id;
+    lines.push(`${label}: ${value(id, raw)}`);
+  }
+  return [
+    `<product>\n${lines.join('\n')}\n</product>`,
+    `<market>\n${market.studio.en}${market.marketplace.rules.length ? `\nThe marketplace also checks:\n${market.marketplace.rules.map((rule) => `- ${rule.en}`).join('\n')}` : ''}\n</market>`,
+  ].join('\n\n');
+}
+
+/** The brand and the campaign (and its product): shared by every request of a run. */
+export function studioContext(brief: string, campaign: Pick<Campaign, 'name' | 'goal' | 'audience' | 'message' | 'startsOn' | 'endsOn'>, language: string, notes: string, product = ''): string {
   const lines = [`Name: ${campaign.name}`, `Goal: ${GOAL_TEXT[campaign.goal] ?? campaign.goal}`];
   if (campaign.audience) lines.push(`Audience: ${campaign.audience}`);
   if (campaign.message) lines.push(`Key message: ${campaign.message}`);
@@ -125,6 +146,7 @@ export function studioContext(brief: string, campaign: Pick<Campaign, 'name' | '
     `Write every text in ${LANGUAGE_NAMES[language] ?? language}. Address people the way the tone of voice says; if it says nothing, use the form most usual for this audience in that language.`,
     `<brand>\n${brief}\n</brand>`,
     `<campaign>\n${lines.join('\n')}\n</campaign>`,
+    ...(product ? [product] : []),
     ...(notes ? [`<notes>\n${notes}\n</notes>`] : []),
   ].join('\n\n');
 }
@@ -161,10 +183,19 @@ const SPOT_TASKS: Record<SpotFormat, { what: string; scenes: [number, number] }>
 
 const rule = (r: TextRule, from: number, word: string) => `${Math.max(r.min, from)} to ${r.max} ${word}, each at most ${r.chars} characters`;
 
-/** What to write for one format (the user turn). */
-export function studioTask(format: string, variants: number): string {
+/** What to write for one format (the user turn); a listing follows the market of the campaign's product. */
+export function studioTask(format: string, variants: number, market?: MarketManifest): string {
   const [kind, name] = format.split(':') as [string, string];
   const count = variants === 1 ? 'one' : String(variants);
+  if (kind === 'listing' && market) {
+    const { listing } = market.marketplace;
+    return [
+      `Write ${count} ${variants === 1 ? 'draft' : 'different drafts'} of the product's listing on ${market.marketplace.name}. Each draft has:`,
+      `- texts: ${listing.texts.map((field) => `"${field.id}" (${field.label.en}): at most ${field.max} characters${field.multiline ? '; short paragraphs and simple lists are fine' : ''}`).join('; ')}.`,
+      `- keywords: at most ${listing.keywords.max} search keywords people use to find a product like this, not repeating the name.`,
+      `- Use only what <product> says; follow <market> exactly, and name the countries, languages and editions the product supports where the description has room.`,
+    ].join('\n');
+  }
   if (format === 'posts') {
     return `Write ${variants * POST_IDEAS_PER_VARIANT} social media posts for this campaign. Each at most ${POST_CHARS} characters including hashtags, so it fits every network, with at most 3 hashtags at the end. Each post takes a different angle.`;
   }
@@ -230,9 +261,10 @@ const object = (properties: Record<string, unknown>) => ({ type: 'object', prope
 const drafts = (properties: Record<string, unknown>) => object({ drafts: { type: 'array', items: object({ title: str, ...properties }) } });
 
 /** The JSON schema Claude's answer follows for a format (structured outputs). */
-export function studioSchema(format: string): Record<string, unknown> {
+export function studioSchema(format: string, market?: MarketManifest): Record<string, unknown> {
   const [kind, name] = format.split(':');
   if (format === 'posts') return object({ posts: strings });
+  if (kind === 'listing') return drafts({ texts: object(Object.fromEntries((market?.marketplace.listing.texts ?? []).map((field) => [field.id, str]))), keywords: strings });
   if (kind === 'ad' && name === 'search') return drafts({ headlines: strings, descriptions: strings, path1: str, path2: str, keywords: strings });
   if (kind === 'ad' && name === 'social') return drafts({ headline: str, primaryText: str, callToAction: { type: 'string', enum: [...AD_CALLS_TO_ACTION] } });
   if (kind === 'ad') return drafts({ headlines: strings, longHeadlines: strings, descriptions: strings });
@@ -277,7 +309,7 @@ export interface StudioDraft {
 }
 
 /** Turns Claude's answer for a format into pieces that pass the editors' checks (or post ideas). */
-export function draftsFrom(format: string, output: unknown, variants: number, brand: StudioBrand): { pieces: StudioDraft[]; postIdeas: string[] } {
+export function draftsFrom(format: string, output: unknown, variants: number, brand: StudioBrand, market?: MarketManifest): { pieces: StudioDraft[]; postIdeas: string[] } {
   const data = record(output);
   if (format === 'posts') {
     const posts = Array.isArray(data.posts) ? data.posts : [];
@@ -290,7 +322,17 @@ export function draftsFrom(format: string, output: unknown, variants: number, br
     const draft = record(entry);
     const title = fitText(draft.title, 60) || `${name} ${index + 1}`;
     let content: PieceContent;
-    if (kind === 'ad') {
+    if (kind === 'listing') {
+      if (!market) continue;
+      const { listing } = market.marketplace;
+      const texts = record(draft.texts);
+      content = cleanListingContent({
+        texts: Object.fromEntries(listing.texts.map((field) => [field.id, field.multiline ? String(texts[field.id] ?? '').trim().slice(0, field.max) : fitText(texts[field.id], field.max)])),
+        keywords: (Array.isArray(draft.keywords) ? draft.keywords : []).map((keyword) => fitText(keyword, 100)).slice(0, listing.keywords.max),
+        videos: [],
+        documents: [],
+      });
+    } else if (kind === 'ad') {
       const rules = AD_FORMATS[name as AdFormat];
       const ad: AdContent = { headlines: [], descriptions: [], finalUrl: link, callToAction: '' };
       if (name === 'social') {
@@ -370,7 +412,7 @@ function addUsage(a: StudioUsage, b: StudioUsage): StudioUsage {
 }
 
 /** Asks Claude for one format. Problems with one format are answered as a failure; a wrong key stops the run. */
-async function ask(client: Anthropic, model: string, context: string, format: string, variants: number): Promise<Answer> {
+async function ask(client: Anthropic, model: string, context: string, format: string, variants: number, market?: MarketManifest): Promise<Answer> {
   try {
     const message = await client.beta.messages
       .stream({
@@ -384,8 +426,8 @@ async function ask(client: Anthropic, model: string, context: string, format: st
           { type: 'text', text: STUDIO_RULES },
           { type: 'text', text: context, cache_control: { type: 'ephemeral' } },
         ],
-        messages: [{ role: 'user', content: studioTask(format, variants) }],
-        output_config: { effort: 'medium', format: { type: 'json_schema', schema: studioSchema(format) } },
+        messages: [{ role: 'user', content: studioTask(format, variants, market) }],
+        output_config: { effort: 'medium', format: { type: 'json_schema', schema: studioSchema(format, market) } },
       })
       .finalMessage();
     const usage: StudioUsage = {
@@ -431,12 +473,15 @@ export async function runStudio(db: Database, workspace: { id: string; name: str
   const campaign = await db.query.campaigns.findFirst({ where: and(eq(campaigns.id, request.campaignId), eq(campaigns.workspaceId, workspace.id)) });
   if (!campaign) throw new StudioError((m) => m.campaignGone);
   const kit = await getBrandKit(db, workspace);
-  const context = studioContext(brandBrief(kit), campaign, request.language, request.notes);
+  const product = await campaignMarket(db, workspace.id, campaign);
+  const market = product?.market;
+  if (!market && request.formats.some((format) => format.startsWith('listing:'))) throw new StudioError((m) => m.needsProduct);
+  const context = studioContext(brandBrief(kit), campaign, request.language, request.notes, product && market ? productBrief(product.product, market) : '');
   const client = options.client ?? new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
   const [first, ...others] = request.formats;
-  const answers = [await ask(client, setup.model, context, first!, request.variants)];
-  answers.push(...(await Promise.all(others.map((format) => ask(client, setup.model, context, format, request.variants)))));
+  const answers = [await ask(client, setup.model, context, first!, request.variants, market)];
+  answers.push(...(await Promise.all(others.map((format) => ask(client, setup.model, context, format, request.variants, market)))));
 
   const brand: StudioBrand = { website: kit.website, hasCharacter: Boolean(kit.character) };
   const created: Piece[] = [];
@@ -454,7 +499,7 @@ export async function runStudio(db: Database, workspace: { id: string; name: str
     models.add(answer.model);
     let drafts: ReturnType<typeof draftsFrom>;
     try {
-      drafts = draftsFrom(format, answer.output, request.variants, brand);
+      drafts = draftsFrom(format, answer.output, request.variants, brand, market);
     } catch (error) {
       // An answer the rules still reject (rare: the schema and fitting cover the limits).
       if (!(error instanceof LocalizedError)) throw error;

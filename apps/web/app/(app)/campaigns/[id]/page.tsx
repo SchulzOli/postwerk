@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { formatMoney, getBrandKit, getCampaign, listMembers, pieceChannel, summarizeCampaign, type PieceKind, type PieceStatus } from '@maas/core';
+import { campaignMarket, formatMoney, getBrandKit, getCampaign, listMarkets, listMembers, listProducts, pieceChannel, summarizeCampaign, type PieceKind, type PieceStatus } from '@maas/core';
 import { studioSetup } from '@maas/core/studio';
 import { getDb } from '@maas/db';
 import { AddPieceForm, DeleteButton, PieceStatusButtons, PlanForm, ResultForm } from '@/components/campaign-forms';
@@ -30,16 +30,21 @@ export default async function CampaignPage({ params }: Params) {
   const { id } = await params;
   const session = await requireSession();
   const db = getDb();
-  const [detail, brand, members, t, common, locale] = await Promise.all([
+  const [detail, brand, members, products, markets, t, common, locale] = await Promise.all([
     load(id),
     getBrandKit(db, session.workspace),
     listMembers(db, session.workspace.id),
+    listProducts(db, session.workspace.id),
+    listMarkets(db, session.workspace.id),
     getMessages(campaignsMessages),
     getMessages(commonMessages),
     getLocale(),
   ]);
   if (!detail) notFound();
   const { campaign, pieces, posts, results } = detail;
+  const context = await campaignMarket(db, session.workspace.id, campaign);
+  const marketName = new Map(markets.map((market) => [market.id, market.manifest.name[locale]]));
+  const productChoices = products.map((product) => ({ id: product.id, name: product.name, market: marketName.get(product.marketId) ?? product.marketId }));
   const canManage = session.role !== 'editor';
   const money = (cents: number) => formatMoney(cents, campaign.currency, locale);
   const number = (value: number) => new Intl.NumberFormat(locale).format(value);
@@ -53,6 +58,11 @@ export default async function CampaignPage({ params }: Params) {
         <Link href="/campaigns" className="small-link">{t.back}</Link>
         <div className="row">
           <h1 className="grow">{campaign.name}</h1>
+          {context && (
+            <Link href={`/brand/products/${context.product.id}`} className="badge">
+              {context.product.name}
+            </Link>
+          )}
           <span className={`badge campaign-${campaign.status}`}>{t.statuses[campaign.status]}</span>
         </div>
       </div>
@@ -71,7 +81,9 @@ export default async function CampaignPage({ params }: Params) {
           budgetCents: campaign.budgetCents,
           channels: campaign.channels,
           notes: campaign.notes,
+          productId: campaign.productId,
         }}
+        products={productChoices}
         brandAudience={brand.audience}
         canDelete={canManage}
       />
@@ -103,7 +115,7 @@ export default async function CampaignPage({ params }: Params) {
           </ul>
         )}
         {!canManage && <small className="muted">{t.adminsApprove}</small>}
-        <AddPieceForm campaignId={campaign.id} />
+        <AddPieceForm campaignId={campaign.id} hasProduct={Boolean(context)} />
         {studioSetup() && (
           <Link href={`/studio?campaign=${campaign.id}`} className="small-link">
             {t.draftWithAi}
@@ -168,6 +180,11 @@ export default async function CampaignPage({ params }: Params) {
               </tbody>
             </table>
           </div>
+        )}
+        {context?.market && (
+          <small className="muted">
+            {t.marketResults(context.market.marketplace.name)} {t.reach} = {context.market.results.reach[locale]} · {t.clicks} = {context.market.results.clicks[locale]} · {t.leads} = {context.market.results.leads[locale]}
+          </small>
         )}
         {campaign.budgetCents > 0 && summary.total.spendCents > 0 && <small className="muted">{t.spentOf(money(summary.total.spendCents), money(campaign.budgetCents))}</small>}
 

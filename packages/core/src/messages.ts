@@ -185,6 +185,15 @@ export const campaignMessages = defineMessages({
     day: 'Please enter the day the results are for.',
     manage: 'Only workspace owners and admins can approve pieces.',
     approveFirst: 'Approve the piece first.',
+    needsProduct: 'Listings and screenshots belong to a product. Pick the campaign’s product in its plan first.',
+    marketMissing: 'The product’s target market is not installed. Install it again under Brand → Target markets.',
+    listingNotReady: 'The listing is not ready yet. Fix what its checks list, then approve it.',
+    screenshotNotReady: 'Add a capture and a caption before you approve the screenshot.',
+    product: 'This product does not exist in this workspace.',
+    template: 'This template does not exist in the product’s target market.',
+    templatePosts: (p: { template: string; posts: number; weeks: number }) => `From the template “${p.template}”: ${p.posts} ${p.posts === 1 ? 'post' : 'posts'} over ${p.weeks} ${p.weeks === 1 ? 'week' : 'weeks'}. Let the AI studio draft them, or write them in the composer.`,
+    listingLink: (field: string) => `A link in “${field}” is not a web address. Start it with https://.`,
+    tooManyLinks: (max: number) => `Add at most ${max} links.`,
     recipients: (max: number) => `Add between 1 and ${max} recipients.`,
     link: 'The QR code link must start with https:// or http://.',
     size: 'Enter the ad size in millimetres, between 20 and 1200.',
@@ -225,6 +234,15 @@ export const campaignMessages = defineMessages({
     day: 'Bitte gib den Tag an, für den die Ergebnisse gelten.',
     manage: 'Nur Inhaber und Admins des Arbeitsbereichs können Werbemittel freigeben.',
     approveFirst: 'Gib das Werbemittel zuerst frei.',
+    needsProduct: 'Einträge und Screenshots gehören zu einem Produkt. Wähle zuerst im Plan das Produkt der Kampagne.',
+    marketMissing: 'Der Zielmarkt des Produkts ist nicht installiert. Installiere ihn wieder unter Marke → Zielmärkte.',
+    listingNotReady: 'Der Eintrag ist noch nicht fertig. Behebe, was seine Prüfung auflistet, und gib ihn dann frei.',
+    screenshotNotReady: 'Füge eine Aufnahme und eine Bildunterschrift hinzu, bevor du den Screenshot freigibst.',
+    product: 'Dieses Produkt gibt es in diesem Arbeitsbereich nicht.',
+    template: 'Diese Vorlage gibt es im Zielmarkt des Produkts nicht.',
+    templatePosts: (p) => `Aus der Vorlage „${p.template}“: ${p.posts} ${p.posts === 1 ? 'Beitrag' : 'Beiträge'} über ${p.weeks} ${p.weeks === 1 ? 'Woche' : 'Wochen'}. Lass sie vom KI-Studio entwerfen oder schreib sie im Editor.`,
+    listingLink: (field) => `Ein Link in „${field}“ ist keine Webadresse. Beginne ihn mit https://.`,
+    tooManyLinks: (max) => `Füge höchstens ${max} Links hinzu.`,
     recipients: (max) => `Gib zwischen 1 und ${max} Empfänger an.`,
     link: 'Der Link für den QR-Code muss mit https:// oder http:// beginnen.',
     size: 'Gib die Anzeigengröße in Millimetern an, zwischen 20 und 1200.',
@@ -255,6 +273,7 @@ export const studioMessages = defineMessages({
   en: {
     notSetUp: 'The AI studio is not set up on this server. Add an Anthropic API key (ANTHROPIC_API_KEY) to turn it on.',
     chooseFormats: 'Choose at least one format.',
+    needsProduct: 'A listing needs a campaign with a product in an installed target market. Pick the product in the campaign’s plan.',
     tooManyFormats: (max: number) => `Choose at most ${max} formats at a time.`,
     variants: (max: number) => `Choose between 1 and ${max} variants.`,
     language: 'Unknown language.',
@@ -268,6 +287,7 @@ export const studioMessages = defineMessages({
   de: {
     notSetUp: 'Das KI-Studio ist auf diesem Server nicht eingerichtet. Hinterlege einen Anthropic-API-Schlüssel (ANTHROPIC_API_KEY), um es einzuschalten.',
     chooseFormats: 'Wähl mindestens ein Format aus.',
+    needsProduct: 'Ein Eintrag braucht eine Kampagne mit einem Produkt in einem installierten Zielmarkt. Wähle das Produkt im Plan der Kampagne.',
     tooManyFormats: (max) => `Wähl höchstens ${max} Formate auf einmal.`,
     variants: (max) => `Wähl zwischen 1 und ${max} Varianten.`,
     language: 'Unbekannte Sprache.',
@@ -451,6 +471,25 @@ export const themeMessages = defineMessages({
     notBuiltin: 'Dieses Plugin gehört nicht zu MarketingAsAService.',
     builtinId: (id) => `„${id}“ ist die ID eines eingebauten Designs. Gib deinem Design eine eigene ID, z. B. "${id}-eigenes".`,
     idTaken: (id) => `Ein anderes Plugin verwendet schon die ID „${id}“. Gib deinem Design eine eigene ID.`,
+  },
+});
+
+export const productMessages = defineMessages({
+  en: {
+    name: 'Give the product a name.',
+    tooLong: (p: { field: string; max: number }) => `“${p.field}” is too long (at most ${p.max} characters).`,
+    tooMany: (p: { field: string; max: number }) => `“${p.field}” has too many entries (at most ${p.max}).`,
+    choice: (field: string) => `Pick one of the offered options for “${field}”.`,
+    notFound: 'This product no longer exists.',
+    marketNotInstalled: 'Install the product’s target market under Brand → Target markets first.',
+  },
+  de: {
+    name: 'Gib dem Produkt einen Namen.',
+    tooLong: (p) => `„${p.field}“ ist zu lang (höchstens ${p.max} Zeichen).`,
+    tooMany: (p) => `„${p.field}“ hat zu viele Einträge (höchstens ${p.max}).`,
+    choice: (field) => `Wähle für „${field}“ eine der angebotenen Optionen.`,
+    notFound: 'Dieses Produkt gibt es nicht mehr.',
+    marketNotInstalled: 'Installiere zuerst den Zielmarkt des Produkts unter Marke → Zielmärkte.',
   },
 });
 

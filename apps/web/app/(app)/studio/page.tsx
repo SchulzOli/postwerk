@@ -53,7 +53,7 @@ export default async function StudioPage({ searchParams }: { searchParams: Promi
           <p className="muted small">
             {t.brandTip} <Link href="/brand">{t.toBrand}</Link>
           </p>
-          <StudioForm campaigns={open.map((item) => ({ id: item.id, name: item.name }))} campaignId={open.some((item) => item.id === campaign) ? campaign : undefined} language={locale} model={setup.model} />
+          <StudioForm campaigns={open.map((item) => ({ id: item.id, name: item.name, hasProduct: Boolean(item.productId) }))} campaignId={open.some((item) => item.id === campaign) ? campaign : undefined} language={locale} model={setup.model} />
         </>
       )}
 

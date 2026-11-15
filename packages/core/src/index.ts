@@ -18,6 +18,8 @@ export * from './flow';
 export * from './flows';
 export * from './theme';
 export * from './market';
+export * from './products';
+export * from './templates';
 export * from './plugins';
 export * from './ratelimit';
 export * from './audit';

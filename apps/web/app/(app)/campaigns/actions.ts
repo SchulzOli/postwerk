@@ -7,6 +7,7 @@ import {
   CampaignError,
   CHANNELS,
   createCampaign,
+  createCampaignFromTemplate,
   createPiece,
   deleteCampaign,
   deletePiece,
@@ -23,7 +24,7 @@ import {
 } from '@maas/core';
 import { getDb } from '@maas/db';
 import { record } from '@/lib/audit';
-import { getMessages, localizedError } from '@/lib/i18n-server';
+import { getLocale, getMessages, localizedError } from '@/lib/i18n-server';
 import { requireAdmin, requireSession } from '@/lib/session';
 import { campaignsMessages } from '@/messages/campaigns';
 
@@ -56,20 +57,22 @@ export async function createCampaignAction(_: CampaignState, form: FormData): Pr
   const budget = await money(form, 'budget', t.budget);
   if (typeof budget === 'string') return { error: budget };
   let id: string;
+  const db = getDb();
+  const productId = text(form, 'productId') || null;
+  const templateId = text(form, 'templateId');
+  const start = {
+    name: text(form, 'name'),
+    message: text(form, 'message'),
+    startsOn: text(form, 'startsOn') || null,
+    endsOn: text(form, 'endsOn') || null,
+    currency: text(form, 'currency') || 'EUR',
+    budgetCents: budget,
+  };
   try {
-    const campaign = await createCampaign(getDb(), workspace.id, user.id, {
-      name: text(form, 'name'),
-      goal: text(form, 'goal') as Goal,
-      status: 'draft',
-      audience: '',
-      message: text(form, 'message'),
-      startsOn: text(form, 'startsOn') || null,
-      endsOn: text(form, 'endsOn') || null,
-      currency: text(form, 'currency') || 'EUR',
-      budgetCents: budget,
-      channels: [],
-      notes: '',
-    });
+    const campaign =
+      productId && templateId
+        ? await createCampaignFromTemplate(db, workspace.id, user.id, { ...start, productId, templateId }, await getLocale())
+        : await createCampaign(db, workspace.id, user.id, { ...start, productId, goal: text(form, 'goal') as Goal, status: 'draft', audience: '', channels: [], notes: '' });
     id = campaign.id;
     await record({ action: 'campaign.created', userId: user.id, workspaceId: workspace.id, target: campaign.name });
   } catch (error) {
@@ -105,6 +108,7 @@ export async function saveCampaignAction(campaignId: string, _: CampaignState, f
       budgetCents: budget,
       channels,
       notes: text(form, 'notes'),
+      ...(form.has('productId') && { productId: text(form, 'productId') || null }),
     });
     await record({ action: 'campaign.updated', userId: user.id, workspaceId: workspace.id, target: campaign.name });
   } catch (error) {

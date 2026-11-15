@@ -8,10 +8,10 @@ import { useMessages } from '@/lib/i18n';
 import { campaignsMessages } from '@/messages/campaigns';
 import { studioMessages } from '@/messages/studio';
 
-const GROUPS = ['ad', 'print', 'spot', 'posts'] as const;
+const GROUPS = ['ad', 'print', 'spot', 'listing', 'posts'] as const;
 
 interface Props {
-  campaigns: { id: string; name: string }[];
+  campaigns: { id: string; name: string; hasProduct: boolean }[];
   campaignId?: string;
   language: string;
   model: string;
@@ -23,6 +23,10 @@ export function StudioForm({ campaigns, campaignId, language, model }: Props) {
   const c = useMessages(campaignsMessages);
   const [state, action, pending] = useActionState<StudioState, FormData>(runStudioAction, {});
   const [chosen, setChosen] = useState<Set<string>>(new Set());
+  const [campaign, setCampaign] = useState(campaignId ?? campaigns[0]?.id);
+  // A listing is drafted for the campaign's product, so it needs one.
+  const hasProduct = campaigns.find((item) => item.id === campaign)?.hasProduct ?? false;
+  const groups = GROUPS.filter((group) => group !== 'listing' || hasProduct);
   const full = chosen.size >= MAX_STUDIO_FORMATS;
   const label = (format: string) => (format === 'posts' ? t.posts : (c.formats[format.split(':')[1]!] ?? format));
 
@@ -30,7 +34,15 @@ export function StudioForm({ campaigns, campaignId, language, model }: Props) {
     <form onSubmit={keepValues(action)} className="card stack">
       <label>
         {t.campaign}
-        <select name="campaign" defaultValue={campaignId ?? campaigns[0]?.id} required>
+        <select
+          name="campaign"
+          value={campaign}
+          onChange={(e) => {
+            setCampaign(e.target.value);
+            setChosen((current) => new Set([...current].filter((format) => !format.startsWith('listing:'))));
+          }}
+          required
+        >
           {campaigns.map((campaign) => (
             <option key={campaign.id} value={campaign.id}>
               {campaign.name}
@@ -43,7 +55,7 @@ export function StudioForm({ campaigns, campaignId, language, model }: Props) {
         <legend>{t.formats}</legend>
         <small className="muted">{t.formatsHint(MAX_STUDIO_FORMATS)}</small>
         <div className="studio-groups">
-          {GROUPS.map((group) => (
+          {groups.map((group) => (
             <div key={group} className="stack-sm">
               <strong className="small">{t.groups[group]}</strong>
               <ul className="channel-list">

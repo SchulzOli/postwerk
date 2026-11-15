@@ -6,8 +6,11 @@ import { runMigrations } from '../../db/src/migrate';
 import { DEFAULT_BRAND_COLORS } from '../src/brand';
 import { createCampaign } from '../src/campaigns';
 import { errorText } from '../src/i18n';
-import type { AdContent, PrintContent, SpotContent } from '../src/marketing';
-import { cleanStudioRequest, draftsFrom, fitText, listStudioRuns, runStudio, studioSchema, studioSetup, studioTask, type StudioRequest } from '../src/studio';
+import { builtinMarket } from '../src/market';
+import type { AdContent, ListingContent, PrintContent, SpotContent } from '../src/marketing';
+import { installBuiltinMarket } from '../src/plugins';
+import { createProduct } from '../src/products';
+import { cleanStudioRequest, draftsFrom, fitText, listStudioRuns, productBrief, runStudio, studioSchema, studioSetup, studioTask, type StudioRequest } from '../src/studio';
 
 const fail = (run: () => unknown) => {
   try {
@@ -46,6 +49,35 @@ describe('studio requests', () => {
     const schema = studioSchema('spot:video_15') as { properties: { drafts: { items: { required: string[]; additionalProperties: boolean } } } };
     expect(schema.properties.drafts.items.required).toEqual(['title', 'scenes', 'directions']);
     expect(schema.properties.drafts.items.additionalProperties).toBe(false);
+  });
+});
+
+describe('listings of a target market', () => {
+  const market = builtinMarket('business-central')!;
+
+  it('asks for the market’s texts and limits', () => {
+    const task = studioTask('listing:listing', 2, market);
+    expect(task).toMatch(/2 different drafts of the product's listing on AppSource/);
+    expect(task).toMatch(/"name" \(Name\): at most 200 characters[\s\S]*"summary"[\s\S]*at most 100[\s\S]*"description"[\s\S]*at most 5000/);
+    expect(task).toMatch(/at most 3 search keywords/);
+    const schema = studioSchema('listing:listing', market) as { properties: { drafts: { items: { properties: { texts: { required: string[] } } } } } };
+    expect(schema.properties.drafts.items.properties.texts.required).toEqual(['name', 'summary', 'description']);
+  });
+
+  it('fits drafted listings to the limits', () => {
+    const { pieces } = draftsFrom('listing:listing', { drafts: [{ title: 'Deposits', texts: { name: 'Deposit Tracker', summary: 'word '.repeat(40), description: 'Text' }, keywords: ['deposit', 'beverage', 'returns', 'crates'] }] }, 1, brand, market);
+    const content = pieces[0]!.content as ListingContent;
+    expect(pieces[0]).toMatchObject({ kind: 'listing', format: 'listing', title: 'Deposits' });
+    expect(content.texts.summary!.length).toBeLessThanOrEqual(100);
+    expect(content.keywords).toEqual(['deposit', 'beverage', 'returns']);
+    expect(draftsFrom('listing:listing', { drafts: [{ title: 'x', texts: {}, keywords: [] }] }, 1, brand).pieces).toEqual([]);
+  });
+
+  it('tells Claude about the product and the market’s rules', () => {
+    const brief = productBrief({ name: 'Deposit Tracker', profile: { does: 'Books deposits.', editions: ['essentials', 'premium'], features: ['Deposit lines', 'Statements'] } }, market);
+    expect(brief).toMatch(/Product: Deposit Tracker \(Business Central extension, sold on AppSource\)/);
+    expect(brief).toMatch(/What it does: Books deposits\.\nEditions: Essentials, Premium\nWhat it can do: Deposit lines; Statements/);
+    expect(brief).toMatch(/<market>[\s\S]*Microsoft Dynamics 365 Business Central[\s\S]*The marketplace also checks:[\s\S]*app\.json/);
   });
 });
 
@@ -200,6 +232,22 @@ describe.skipIf(!url)('studio runs (Postgres)', () => {
     expect(run.pieceIds).toHaveLength(3);
     expect(run.usage).toEqual({ inputTokens: 400, outputTokens: 200, cacheReadTokens: 0, cacheWriteTokens: 3200 });
     expect((await listStudioRuns(db, workspace.id))[0]).toMatchObject({ campaignName: 'Rückenwochen', run: { id: run.id } });
+  });
+
+  it('drafts a listing with the product in the prompt, and only for a campaign with a product', async () => {
+    const run = (id: string) => runStudio(db, workspace, userId, { campaignId: id, formats: ['listing:listing'], variants: 1, language: 'en', notes: '' }, { client: client(), setup });
+    await expect(run(campaignId)).rejects.toThrow(/needs a campaign with a product/);
+    await installBuiltinMarket(db, workspace.id, 'business-central');
+    const product = await createProduct(db, workspace.id, 'business-central', { name: 'Deposit Tracker', profile: { does: 'Books deposits on crates.', publisher: 'Example Apps' } });
+    const campaign = await createCampaign(db, workspace.id, userId, { name: 'Launch', goal: 'leads', status: 'planned', audience: '', message: '', startsOn: null, endsOn: null, currency: 'EUR', budgetCents: 0, channels: [], notes: '', productId: product.id });
+    answer = () => sse({ drafts: [{ title: 'Deposits', texts: { name: 'Deposit Tracker', summary: 'Deposits, booked by themselves.', description: 'Books deposits in Microsoft Dynamics 365 Business Central.' }, keywords: ['deposit'] }] });
+    const done = await run(campaign.id);
+    expect(done.pieceIds).toHaveLength(1);
+    const system = calls[0]!.body.system as { text: string }[];
+    expect(system[1]!.text).toMatch(/<product>\nProduct: Deposit Tracker[\s\S]*Publisher: Example Apps[\s\S]*<\/product>\n\n<market>/);
+    const [listing] = await db.select().from(pieces).where(eq(pieces.campaignId, campaign.id));
+    expect(listing).toMatchObject({ kind: 'listing', source: 'ai', status: 'draft' });
+    expect((listing!.content as unknown as ListingContent).texts.summary).toBe('Deposits, booked by themselves.');
   });
 
   it('says when the key is wrong, Claude is busy, or the studio is off', async () => {
