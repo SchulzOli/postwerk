@@ -41,6 +41,8 @@ export const legalMessages = defineMessages({
         'Social media and ad accounts you connect: name, handle, profile picture and the access the platform grants, stored encrypted. MarketingAsAService uses this access only to publish the posts you schedule, run the ads you start and read their numbers, and to show which account is which (Art. 6(1)(b) GDPR).',
       letters:
         'Letters by post: the names and postal addresses you enter for a mailing. They are used only to print and send these letters through the letter service named below, and are kept until you delete the mailing or its campaign.',
+      leads:
+        'Marketplace leads: when a workspace connects a marketplace such as Microsoft AppSource, the marketplace sends the name, company, job title, email address, phone number and country of people who asked about or acquired a product, and their message. They are used only so the publisher can answer them, and are kept until the workspace deletes them (Art. 6(1)(b) and (f) GDPR).',
       security: (days: number) =>
         `Security: sign-in attempts are counted per email address and IP address for up to an hour to stop password guessing. Sign-ins and changes are recorded in an activity log with the IP address; IP addresses are removed after ${days} days. Our legitimate interest is keeping accounts safe (Art. 6(1)(f) GDPR).`,
       cookies: 'Cookies: only the ones the service needs: your sign-in (30 days), your language, and light or dark mode. No tracking, analytics or advertising.',
@@ -145,6 +147,8 @@ export const legalMessages = defineMessages({
         'Social-Media- und Werbekonten, die du verbindest: Name, Handle, Profilbild und der Zugriff, den die Plattform gewährt, verschlüsselt gespeichert. MarketingAsAService nutzt diesen Zugriff nur, um deine geplanten Beiträge zu veröffentlichen, die Anzeigen zu schalten, die du startest, und ihre Zahlen abzurufen, und um anzuzeigen, welches Konto welches ist (Art. 6 Abs. 1 lit. b DSGVO).',
       letters:
         'Briefe per Post: die Namen und Postanschriften, die du für ein Mailing eingibst. Sie dienen nur dazu, diese Briefe über den unten genannten Versanddienst zu drucken und zu versenden, und bleiben gespeichert, bis du das Mailing oder seine Kampagne löschst.',
+      leads:
+        'Leads von Marktplätzen: Verbindet ein Arbeitsbereich einen Marktplatz wie Microsoft AppSource, sendet der Marktplatz Name, Unternehmen, Position, E-Mail-Adresse, Telefonnummer und Land von Menschen, die sich für ein Produkt interessiert oder es erworben haben, sowie ihre Nachricht. Sie dienen nur dazu, dass der Anbieter ihnen antworten kann, und bleiben gespeichert, bis der Arbeitsbereich sie löscht (Art. 6 Abs. 1 lit. b und f DSGVO).',
       security: (days) =>
         `Sicherheit: Anmeldeversuche werden pro E-Mail-Adresse und IP-Adresse bis zu einer Stunde gezählt, um das Erraten von Passwörtern zu verhindern. Anmeldungen und Änderungen werden mit IP-Adresse in einem Aktivitätsprotokoll festgehalten; die IP-Adressen werden nach ${days} Tagen entfernt. Unser berechtigtes Interesse ist die Sicherheit der Konten (Art. 6 Abs. 1 lit. f DSGVO).`,
       cookies: 'Cookies: nur die nötigen – deine Anmeldung (30 Tage), deine Sprache und heller oder dunkler Modus. Kein Tracking, keine Analyse, keine Werbung.',

@@ -122,12 +122,13 @@ Every product already has a name, what it does, who it is for, what it can do, c
 |---|---|
 | `name` | The marketplace's name, the same in every language, e.g. "AppSource" |
 | `url` | Its `https://` address |
-| `listing.texts` | The listing's text fields, 1 to 30: `id`, `label`, `max` characters, `required` (default `true`), `multiline` |
+| `listing.texts` | The listing's text fields, 1 to 30: `id`, `label`, `max` characters, `required` (default `true`), `multiline`, and `emoji: false` where the marketplace refuses emojis |
 | `listing.keywords`, `.videos`, `.documents` | How many: `min` (default 0) and `max` |
 | `listing.screenshots` | How many (`min`, `max`) and their size in pixels (`width`, `height`); they are rendered as PNG |
 | `rules` | Up to 30 checks the marketplace makes that a computer cannot, shown before approval and given to the AI studio |
+| `integration` | The publisher tools MarketingAsAService can connect: `partner-center` (Microsoft's marketplaces) adds leads, daily numbers and sending the listing; leave it out for others |
 
-Before a listing can be approved, MarketingAsAService checks every limit: required texts filled in, texts within their length, the number of keywords, screenshots, videos and documents, and a caption on every screenshot (`listingProblems` in `@maas/core/market`).
+Before a listing can be approved, MarketingAsAService checks every limit: required texts filled in, texts within their length and without emojis where they are refused, the number of keywords, screenshots, videos and documents, and a caption on every screenshot (`listingProblems` in `@maas/core/market`).
 
 ### Templates
 
@@ -140,6 +141,7 @@ A template fills in a new campaign. Every template uses the market's marketplace
 | `channels` | Any of the platform's channels: `social`, `search_ads`, `social_ads`, `video_ads`, `print`, `mail`, `radio`, `tv`, `cinema`, `outdoor` |
 | `pieces` | `listing`, `screenshot`, or a piece of the platform's kinds with its format, e.g. `{ "kind": "ad", "format": "search" }` |
 | `posts`, `weeks` | How many post drafts, spread over how many weeks (defaults 0 and 4) |
+| `postTopics` | What each post is about, in order (up to `posts`); posts without one get a general topic |
 
 ### Rules
 

@@ -1,8 +1,8 @@
 'use client';
 
-import { useActionState, useEffect, useRef, useState } from 'react';
+import { useActionState, useEffect, useRef, useState, useTransition } from 'react';
 import { SCREENSHOT_BACKGROUNDS, SCREENSHOT_LIMITS, type ListingLink, type ScreenshotBackground } from '@maas/core/marketing';
-import { saveListingAction, saveScreenshotAction, type ListingState } from '@/app/(app)/campaigns/listing-actions';
+import { saveListingAction, saveScreenshotAction, sendListingAction, type ListingState } from '@/app/(app)/campaigns/listing-actions';
 import { keepValues } from '@/lib/form';
 import { useMessages } from '@/lib/i18n';
 import { listingMessages } from '@/messages/listing';
@@ -101,6 +101,26 @@ export function ListingForm({ listing, fields, limits }: { listing: ListingFormD
       <Feedback state={state} />
       <button type="submit" disabled={pending} className="align-start">{t.save}</button>
     </form>
+  );
+}
+
+/** Sends an approved listing into the offer's draft in Partner Center; says why it cannot when it cannot. */
+export function SendListingButton({ pieceId, blocker }: { pieceId: string; blocker: string | null }) {
+  const t = useMessages(listingMessages);
+  const [state, setState] = useState<ListingState>({});
+  const [pending, start] = useTransition();
+  return (
+    <div className="stack-sm">
+      <small className="muted">{t.sendHint}</small>
+      {blocker ? (
+        <small className="warn-text">{blocker}</small>
+      ) : (
+        <button type="button" className="align-start" disabled={pending} onClick={() => start(async () => setState(await sendListingAction(pieceId)))}>
+          {t.send}
+        </button>
+      )}
+      <Feedback state={state} />
+    </div>
   );
 }
 

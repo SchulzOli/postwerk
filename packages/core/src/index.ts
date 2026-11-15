@@ -20,6 +20,8 @@ export * from './theme';
 export * from './market';
 export * from './products';
 export * from './templates';
+export * from './partner-center';
+export * from './marketplace';
 export * from './plugins';
 export * from './ratelimit';
 export * from './audit';

@@ -1,9 +1,15 @@
 'use client';
 
-import { useActionState, useRef, useTransition } from 'react';
+import { useActionState, useRef, useState, useTransition } from 'react';
 import {
   createProductAction,
+  deleteLeadAction,
   deleteProductAction,
+  deleteProductLeadsAction,
+  disconnectPartnerCenterAction,
+  renewLeadAddressAction,
+  savePartnerCenterAction,
+  syncMarketplaceAction,
   installBuiltinMarketAction,
   installMarketAction,
   saveProductAction,
@@ -12,6 +18,7 @@ import {
 } from '@/app/(app)/brand/markets/actions';
 import { keepValues } from '@/lib/form';
 import { useMessages } from '@/lib/i18n';
+import { listingMessages } from '@/messages/listing';
 import { marketsMessages } from '@/messages/markets';
 
 function Feedback({ state }: { state: MarketState }) {
@@ -239,3 +246,116 @@ export function ProductForm({ product, fields, maxFeatures, canEdit }: { product
     </form>
   );
 }
+
+// ------------------------------------------------------------------ Partner Center
+
+export interface PartnerCenterData {
+  marketId: string;
+  leadUrl: string;
+  connected: boolean;
+  /** Already formatted for the UI. */
+  lastSync: string | null;
+  lastError: string | null;
+}
+
+/** The lead address and the Entra app of a market whose marketplace is Partner Center. */
+export function PartnerCenterCard({ data, canManage }: { data: PartnerCenterData; canManage: boolean }) {
+  const t = useMessages(marketsMessages);
+  const l = useMessages(listingMessages);
+  const [state, action, pending] = useActionState<MarketState, FormData>(savePartnerCenterAction.bind(null, data.marketId), {});
+  const [sync, setSync] = useState<MarketState>({});
+  const [busy, start] = useTransition();
+  const [copied, setCopied] = useState(false);
+  return (
+    <section className="card stack" id={`partner-center-${data.marketId}`}>
+      <div className="row">
+        <h2 className="grow">{t.partnerCenter}</h2>
+        <span className={data.connected ? 'badge badge-active' : 'badge'}>{data.connected ? t.connected : t.notConnected}</span>
+      </div>
+      <p className="muted">{t.partnerCenterIntro}</p>
+
+      <div className="stack-sm">
+        <strong>{t.leadAddress}</strong>
+        <small className="muted">{t.leadAddressHint}</small>
+        <div className="row-tight">
+          <input readOnly value={data.leadUrl} className="mono" aria-label={t.leadAddress} onFocus={(e) => e.target.select()} />
+          <button
+            type="button"
+            className="small secondary"
+            onClick={async () => {
+              await navigator.clipboard.writeText(data.leadUrl);
+              setCopied(true);
+              setTimeout(() => setCopied(false), 1500);
+            }}
+          >
+            {copied ? l.copied : l.copy}
+          </button>
+          {canManage && (
+            <button type="button" className="small secondary nowrap" disabled={busy} onClick={() => confirm(t.confirmRenew) && start(() => renewLeadAddressAction(data.marketId))}>
+              {t.renewAddress}
+            </button>
+          )}
+        </div>
+      </div>
+
+      {canManage && (
+        <form onSubmit={keepValues(action)} className="stack-sm">
+          <strong>{t.app}</strong>
+          <small className="muted">{t.appHint}</small>
+          <div className="grid-3">
+            <label>
+              {t.tenantId}
+              <input name="tenantId" required autoComplete="off" placeholder="contoso.onmicrosoft.com" />
+            </label>
+            <label>
+              {t.clientId}
+              <input name="clientId" required autoComplete="off" placeholder="00000000-0000-0000-0000-000000000000" />
+            </label>
+            <label>
+              {t.clientSecret} <small className="muted">{t.secretHint}</small>
+              <input name="clientSecret" type="password" required autoComplete="off" />
+            </label>
+          </div>
+          <Feedback state={state} />
+          <div className="row">
+            <button type="submit" className="align-start" disabled={pending}>{t.saveConnection}</button>
+            {data.connected && (
+              <button type="button" className="secondary" disabled={busy} onClick={() => start(async () => setSync(await syncMarketplaceAction(data.marketId)))}>
+                {t.syncNow}
+              </button>
+            )}
+            <span className="grow" />
+            {data.connected && (
+              <button type="button" className="secondary danger" disabled={busy} onClick={() => confirm(t.confirmDisconnect) && start(() => disconnectPartnerCenterAction(data.marketId))}>
+                {t.disconnect}
+              </button>
+            )}
+          </div>
+        </form>
+      )}
+      <Feedback state={sync} />
+      {data.connected && <small className="muted">{data.lastSync ? t.lastSync(data.lastSync) : t.neverSynced}</small>}
+      {data.lastError && <small className="warn-text">{t.lastError(data.lastError)}</small>}
+    </section>
+  );
+}
+
+export function DeleteLeadButton({ productId, leadId }: { productId: string; leadId: string }) {
+  const [pending, start] = useTransition();
+  return (
+    <button type="button" className="small secondary" disabled={pending} onClick={() => start(() => deleteLeadAction(productId, leadId))} aria-label="×">
+      ×
+    </button>
+  );
+}
+
+export function DeleteLeadsButton({ productId }: { productId: string }) {
+  const t = useMessages(marketsMessages);
+  const [pending, start] = useTransition();
+  return (
+    <button type="button" className="small secondary danger align-start" disabled={pending} onClick={() => confirm(t.confirmDeleteLeads) && start(() => deleteProductLeadsAction(productId))}>
+      {t.deleteLeads}
+    </button>
+  );
+}
+

@@ -1,9 +1,9 @@
-import { sql } from 'drizzle-orm';
+import { asc, eq, sql } from 'drizzle-orm';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
-import { campaigns, createDb, media, users, workspaces, type Database } from '@maas/db';
+import { campaigns, createDb, media, posts, users, workspaces, type Database } from '@maas/db';
 import { runMigrations } from '../../db/src/migrate';
 import { createCampaign, createPiece, getCampaign, saveListingPiece, saveScreenshotPiece, setPieceStatus, updateCampaign, type CampaignInput } from '../src/campaigns';
-import { createCampaignFromTemplate } from '../src/templates';
+import { createCampaignFromTemplate, postPlan } from '../src/templates';
 import { errorText } from '../src/i18n';
 import { builtinMarket } from '../src/market';
 import { pieceChannel, screenshotProblems } from '../src/marketing';
@@ -37,6 +37,15 @@ describe('cleanProduct', () => {
   it('lists what a listing still needs from the profile', () => {
     expect(productProblems(market, { profile: {} })).toEqual(['does', 'publisher', 'app_version', 'editions']);
     expect(productProblems(market, { profile })).toEqual([]);
+  });
+});
+
+describe('a template’s post plan', () => {
+  it('spreads the posts from tomorrow without dates, and names posts without a topic', () => {
+    const template = { ...market.templates.find((entry) => entry.id === 'launch')!, posts: 3, weeks: 1, postTopics: [] };
+    const plan = postPlan(template, null, 'en', new Date('2027-03-10T15:00:00Z'));
+    expect(plan.map((entry) => entry.at.toISOString())).toEqual(['2027-03-11T09:00:00.000Z', '2027-03-13T09:00:00.000Z', '2027-03-15T09:00:00.000Z']);
+    expect(plan[1]!.text).toMatch(/^Post 2 of 3 for “Launch on AppSource”\./);
   });
 });
 
@@ -202,7 +211,17 @@ describe.skipIf(!url)('campaigns from a market template (Postgres)', () => {
     const campaign = await createCampaignFromTemplate(db, workspaceId, userId, start(product.id), 'de');
     expect(campaign).toMatchObject({ goal: 'leads', productId: product.id, budgetCents: 120_000, status: 'draft' });
     expect(campaign.channels.map((entry) => entry.channel)).toEqual(['social', 'marketplace', 'search_ads', 'video_ads']);
-    expect(campaign.notes).toMatch(/„Start auf AppSource“: 6 Beiträge über 4 Wochen/);
+    expect(campaign.notes).toMatch(/„Start auf AppSource“: 6 Beitragsentwürfe über 4 Wochen/);
+    const drafts = await db.query.posts.findMany({ where: eq(posts.campaignId, campaign.id), orderBy: [asc(posts.scheduledAt)], with: { targets: true } });
+    expect(drafts.map((post) => [post.status, post.scheduledAt!.toISOString().slice(0, 10), post.targets.length])).toEqual([
+      ['draft', '2027-01-11', 0],
+      ['draft', '2027-01-15', 0],
+      ['draft', '2027-01-20', 0],
+      ['draft', '2027-01-25', 0],
+      ['draft', '2027-01-29', 0],
+      ['draft', '2027-02-03', 0],
+    ]);
+    expect(drafts[0]!.text).toMatch(/^Das Problem: Was deine Kunden heute Zeit kostet[\s\S]*Entwurf aus der Kampagnenvorlage/);
     const detail = await getCampaign(db, workspaceId, campaign.id);
     expect(detail!.pieces.map((piece) => [piece.kind, piece.format, piece.title])).toEqual([
       ['listing', 'listing', 'AppSource-Eintrag'],

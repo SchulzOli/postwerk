@@ -191,7 +191,9 @@ export const campaignMessages = defineMessages({
     screenshotNotReady: 'Add a capture and a caption before you approve the screenshot.',
     product: 'This product does not exist in this workspace.',
     template: 'This template does not exist in the product’s target market.',
-    templatePosts: (p: { template: string; posts: number; weeks: number }) => `From the template “${p.template}”: ${p.posts} ${p.posts === 1 ? 'post' : 'posts'} over ${p.weeks} ${p.weeks === 1 ? 'week' : 'weeks'}. Let the AI studio draft them, or write them in the composer.`,
+    templatePosts: (p: { template: string; posts: number; weeks: number }) => `From the template “${p.template}”: ${p.posts} post ${p.posts === 1 ? 'draft' : 'drafts'} over ${p.weeks} ${p.weeks === 1 ? 'week' : 'weeks'}, in the calendar. Write each in the composer (or let the AI studio draft ideas) and pick its accounts.`,
+    templatePostTopic: (p: { template: string; number: number; of: number }) => `Post ${p.number} of ${p.of} for “${p.template}”.`,
+    templatePostHint: '(Draft from the campaign template: write the post here, then pick the accounts and schedule it.)',
     listingLink: (field: string) => `A link in “${field}” is not a web address. Start it with https://.`,
     tooManyLinks: (max: number) => `Add at most ${max} links.`,
     recipients: (max: number) => `Add between 1 and ${max} recipients.`,
@@ -240,7 +242,9 @@ export const campaignMessages = defineMessages({
     screenshotNotReady: 'Füge eine Aufnahme und eine Bildunterschrift hinzu, bevor du den Screenshot freigibst.',
     product: 'Dieses Produkt gibt es in diesem Arbeitsbereich nicht.',
     template: 'Diese Vorlage gibt es im Zielmarkt des Produkts nicht.',
-    templatePosts: (p) => `Aus der Vorlage „${p.template}“: ${p.posts} ${p.posts === 1 ? 'Beitrag' : 'Beiträge'} über ${p.weeks} ${p.weeks === 1 ? 'Woche' : 'Wochen'}. Lass sie vom KI-Studio entwerfen oder schreib sie im Editor.`,
+    templatePosts: (p) => `Aus der Vorlage „${p.template}“: ${p.posts} ${p.posts === 1 ? 'Beitragsentwurf' : 'Beitragsentwürfe'} über ${p.weeks} ${p.weeks === 1 ? 'Woche' : 'Wochen'}, im Kalender. Schreib jeden im Editor (oder lass dir vom KI-Studio Ideen entwerfen) und wähle seine Konten.`,
+    templatePostTopic: (p) => `Beitrag ${p.number} von ${p.of} für „${p.template}“.`,
+    templatePostHint: '(Entwurf aus der Kampagnenvorlage: Schreib den Beitrag hier, wähle dann die Konten und plane ihn ein.)',
     listingLink: (field) => `Ein Link in „${field}“ ist keine Webadresse. Beginne ihn mit https://.`,
     tooManyLinks: (max) => `Füge höchstens ${max} Links hinzu.`,
     recipients: (max) => `Gib zwischen 1 und ${max} Empfänger an.`,
@@ -490,6 +494,27 @@ export const productMessages = defineMessages({
     choice: (field) => `Wähle für „${field}“ eine der angebotenen Optionen.`,
     notFound: 'Dieses Produkt gibt es nicht mehr.',
     marketNotInstalled: 'Installiere zuerst den Zielmarkt des Produkts unter Marke → Zielmärkte.',
+  },
+});
+
+export const partnerCenterMessages = defineMessages({
+  en: {
+    credentials: 'Microsoft did not accept the app’s tenant ID, client ID or secret. Check them, and that the secret has not expired.',
+    forbidden: 'The app has no access to Partner Center. Add it under Account settings → User management → Microsoft Entra applications with the Manager role.',
+    notFound: 'Partner Center has no product with this ID. Copy the product ID from the offer’s address in Partner Center into the product’s profile.',
+    noListing: 'The offer in Partner Center has no listing yet. Open the offer’s listing page in Partner Center once, save it, then send again.',
+    rejected: (detail: string) => `Partner Center refused it: ${detail}`,
+    unreachable: 'Partner Center could not be reached. Try again in a few minutes.',
+    pending: 'Partner Center is still processing the listing. Look at the offer’s draft there in a few minutes.',
+  },
+  de: {
+    credentials: 'Microsoft hat Mandanten-ID, Client-ID oder Geheimnis der App nicht angenommen. Prüfe sie, und ob das Geheimnis abgelaufen ist.',
+    forbidden: 'Die App hat keinen Zugriff auf Partner Center. Füge sie unter Kontoeinstellungen → Benutzerverwaltung → Microsoft Entra-Anwendungen mit der Rolle „Manager“ hinzu.',
+    notFound: 'Partner Center kennt kein Produkt mit dieser ID. Kopiere die Produkt-ID aus der Adresse des Angebots in Partner Center ins Profil des Produkts.',
+    noListing: 'Das Angebot in Partner Center hat noch keinen Eintrag. Öffne einmal die Eintragsseite des Angebots in Partner Center, speichere sie und sende dann erneut.',
+    rejected: (detail) => `Partner Center hat abgelehnt: ${detail}`,
+    unreachable: 'Partner Center war nicht erreichbar. Versuch es in ein paar Minuten noch einmal.',
+    pending: 'Partner Center verarbeitet den Eintrag noch. Sieh dir den Entwurf des Angebots dort in ein paar Minuten an.',
   },
 });
 

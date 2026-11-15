@@ -78,6 +78,10 @@ export const activityMessages = defineMessages({
       'product.created': (p) => `added the product ${p.target}`,
       'product.updated': (p) => `changed the product ${p.target}`,
       'product.deleted': (p) => `deleted the product ${p.target}`,
+      'marketplace.connected': (p) => `connected ${p.target}`,
+      'marketplace.disconnected': (p) => `disconnected ${p.target}`,
+      'listing.sent': (p) => `sent the listing ${p.target} to Partner Center`,
+      'leads.deleted': (p) => `deleted leads of ${p.target}`,
     } satisfies Phrases as Phrases,
   },
   de: {
@@ -135,6 +139,10 @@ export const activityMessages = defineMessages({
       'product.created': (p) => `hat das Produkt ${p.target} angelegt`,
       'product.updated': (p) => `hat das Produkt ${p.target} geändert`,
       'product.deleted': (p) => `hat das Produkt ${p.target} gelöscht`,
+      'marketplace.connected': (p) => `hat ${p.target} verbunden`,
+      'marketplace.disconnected': (p) => `hat ${p.target} getrennt`,
+      'listing.sent': (p) => `hat den Eintrag ${p.target} an Partner Center gesendet`,
+      'leads.deleted': (p) => `hat Leads von ${p.target} gelöscht`,
     },
   },
 });

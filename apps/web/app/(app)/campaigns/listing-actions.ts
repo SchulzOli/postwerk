@@ -1,10 +1,11 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
-import { CampaignError, getPiece, saveListingPiece, saveScreenshotPiece, type ScreenshotBackground } from '@maas/core';
+import { CampaignError, getPiece, PartnerCenterError, saveListingPiece, saveScreenshotPiece, sendListing, type ScreenshotBackground } from '@maas/core';
+import { record } from '@/lib/audit';
 import { getDb } from '@maas/db';
 import { getMessages, localizedError } from '@/lib/i18n-server';
-import { requireSession } from '@/lib/session';
+import { requireAdmin, requireSession } from '@/lib/session';
 import { listingMessages } from '@/messages/listing';
 
 export type ListingState = { error?: string; success?: string; saved?: number };
@@ -28,8 +29,21 @@ async function refresh(pieceId: string) {
 }
 
 async function failure(error: unknown): Promise<ListingState> {
-  if (error instanceof CampaignError) return { error: await localizedError(error) };
+  if (error instanceof CampaignError || error instanceof PartnerCenterError) return { error: await localizedError(error) };
   throw error;
+}
+
+/** Writes an approved listing's texts into the offer's draft in Partner Center (owners and admins). */
+export async function sendListingAction(pieceId: string): Promise<ListingState> {
+  const { user, workspace } = await requireAdmin();
+  try {
+    await sendListing(getDb(), workspace.id, pieceId);
+  } catch (error) {
+    return failure(error);
+  }
+  const piece = await getPiece(getDb(), workspace.id, pieceId);
+  await record({ action: 'listing.sent', userId: user.id, workspaceId: workspace.id, target: piece?.title ?? null });
+  return { success: (await getMessages(listingMessages)).sent };
 }
 
 /** Saves a marketplace listing (it goes back to draft). */

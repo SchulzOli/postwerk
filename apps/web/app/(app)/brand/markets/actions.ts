@@ -5,7 +5,14 @@ import { redirect } from 'next/navigation';
 import {
   builtinMarket,
   createProduct,
+  deleteLeads,
   deleteProduct,
+  getProduct,
+  PartnerCenterError,
+  removeCredentials,
+  renewLeadToken,
+  saveCredentials,
+  syncMarketplace,
   installBuiltinMarket,
   installMarket,
   listMarkets,
@@ -30,7 +37,7 @@ function refresh() {
 }
 
 async function failure(error: unknown): Promise<MarketState> {
-  if (error instanceof MarketError || error instanceof ProductError) return { error: await localizedError(error) };
+  if (error instanceof MarketError || error instanceof ProductError || error instanceof PartnerCenterError) return { error: await localizedError(error) };
   throw error;
 }
 
@@ -113,4 +120,66 @@ export async function deleteProductAction(productId: string): Promise<void> {
   if (product) await record({ action: 'product.deleted', userId: user.id, workspaceId: workspace.id, target: product.name });
   refresh();
   redirect('/brand/markets');
+}
+
+// ------------------------------------------------------------------ Partner Center
+
+/** Saves the Entra app after Microsoft accepted it (owners and admins). */
+export async function savePartnerCenterAction(marketId: string, _: MarketState, form: FormData): Promise<MarketState> {
+  const { user, workspace } = await requireAdmin();
+  const text = (name: string) => String(form.get(name) ?? '');
+  try {
+    await saveCredentials(getDb(), workspace.id, marketId, { tenantId: text('tenantId'), clientId: text('clientId'), clientSecret: text('clientSecret') });
+  } catch (error) {
+    return failure(error);
+  }
+  await record({ action: 'marketplace.connected', userId: user.id, workspaceId: workspace.id, target: 'Partner Center', details: { market: marketId } });
+  refresh();
+  return { success: (await getMessages(marketsMessages)).connectedNow };
+}
+
+export async function disconnectPartnerCenterAction(marketId: string): Promise<void> {
+  const { user, workspace } = await requireAdmin();
+  await removeCredentials(getDb(), workspace.id, marketId);
+  await record({ action: 'marketplace.disconnected', userId: user.id, workspaceId: workspace.id, target: 'Partner Center', details: { market: marketId } });
+  refresh();
+}
+
+export async function renewLeadAddressAction(marketId: string): Promise<void> {
+  await requireAdmin().then(({ workspace }) => renewLeadToken(getDb(), workspace.id, marketId));
+  refresh();
+}
+
+/** Reads the marketplace's numbers now instead of waiting for the worker. */
+export async function syncMarketplaceAction(marketId: string): Promise<MarketState> {
+  const { workspace } = await requireAdmin();
+  const t = await getMessages(marketsMessages);
+  try {
+    const outcome = await syncMarketplace(getDb(), workspace.id, marketId);
+    refresh();
+    if (outcome.status === 'synced') return { success: t.synced(outcome.days) };
+    if (outcome.status === 'scheduled') return { success: t.syncScheduled };
+    if (outcome.status === 'waiting') return { success: t.syncWaiting };
+    return { error: t.notConnected };
+  } catch (error) {
+    refresh();
+    return failure(error);
+  }
+}
+
+/** Deletes a product's leads (personal data). */
+export async function deleteProductLeadsAction(productId: string): Promise<void> {
+  const { user, workspace } = await requireAdmin();
+  const db = getDb();
+  const product = await getProduct(db, workspace.id, productId);
+  if (!product) return;
+  const deleted = await deleteLeads(db, workspace.id, { productId });
+  if (deleted > 0) await record({ action: 'leads.deleted', userId: user.id, workspaceId: workspace.id, target: product.name, details: { count: deleted } });
+  revalidatePath(`/brand/products/${productId}`);
+}
+
+export async function deleteLeadAction(productId: string, leadId: string): Promise<void> {
+  const { workspace } = await requireAdmin();
+  await deleteLeads(getDb(), workspace.id, { leadId });
+  revalidatePath(`/brand/products/${productId}`);
 }

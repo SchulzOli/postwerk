@@ -7,6 +7,7 @@ import {
   adVideoId,
   campaignMarket,
   checkListing,
+  listingDestination,
   findMedia,
   formatMoney,
   getAdLaunch,
@@ -39,7 +40,7 @@ import { LocalTime } from '@/components/local-time';
 import { DeleteMailingButton, MailingForm, PrintForm } from '@/components/print-editor';
 import { AdForm, LaunchForm, RunButtons } from '@/components/ad-editor';
 import { SpotEditor, YoutubeUpload } from '@/components/spot-editor';
-import { CopyButton, ListingForm, ScreenshotEditor } from '@/components/listing-editor';
+import { CopyButton, ListingForm, ScreenshotEditor, SendListingButton } from '@/components/listing-editor';
 import { listingMessages } from '@/messages/listing';
 import { marketsMessages } from '@/messages/markets';
 import { formatDay } from '@/lib/dates';
@@ -378,13 +379,14 @@ async function ListingPiece({ campaign, piece }: { campaign: Campaign; piece: Pi
   const session = await requireSession();
   const db = getDb();
   const content = piece.content as unknown as ListingContent;
-  const [t, m, locale, context, check, detail] = await Promise.all([
+  const [t, m, locale, context, check, detail, destination] = await Promise.all([
     getMessages(listingMessages),
     getMessages(marketsMessages),
     getLocale(),
     campaignMarket(db, session.workspace.id, campaign),
     checkListing(db, session.workspace.id, piece),
     getCampaign(db, session.workspace.id, campaign.id),
+    listingDestination(db, session.workspace.id, piece),
   ]);
   const canManage = session.role !== 'editor';
   const market = context?.market;
@@ -407,7 +409,9 @@ async function ListingPiece({ campaign, piece }: { campaign: Campaign; piece: Pi
         ? t.tooLong({ field: label(entry.field), length: entry.length, max: entry.max })
         : entry.code === 'count'
           ? t.count({ what: countLabel[entry.field], actual: entry.actual, min: entry.min, max: entry.max })
-          : t.caption(entry.index + 1);
+          : entry.code === 'emoji'
+            ? t.emoji(label(entry.field))
+            : t.caption(entry.index + 1);
   const profileLabel = (id: string) => market.product.fields.find((field) => field.id === id)?.label[locale] ?? (m as Record<string, unknown>)[id]?.toString() ?? id;
   const limit = (count: { min: number; max: number }) => (count.min > 0 ? t.between(count.min, count.max) : t.upTo(count.max));
   const publisher = context.product.profile.publisher;
@@ -494,6 +498,20 @@ async function ListingPiece({ campaign, piece }: { campaign: Campaign; piece: Pi
                 <CopyButton text={allTexts} />
               </li>
             </ul>
+            {destination && canManage && (
+              <SendListingButton
+                pieceId={piece.id}
+                blocker={
+                  piece.status !== 'approved' && piece.status !== 'live'
+                    ? t.sendNeedsApproval
+                    : !destination.marketplaceProductId
+                      ? t.sendNeedsId
+                      : !destination.connected
+                        ? t.sendNeedsConnection
+                        : null
+                }
+              />
+            )}
           </section>
         </div>
       </div>

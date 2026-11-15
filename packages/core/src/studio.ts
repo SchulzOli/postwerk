@@ -403,7 +403,7 @@ export function draftsFrom(format: string, output: unknown, variants: number, br
 
 // ------------------------------------------------------------------ running
 
-type Answer = { output: unknown; usage: StudioUsage; model: string } | { failure: string; usage: StudioUsage };
+export type StudioAnswer = { output: unknown; usage: StudioUsage; model: string } | { failure: string; usage: StudioUsage };
 
 const NO_USAGE: StudioUsage = { inputTokens: 0, outputTokens: 0, cacheReadTokens: 0, cacheWriteTokens: 0 };
 
@@ -412,7 +412,7 @@ function addUsage(a: StudioUsage, b: StudioUsage): StudioUsage {
 }
 
 /** Asks Claude for one format. Problems with one format are answered as a failure; a wrong key stops the run. */
-async function ask(client: Anthropic, model: string, context: string, format: string, variants: number, market?: MarketManifest): Promise<Answer> {
+export async function askStudio(client: Anthropic, model: string, context: string, format: string, variants: number, market?: MarketManifest): Promise<StudioAnswer> {
   try {
     const message = await client.beta.messages
       .stream({
@@ -480,8 +480,8 @@ export async function runStudio(db: Database, workspace: { id: string; name: str
   const client = options.client ?? new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
   const [first, ...others] = request.formats;
-  const answers = [await ask(client, setup.model, context, first!, request.variants, market)];
-  answers.push(...(await Promise.all(others.map((format) => ask(client, setup.model, context, format, request.variants, market)))));
+  const answers = [await askStudio(client, setup.model, context, first!, request.variants, market)];
+  answers.push(...(await Promise.all(others.map((format) => askStudio(client, setup.model, context, format, request.variants, market)))));
 
   const brand: StudioBrand = { website: kit.website, hasCharacter: Boolean(kit.character) };
   const created: Piece[] = [];

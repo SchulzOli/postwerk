@@ -340,6 +340,56 @@ export const products = pgTable(
   (t) => [index('products_workspace_idx').on(t.workspaceId, t.marketId)],
 );
 
+/**
+ * A workspace's connection to a marketplace's publisher tools for one target
+ * market (Partner Center for AppSource): the API credentials (encrypted), the
+ * secret token in the lead endpoint's address, and the state of the report
+ * that brings the marketplace's numbers (see @maas/core/marketplace).
+ */
+export const marketplaceConnections = pgTable(
+  'marketplace_connections',
+  {
+    workspaceId: uuid('workspace_id').notNull().references(() => workspaces.id, { onDelete: 'cascade' }),
+    marketId: text('market_id').notNull(),
+    /** encryptJson of the credentials; null while only the lead endpoint is used. */
+    credentials: text('credentials'),
+    /** The secret part of the lead endpoint's address. */
+    leadToken: text('lead_token').notNull(),
+    /** The marketplace's scheduled report that brings the daily numbers. */
+    reportId: text('report_id'),
+    lastSyncAt: timestamp('last_sync_at', { withTimezone: true }),
+    lastSyncError: text('last_sync_error'),
+    createdAt: createdAt(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [primaryKey({ columns: [t.workspaceId, t.marketId] }), uniqueIndex('marketplace_connections_token_idx').on(t.leadToken)],
+);
+
+/** A lead a marketplace sent: someone who asked about or acquired a product. Personal data: kept until people delete it. */
+export const marketplaceLeads = pgTable(
+  'marketplace_leads',
+  {
+    id: id(),
+    workspaceId: uuid('workspace_id').notNull().references(() => workspaces.id, { onDelete: 'cascade' }),
+    marketId: text('market_id').notNull(),
+    /** The product the lead's offer belongs to, when it could be matched. */
+    productId: uuid('product_id').references(() => products.id, { onDelete: 'set null' }),
+    /** What the person did, e.g. "INS" (acquired) or "PLT" (asked to be contacted). */
+    action: text('action').notNull().default(''),
+    offerTitle: text('offer_title').notNull().default(''),
+    firstName: text('first_name').notNull().default(''),
+    lastName: text('last_name').notNull().default(''),
+    email: text('email').notNull().default(''),
+    phone: text('phone').notNull().default(''),
+    company: text('company').notNull().default(''),
+    title: text('title').notNull().default(''),
+    country: text('country').notNull().default(''),
+    description: text('description').notNull().default(''),
+    receivedAt: timestamp('received_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [index('marketplace_leads_workspace_idx').on(t.workspaceId, t.receivedAt)],
+);
+
 /** A marketing campaign: goal, audience, message, time and budget, across channels (see @maas/core/marketing). */
 export const campaigns = pgTable(
   'campaigns',
@@ -681,6 +731,8 @@ export type Invite = typeof invites.$inferSelect;
 export type Media = typeof media.$inferSelect;
 export type BrandKit = typeof brandKits.$inferSelect;
 export type Product = typeof products.$inferSelect;
+export type MarketplaceConnection = typeof marketplaceConnections.$inferSelect;
+export type MarketplaceLead = typeof marketplaceLeads.$inferSelect;
 export type Campaign = typeof campaigns.$inferSelect;
 export type Piece = typeof pieces.$inferSelect;
 export type CampaignResult = typeof campaignResults.$inferSelect;

@@ -1,8 +1,9 @@
 import Link from 'next/link';
-import { builtinMarkets, listMarkets, listProducts } from '@maas/core';
+import { builtinMarkets, ensureConnection, listMarkets, listProducts } from '@maas/core';
 import { DOCS_URL } from '@maas/providers';
 import { getDb } from '@maas/db';
-import { DownloadMarketButton, InstallBuiltinMarketButton, InstallMarketForm, UninstallMarketButton } from '@/components/market-forms';
+import { DownloadMarketButton, InstallBuiltinMarketButton, InstallMarketForm, PartnerCenterCard, UninstallMarketButton, type PartnerCenterData } from '@/components/market-forms';
+import { appUrl } from '@/lib/env';
 import { getLocale, getMessages } from '@/lib/i18n-server';
 import { requireSession } from '@/lib/session';
 import { commonMessages } from '@/messages/common';
@@ -22,6 +23,24 @@ export default async function MarketsPage() {
   const available = builtinMarkets.filter((market) => !installed.has(market.id));
   const productsOf = (marketId: string) => products.filter((product) => product.marketId === marketId);
   const orphans = products.filter((product) => !installed.has(product.marketId));
+  // The lead address is a secret: only owners and admins see it.
+  const partnerCenter: PartnerCenterData[] = canManage
+    ? await Promise.all(
+        markets
+          .filter((market) => market.manifest.marketplace.integration === 'partner-center')
+          .map(async (market) => {
+            const connection = await ensureConnection(db, workspace.id, market.id);
+            const when = connection.lastSyncAt && new Intl.DateTimeFormat(locale, { dateStyle: 'medium', timeStyle: 'short' }).format(connection.lastSyncAt);
+            return {
+              marketId: market.id,
+              leadUrl: `${appUrl}/api/marketplace/leads/${connection.leadToken}`,
+              connected: Boolean(connection.credentials),
+              lastSync: when || null,
+              lastError: connection.lastSyncError ? (t.errors[connection.lastSyncError] ?? connection.lastSyncError) : null,
+            };
+          }),
+      )
+    : [];
 
   return (
     <div className="stack-lg">
@@ -78,6 +97,10 @@ export default async function MarketsPage() {
           </div>
         )}
       </section>
+
+      {partnerCenter.map((data) => (
+        <PartnerCenterCard key={data.marketId} data={data} canManage={canManage} />
+      ))}
 
       {available.length > 0 && (
         <section className="card stack">

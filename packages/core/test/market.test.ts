@@ -47,8 +47,10 @@ describe('built-in markets', () => {
     expect(builtinMarkets.filter((market) => themeIds.has(market.id))).toEqual([]);
   });
 
-  it('holds AppSource’s listing limits', () => {
-    const { listing } = builtinMarket('business-central')!.marketplace;
+  it('holds AppSource’s listing limits, and connects to Partner Center', () => {
+    const { listing, integration } = builtinMarket('business-central')!.marketplace;
+    expect(integration).toBe('partner-center');
+    expect(listing.texts.find((field) => field.id === 'name')).toMatchObject({ max: 200, emoji: false });
     expect(Object.fromEntries(listing.texts.map((field) => [field.id, field.max]))).toEqual({ name: 200, summary: 100, description: 5000 });
     expect(listing.screenshots).toEqual({ min: 3, max: 5, width: 1280, height: 720 });
     expect(listing).toMatchObject({ keywords: { max: 3 }, videos: { max: 4 }, documents: { min: 1, max: 3 } });
@@ -60,7 +62,8 @@ describe('parseMarketManifest', () => {
     const market = parseMarketManifest(minimal);
     expect(market).toMatchObject({ id: 'shop-apps', version: '1.0.0', author: 'Unknown', templates: [], product: { fields: [] } });
     expect(market.marketplace.listing).toMatchObject({ keywords: { min: 0, max: 100 }, videos: { min: 0, max: 20 } });
-    expect(market.marketplace.listing.texts[0]).toEqual({ id: 'name', label: text('Name'), max: 30, required: true, multiline: false });
+    expect(market.marketplace.listing.texts[0]).toEqual({ id: 'name', label: text('Name'), max: 30, required: true, multiline: false, emoji: true });
+    expect(market.marketplace).not.toHaveProperty('integration');
   });
 
   it('explains invalid JSON and wrong kinds', () => {
@@ -89,6 +92,8 @@ describe('parseMarketManifest', () => {
     rejects(marketplace({ url: 'http://apps.example.com' }), /https:\/\/ address/);
     rejects(marketplace({ listing: { ...minimal.marketplace.listing, texts: [] } }), /list of 1 to/);
     rejects(marketplace({ listing: { ...minimal.marketplace.listing, screenshots: { min: 4, max: 2, width: 1600, height: 900 } } }), /must not be larger/);
+    rejects(marketplace({ integration: 'shopify' }), /“marketplace.integration” must be one of: partner-center/);
+    expect(parseMarketManifest({ ...minimal, ...marketplace({ integration: 'partner-center' }) }).marketplace.integration).toBe('partner-center');
     const twice = { id: 'name', label: text('Name'), max: 30 };
     rejects(marketplace({ listing: { ...minimal.marketplace.listing, texts: [twice, twice] } }), /the id “name” twice/);
   });
@@ -132,6 +137,11 @@ describe('listingProblems', () => {
       { code: 'required', field: 'name' },
       { code: 'tooLong', field: 'summary', max: 100, length: 101 },
     ]);
+  });
+
+  it('refuses emojis where the marketplace does, and keeps ™ and ©', () => {
+    expect(listingProblems(market, draft({ texts: { ...draft().texts, name: 'Deposit Tracker 🚀' } }))).toEqual([{ code: 'emoji', field: 'name' }]);
+    expect(listingProblems(market, draft({ texts: { ...draft().texts, name: 'Deposit Tracker™ ©', summary: 'Deposits ✅' } }))).toEqual([]);
   });
 
   it('reports counts outside the marketplace’s limits and screenshots without a caption', () => {

@@ -19,7 +19,7 @@ export function marketFields(market: MarketManifest | undefined, locale: Locale)
 }
 
 /** The product page for a new or an existing product. */
-export async function ProductPage({ title, product, market, locale, canEdit, children }: { title: string; product: ProductFormData; market: MarketManifest | undefined; locale: Locale; canEdit: boolean; children?: React.ReactNode }) {
+export async function ProductPage({ title, product, market, locale, canEdit, children, footer }: { title: string; product: ProductFormData; market: MarketManifest | undefined; locale: Locale; canEdit: boolean; children?: React.ReactNode; footer?: React.ReactNode }) {
   const t = await getMessages(marketsMessages);
   return (
     <div className="stack-lg">
@@ -34,6 +34,7 @@ export async function ProductPage({ title, product, market, locale, canEdit, chi
       {!canEdit && <p className="muted">{t.readOnly}</p>}
       {children}
       <ProductForm product={product} fields={marketFields(market, locale)} maxFeatures={MAX_FEATURES} canEdit={canEdit && Boolean(market)} />
+      {footer}
     </div>
   );
 }
