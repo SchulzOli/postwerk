@@ -43,7 +43,14 @@ export type AuditAction =
   | 'ads.launched'
   | 'ads.started'
   | 'ads.paused'
-  | 'studio.drafted';
+  | 'studio.drafted'
+  | 'product.created'
+  | 'product.updated'
+  | 'product.deleted'
+  | 'marketplace.connected'
+  | 'marketplace.disconnected'
+  | 'listing.sent'
+  | 'leads.deleted';
 
 export interface AuditInput {
   action: AuditAction;

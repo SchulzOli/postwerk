@@ -608,3 +608,14 @@ textarea.theme-source { font-family: var(--font-mono); font-size: 12px; line-hei
 .post-idea { white-space: pre-wrap; overflow-wrap: anywhere; margin: 0; padding: 0.6rem 0.8rem; border-left: 3px solid var(--accent); background: var(--field); border-radius: var(--radius); }
 .studio-groups { columns: 2 17rem; column-gap: 1rem; }
 .studio-groups > div { break-inside: avoid; margin-bottom: 0.9rem; }
+
+/* Target markets */
+textarea.mono { font-family: var(--font-mono); font-size: 0.85rem; }
+.screenshot-canvas { width: 100%; height: auto; border: 1px solid var(--border); border-radius: var(--radius); }
+.listing-preview { display: flex; gap: 0.9rem; border: 1px solid var(--border); border-radius: var(--radius); padding: 0.9rem; background: var(--field); }
+.listing-preview strong { display: block; line-height: 1.25; }
+.checks { display: flex; flex-direction: column; gap: 0.45rem; font-size: 0.92rem; }
+.checks li { display: flex; gap: 0.5rem; align-items: baseline; }
+.checks li::before { content: "!"; color: var(--warn); font-weight: 700; }
+.checks li.ok::before { content: "\2713"; color: var(--success); }
+.checks li.rule::before { content: "\2022"; color: var(--muted); }

@@ -14,7 +14,7 @@ MarketingAsAService covers more than social media posts. A business's marketing 
 
 An optional [AI studio](ai-studio.md) has Claude draft any of these for a campaign. It is separate: everything also works by hand.
 
-Planned: [target markets](../markets.md) set all of this up for a product sold in a marketplace, with its listing as a channel of its own. The first is [MarketingApp4BusinessCentral](business-central.md), for extensions for Business Central on AppSource.
+[Target markets](../markets.md) set all of this up for a product sold in a marketplace, with its listing as a channel of its own. The first is [MarketingApp4BusinessCentral](business-central.md), for extensions for Business Central on AppSource.
 
 ## Brand kit
 

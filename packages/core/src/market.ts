@@ -36,7 +36,13 @@ export interface ListingText {
   max: number;
   required: boolean;
   multiline: boolean;
+  /** False when the marketplace refuses emojis in this text. */
+  emoji: boolean;
 }
+
+/** Publisher tools MarketingAsAService can talk to for a marketplace. */
+export const MARKETPLACE_INTEGRATIONS = ['partner-center'] as const;
+export type MarketplaceIntegration = (typeof MARKETPLACE_INTEGRATIONS)[number];
 
 /** How many of something a listing takes. */
 export interface Count {
@@ -57,6 +63,8 @@ export interface Marketplace {
   };
   /** What the marketplace checks that a computer cannot: shown before approval and given to the AI studio. */
   rules: MarketText[];
+  /** The publisher tools to connect, if MarketingAsAService supports them: listing upload, leads and numbers. */
+  integration?: MarketplaceIntegration;
 }
 
 /** A piece a template creates: the marketplace listing, a listing screenshot, or a piece of the platform's own kinds. */
@@ -77,6 +85,8 @@ export interface CampaignTemplate {
   /** Post drafts spread over the weeks. */
   posts: number;
   weeks: number;
+  /** What each post is about, in order; posts without a topic get a general one. */
+  postTopics: MarketText[];
 }
 
 export interface MarketManifest {
@@ -106,6 +116,8 @@ const ID = /^[a-z0-9](?:[a-z0-9-]{0,38}[a-z0-9])?$/;
 const FIELD_ID = /^[a-z][a-z0-9_]{0,39}$/;
 const MAX = { manifest: 200_000, name: 60, text: 300, long: 4000, list: 30, rules: 30, templates: 20 };
 const LOCALES: Locale[] = ['en', 'de'];
+/** Pictographs such as 🚀 or ✅; letters, digits and ™/© are fine. */
+const EMOJI = /\p{Extended_Pictographic}(?<![©®™])/u;
 
 /** Fields every product profile has, whatever its market; a market cannot redefine them. */
 export const COMMON_PROFILE_FIELDS = ['name', 'does', 'audience', 'features', 'countries', 'languages', 'price', 'help', 'privacy', 'support', 'video'] as const;
@@ -213,9 +225,13 @@ function marketplace(value: unknown): Marketplace {
       max: integer(text.max, `${field}.max`, 1, 100_000),
       required: text.required !== false,
       multiline: text.multiline === true,
+      emoji: text.emoji !== false,
     };
   });
   const screenshots = object(listing.screenshots, 'marketplace.listing.screenshots');
+  if (raw.integration !== undefined && !MARKETPLACE_INTEGRATIONS.includes(raw.integration as MarketplaceIntegration)) {
+    throw new MarketError((m) => m.choice({ field: 'marketplace.integration', allowed: MARKETPLACE_INTEGRATIONS.join(', ') }));
+  }
   return {
     name: plain(raw.name, 'marketplace.name', MAX.name),
     url: https(raw.url, 'marketplace.url'),
@@ -231,6 +247,7 @@ function marketplace(value: unknown): Marketplace {
       documents: count(listing.documents ?? {}, 'marketplace.listing.documents', 20),
     },
     rules: list(raw.rules, 'marketplace.rules', MAX.rules).map((rule, index) => translated(rule, `marketplace.rules[${index}]`, MAX.text)),
+    ...(raw.integration !== undefined && { integration: raw.integration as MarketplaceIntegration }),
   };
 }
 
@@ -257,6 +274,7 @@ function template(value: unknown, index: number): CampaignTemplate {
     }
     return result;
   });
+  const posts = integer(raw.posts ?? 0, `${field}.posts`, 0, 60);
   return {
     id: plain(raw.id, `${field}.id`, 40),
     name: translated(raw.name, `${field}.name`, MAX.name),
@@ -264,8 +282,9 @@ function template(value: unknown, index: number): CampaignTemplate {
     goal: goal as Goal,
     channels: [...new Set(channels)],
     pieces,
-    posts: integer(raw.posts ?? 0, `${field}.posts`, 0, 60),
+    posts,
     weeks: integer(raw.weeks ?? 4, `${field}.weeks`, 1, 52),
+    postTopics: list(raw.postTopics, `${field}.postTopics`, posts).map((topic, at) => translated(topic, `${field}.postTopics[${at}]`, MAX.text)),
   };
 }
 
@@ -327,6 +346,7 @@ export interface ListingDraft {
 export type ListingProblem =
   | { code: 'required'; field: string }
   | { code: 'tooLong'; field: string; max: number; length: number }
+  | { code: 'emoji'; field: string }
   | { code: 'count'; field: 'keywords' | 'screenshots' | 'videos' | 'documents'; min: number; max: number; actual: number }
   | { code: 'caption'; index: number };
 
@@ -338,6 +358,7 @@ export function listingProblems(market: MarketManifest, draft: ListingDraft): Li
     const value = (draft.texts[text.id] ?? '').trim();
     if (!value && text.required) problems.push({ code: 'required', field: text.id });
     else if (value.length > text.max) problems.push({ code: 'tooLong', field: text.id, max: text.max, length: value.length });
+    if (!text.emoji && EMOJI.test(value)) problems.push({ code: 'emoji', field: text.id });
   }
   const counts = [
     ['keywords', draft.keywords.filter((keyword) => keyword.trim()).length, listing.keywords],

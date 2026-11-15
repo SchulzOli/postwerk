@@ -1,4 +1,4 @@
-import { adsSetup, mailingService, notifyPostProblem, runHousekeeping, runMailingCycle, runPublishCycle, syncAdStats } from '@maas/core';
+import { adsSetup, mailingService, notifyPostProblem, runHousekeeping, runMailingCycle, runPublishCycle, syncAdStats, syncAllMarketplaces } from '@maas/core';
 import { getDb } from '@maas/db';
 
 const intervalMs = Number(process.env.WORKER_POLL_INTERVAL_MS ?? 10_000);
@@ -10,6 +10,9 @@ const ADS_MS = 10 * 60_000;
 let lastHousekeeping = 0;
 let lastMailing = 0;
 let lastAds = 0;
+/** Marketplace connections are read every few hours (see MARKETPLACE_SYNC_MS); this is how often to look for due ones. */
+const MARKETPLACE_MS = 30 * 60_000;
+let lastMarketplace = 0;
 const setup = adsSetup();
 const ads = Boolean(setup.google_ads || setup.meta_ads);
 const letters = mailingService();
@@ -42,6 +45,15 @@ async function loop() {
         if (synced > 0) console.log(`read the numbers of ${synced} ad campaign(s)`);
       } catch (error) {
         console.error('ad numbers failed', error);
+      }
+    }
+    if (Date.now() - lastMarketplace > MARKETPLACE_MS) {
+      lastMarketplace = Date.now();
+      try {
+        const synced = await syncAllMarketplaces(db);
+        if (synced > 0) console.log(`read the marketplace numbers of ${synced} workspace(s)`);
+      } catch (error) {
+        console.error('marketplace numbers failed', error);
       }
     }
     if (Date.now() - lastHousekeeping > HOUSEKEEPING_MS) {

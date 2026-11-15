@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { adsSetup, formatMoney, listAdAccounts, listCampaigns } from '@maas/core';
+import { adsSetup, formatMoney, listAdAccounts, listCampaigns, listMarkets, listProducts } from '@maas/core';
 import { AD_PLATFORMS, DOCS_URL } from '@maas/providers';
 import { getDb } from '@maas/db';
 import { RemoveAdAccountButton } from '@/components/ad-editor';
@@ -21,7 +21,22 @@ export default async function CampaignsPage({ searchParams }: { searchParams: Pr
   const { workspace, role } = await requireSession();
   const { notice, error } = await searchParams;
   const db = getDb();
-  const [campaigns, adAccounts, t, a, locale] = await Promise.all([listCampaigns(db, workspace.id), listAdAccounts(db, workspace.id), getMessages(campaignsMessages), getMessages(adsMessages), getLocale()]);
+  const [campaigns, adAccounts, t, a, locale, products, markets] = await Promise.all([
+    listCampaigns(db, workspace.id),
+    listAdAccounts(db, workspace.id),
+    getMessages(campaignsMessages),
+    getMessages(adsMessages),
+    getLocale(),
+    listProducts(db, workspace.id),
+    listMarkets(db, workspace.id),
+  ]);
+  const marketOf = new Map(markets.map((market) => [market.id, market.manifest]));
+  const productTemplates = products.flatMap((product) => {
+    const market = marketOf.get(product.marketId);
+    return market
+      ? [{ id: product.id, name: product.name, market: market.name[locale], templates: market.templates.map((template) => ({ id: template.id, name: template.name[locale], description: template.description[locale] })) }]
+      : [];
+  });
   const setup = adsSetup();
   const canManage = role !== 'editor';
   const day = (value: string | null) => (value ? formatDay(value, locale) : '…');
@@ -56,7 +71,7 @@ export default async function CampaignsPage({ searchParams }: { searchParams: Pr
         </ul>
       )}
 
-      <NewCampaignForm />
+      <NewCampaignForm products={productTemplates} />
 
       <section className="card stack" id="ad-accounts">
         <h2>{a.accounts}</h2>

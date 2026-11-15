@@ -8,16 +8,16 @@ Markets are plugins like [themes](themes.md): a JSON file, checked when it is in
 |---|---|---|---|
 | **Business Central extensions** (`business-central`, built in) | An extension for Microsoft Dynamics 365 Business Central | AppSource | [MarketingApp4BusinessCentral](marketing/business-central.md) |
 
-> **Status:** the format, its checks and the storage are built (`@maas/core/market`). Installing markets in the app, product profiles, listings and templates are not built yet; the [build order](marketing/business-central.md#build-order) says what comes next.
+Installing markets, product profiles, marketplace listings, listing screenshots, templates and AI drafts all work with any market. [MarketingApp4BusinessCentral](marketing/business-central.md) shows them with the built-in market.
 
 ## Using target markets
 
 - **Owners and admins install markets** under **Brand → Target markets**: a built-in one with one click, or their own from a file. New workspaces start without any, since most businesses do not sell in a marketplace.
 - **Each product belongs to one market.** A workspace can hold several products per market, for example two Business Central extensions.
-- **A campaign belongs to one product.** Its templates, listing, AI drafts and result labels come from the product's market.
+- **A campaign can market one product.** Its templates, listing, AI drafts and result labels come from the product's market.
 - **Uninstalling a market** hides its tools; products and campaigns stay and come back when it is installed again.
 
-![Mockup: two target markets installed in a workspace](screenshots/markets.png)
+![Two target markets installed in a workspace](screenshots/markets.png)
 
 ## The market file
 
@@ -122,12 +122,13 @@ Every product already has a name, what it does, who it is for, what it can do, c
 |---|---|
 | `name` | The marketplace's name, the same in every language, e.g. "AppSource" |
 | `url` | Its `https://` address |
-| `listing.texts` | The listing's text fields, 1 to 30: `id`, `label`, `max` characters, `required` (default `true`), `multiline` |
+| `listing.texts` | The listing's text fields, 1 to 30: `id`, `label`, `max` characters, `required` (default `true`), `multiline`, and `emoji: false` where the marketplace refuses emojis |
 | `listing.keywords`, `.videos`, `.documents` | How many: `min` (default 0) and `max` |
 | `listing.screenshots` | How many (`min`, `max`) and their size in pixels (`width`, `height`); they are rendered as PNG |
 | `rules` | Up to 30 checks the marketplace makes that a computer cannot, shown before approval and given to the AI studio |
+| `integration` | The publisher tools MarketingAsAService can connect: `partner-center` (Microsoft's marketplaces) adds leads, daily numbers and sending the listing; leave it out for others |
 
-Before a listing can be approved, MarketingAsAService checks every limit: required texts filled in, texts within their length, the number of keywords, screenshots, videos and documents, and a caption on every screenshot (`listingProblems` in `@maas/core/market`).
+Before a listing can be approved, MarketingAsAService checks every limit: required texts filled in, texts within their length and without emojis where they are refused, the number of keywords, screenshots, videos and documents, and a caption on every screenshot (`listingProblems` in `@maas/core/market`).
 
 ### Templates
 
@@ -140,6 +141,7 @@ A template fills in a new campaign. Every template uses the market's marketplace
 | `channels` | Any of the platform's channels: `social`, `search_ads`, `social_ads`, `video_ads`, `print`, `mail`, `radio`, `tv`, `cinema`, `outdoor` |
 | `pieces` | `listing`, `screenshot`, or a piece of the platform's kinds with its format, e.g. `{ "kind": "ad", "format": "search" }` |
 | `posts`, `weeks` | How many post drafts, spread over how many weeks (defaults 0 and 4) |
+| `postTopics` | What each post is about, in order (up to `posts`); posts without one get a general topic |
 
 ### Rules
 
@@ -153,4 +155,5 @@ A template fills in a new campaign. Every template uses the market's marketplace
 - Format, checks and the listing check: `packages/core/src/market.ts` (browser-safe, also exported as `@maas/core/market`)
 - Built-in markets: `packages/core/src/markets/`; add one there and to `builtinMarkets`. Its source of every limit goes in the file's comment.
 - Storage: the `plugins` table with `kind = 'market'`; `listMarkets`, `installBuiltinMarket`, `installMarket` and `uninstallMarket` in `packages/core/src/plugins.ts`
-- Error messages in English and German: `marketMessages` in `packages/core/src/messages.ts`
+- Products, listing checks and templates: `packages/core/src/products.ts` and `templates.ts`; the screens are in `apps/web/app/(app)/brand/` and `components/listing-editor.tsx`
+- Error messages in English and German: `marketMessages` and `productMessages` in `packages/core/src/messages.ts`

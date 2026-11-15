@@ -5,6 +5,9 @@ import {
   adProblems,
   adsSetup,
   adVideoId,
+  campaignMarket,
+  checkListing,
+  listingDestination,
   findMedia,
   formatMoney,
   getAdLaunch,
@@ -20,7 +23,11 @@ import {
   spotVideo,
   type AdContent,
   type AdFormat,
+  type ListingContent,
+  type ListingProblem,
+  type MarketManifest,
   type PieceStatus,
+  type ScreenshotContent,
   type PrintContent,
   type SpotContent,
   type SpotFormat,
@@ -33,6 +40,9 @@ import { LocalTime } from '@/components/local-time';
 import { DeleteMailingButton, MailingForm, PrintForm } from '@/components/print-editor';
 import { AdForm, LaunchForm, RunButtons } from '@/components/ad-editor';
 import { SpotEditor, YoutubeUpload } from '@/components/spot-editor';
+import { CopyButton, ListingForm, ScreenshotEditor, SendListingButton } from '@/components/listing-editor';
+import { listingMessages } from '@/messages/listing';
+import { marketsMessages } from '@/messages/markets';
 import { formatDay } from '@/lib/dates';
 import { getLocale, getMessages } from '@/lib/i18n-server';
 import { requireSession } from '@/lib/session';
@@ -68,6 +78,8 @@ export default async function PiecePage({ params }: Params) {
   const { campaign, piece } = found;
   if (piece.kind === 'spot') return <SpotPiece campaign={campaign} piece={piece} />;
   if (piece.kind === 'ad') return <AdPiece campaign={campaign} piece={piece} />;
+  if (piece.kind === 'listing') return <ListingPiece campaign={campaign} piece={piece} />;
+  if (piece.kind === 'screenshot') return <ScreenshotPiece campaign={campaign} piece={piece} />;
   const db = getDb();
   const content = piece.content as unknown as PrintContent;
   const [t, locale, kit, uploads] = await Promise.all([
@@ -361,3 +373,179 @@ async function AdPiece({ campaign, piece }: { campaign: Campaign; piece: Piece }
     </div>
   );
 }
+
+/** A marketplace listing: its texts against the market's limits, the checks, and the hand-over to the marketplace. */
+async function ListingPiece({ campaign, piece }: { campaign: Campaign; piece: Piece }) {
+  const session = await requireSession();
+  const db = getDb();
+  const content = piece.content as unknown as ListingContent;
+  const [t, m, locale, context, check, detail, destination] = await Promise.all([
+    getMessages(listingMessages),
+    getMessages(marketsMessages),
+    getLocale(),
+    campaignMarket(db, session.workspace.id, campaign),
+    checkListing(db, session.workspace.id, piece),
+    getCampaign(db, session.workspace.id, campaign.id),
+    listingDestination(db, session.workspace.id, piece),
+  ]);
+  const canManage = session.role !== 'editor';
+  const market = context?.market;
+  const screenshots = (detail?.pieces ?? []).filter((candidate) => candidate.kind === 'screenshot');
+  if (!market || !context) {
+    return (
+      <div className="stack-lg">
+        <PieceHeader campaign={campaign} piece={piece} canManage={canManage} />
+        <p className="warn-text">{t.marketMissing}</p>
+      </div>
+    );
+  }
+  const { listing } = market.marketplace;
+  const label = (id: string) => listing.texts.find((field) => field.id === id)?.label[locale] ?? id;
+  const countLabel = { keywords: t.keywords, screenshots: t.screenshots, videos: t.videos, documents: t.documents };
+  const problem = (entry: ListingProblem) =>
+    entry.code === 'required'
+      ? t.required(label(entry.field))
+      : entry.code === 'tooLong'
+        ? t.tooLong({ field: label(entry.field), length: entry.length, max: entry.max })
+        : entry.code === 'count'
+          ? t.count({ what: countLabel[entry.field], actual: entry.actual, min: entry.min, max: entry.max })
+          : entry.code === 'emoji'
+            ? t.emoji(label(entry.field))
+            : t.caption(entry.index + 1);
+  const profileLabel = (id: string) => market.product.fields.find((field) => field.id === id)?.label[locale] ?? (m as Record<string, unknown>)[id]?.toString() ?? id;
+  const limit = (count: { min: number; max: number }) => (count.min > 0 ? t.between(count.min, count.max) : t.upTo(count.max));
+  const publisher = context.product.profile.publisher;
+  const allTexts = listing.texts.map((field) => `${field.label[locale]}\n${content.texts[field.id] ?? ''}`).join('\n\n') + `\n\n${t.keywords}\n${content.keywords.join(', ')}`;
+
+  return (
+    <div className="stack-lg">
+      <PieceHeader campaign={campaign} piece={piece} canManage={canManage} />
+      <div className="piece-layout">
+        <ListingForm
+          listing={{ pieceId: piece.id, title: piece.title, texts: content.texts ?? {}, keywords: content.keywords ?? [], videos: content.videos ?? [], documents: content.documents ?? [] }}
+          fields={listing.texts.map((field) => ({ id: field.id, label: field.label[locale], max: field.max, multiline: field.multiline }))}
+          limits={{ keywords: limit(listing.keywords), videos: limit(listing.videos), documents: limit(listing.documents) }}
+        />
+        <div className="stack-lg">
+          <section className="card stack">
+            <h2>{t.preview}</h2>
+            <div className="listing-preview">
+              <span className="avatar-initial">{(context.product.name[0] ?? '?').toUpperCase()}</span>
+              <span>
+                <strong>{content.texts.name || context.product.name}</strong>
+                {typeof publisher === 'string' && <small className="muted">{t.by(publisher)}</small>}
+                <br />
+                <span className="small">{content.texts.summary ?? ''}</span>
+              </span>
+            </div>
+          </section>
+          <section className="card stack">
+            <h2>{t.checks}</h2>
+            <ul className="checks">
+              {check && check.listing.length === 0 && check.profile.length === 0 && <li className="ok">{t.ready}</li>}
+              {check?.listing.map((entry) => <li key={JSON.stringify(entry)}>{problem(entry)}</li>)}
+              {check?.profile.map((id) => <li key={id}>{t.profileMissing(profileLabel(id))}</li>)}
+            </ul>
+            {check && check.profile.length > 0 && (
+              <Link href={`/brand/products/${context.product.id}`} className="small-link">{t.editProfile}</Link>
+            )}
+            {market.marketplace.rules.length > 0 && (
+              <>
+                <strong>{t.rules}</strong>
+                <ul className="checks">
+                  {market.marketplace.rules.map((rule) => (
+                    <li key={rule.en} className="rule">{rule[locale]}</li>
+                  ))}
+                </ul>
+              </>
+            )}
+          </section>
+          <section className="card stack">
+            <h2>{t.screenshots}</h2>
+            <small className="muted">{t.screenshotsHint(`${listing.screenshots.width} × ${listing.screenshots.height}`)}</small>
+            {screenshots.length === 0 ? (
+              <p className="muted">{t.noScreenshots}</p>
+            ) : (
+              <ol className="stack-sm">
+                {screenshots.map((shot) => {
+                  const caption = (shot.content as unknown as ScreenshotContent).caption;
+                  return (
+                    <li key={shot.id}>
+                      <Link href={`/campaigns/${campaign.id}/pieces/${shot.id}`}>{shot.title}</Link>
+                      <span className="muted small"> · {caption || t.noCaption}</span>
+                    </li>
+                  );
+                })}
+              </ol>
+            )}
+          </section>
+          <section className="card stack">
+            <h2>{t.handOver(market.marketplace.name)}</h2>
+            <p className="muted">{t.handOverHint(market.marketplace.name)}</p>
+            <ul className="list">
+              {listing.texts.map((field) => (
+                <li key={field.id} className="row">
+                  <span className="grow">{field.label[locale]}</span>
+                  <CopyButton text={content.texts[field.id] ?? ''} />
+                </li>
+              ))}
+              <li className="row">
+                <span className="grow">{t.keywords}</span>
+                <CopyButton text={content.keywords.join(', ')} />
+              </li>
+              <li className="row">
+                <strong className="grow">{t.listing}</strong>
+                <CopyButton text={allTexts} />
+              </li>
+            </ul>
+            {destination && canManage && (
+              <SendListingButton
+                pieceId={piece.id}
+                blocker={
+                  piece.status !== 'approved' && piece.status !== 'live'
+                    ? t.sendNeedsApproval
+                    : !destination.marketplaceProductId
+                      ? t.sendNeedsId
+                      : !destination.connected
+                        ? t.sendNeedsConnection
+                        : null
+                }
+              />
+            )}
+          </section>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/** A listing screenshot, drawn at the market's size with the brand's colors. */
+async function ScreenshotPiece({ campaign, piece }: { campaign: Campaign; piece: Piece }) {
+  const session = await requireSession();
+  const db = getDb();
+  const content = piece.content as unknown as ScreenshotContent;
+  const [t, kit, context, uploads] = await Promise.all([
+    getMessages(listingMessages),
+    getBrandKit(db, session.workspace),
+    campaignMarket(db, session.workspace.id, campaign),
+    findMedia(db, session.workspace.id, content.captureMediaId ? [content.captureMediaId] : []),
+  ]);
+  const canManage = session.role !== 'editor';
+  const market: MarketManifest | undefined = context?.market;
+  const size = market?.marketplace.listing.screenshots ?? { width: 1280, height: 720 };
+  const capture = content.captureMediaId ? uploads.get(content.captureMediaId) : undefined;
+  const fileName = `${piece.title.replace(/[^\p{L}\p{N}]+/gu, '-').replace(/^-|-$/g, '').toLowerCase() || 'screenshot'}.png`;
+  return (
+    <div className="stack-lg">
+      <PieceHeader campaign={campaign} piece={piece} canManage={canManage} />
+      {!market && <p className="warn-text">{t.marketMissing}</p>}
+      <ScreenshotEditor
+        screenshot={{ pieceId: piece.id, title: piece.title, capture: capture ? [{ id: capture.id, url: `/media/${capture.key}` }] : [], headline: content.headline, caption: content.caption, background: content.background }}
+        look={{ colors: { primary: kit.colors.primary, secondary: kit.colors.secondary, text: kit.colors.text, background: kit.colors.background }, font: kit.font }}
+        size={{ width: size.width, height: size.height }}
+        fileName={fileName}
+      />
+    </div>
+  );
+}
+

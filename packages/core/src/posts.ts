@@ -102,6 +102,18 @@ async function prepareTargets(db: Database | Transaction, input: PostInput): Pro
   return { ok: true, targets, variants };
 }
 
+/**
+ * A draft without accounts yet, for posts planned before anyone writes them
+ * (campaign templates). The composer opens it to write it and pick accounts.
+ */
+export async function createPostDraft(db: Database, input: { workspaceId: string; authorId: string; text: string; campaignId: string | null; scheduledAt: Date }): Promise<string> {
+  const [post] = await db
+    .insert(posts)
+    .values({ workspaceId: input.workspaceId, authorId: input.authorId, text: input.text.slice(0, 5000), campaignId: input.campaignId, status: 'draft', scheduledAt: input.scheduledAt })
+    .returning({ id: posts.id });
+  return post!.id;
+}
+
 const targetRows = (postId: string, scheduledAt: Date, targets: PreparedTarget[]) =>
   targets.map((target) => ({ ...target, postId, nextAttemptAt: new Date(scheduledAt.getTime() + target.delayMinutes * 60_000) }));
 

@@ -1,7 +1,7 @@
 'use client';
 
 import { useActionState, useEffect, useRef, useState, useTransition } from 'react';
-import { CAMPAIGN_STATUSES, CHANNELS, CURRENCIES, formatMoney, GOALS, parseMoney, PIECE_FORMATS, PIECE_KINDS, type PieceKind, type PieceStatus } from '@maas/core/marketing';
+import { CAMPAIGN_STATUSES, CHANNELS, CURRENCIES, formatMoney, GOALS, isMarketPiece, parseMoney, PIECE_FORMATS, PIECE_KINDS, type PieceKind, type PieceStatus } from '@maas/core/marketing';
 import {
   addPieceAction,
   addResultAction,
@@ -40,12 +40,47 @@ const today = () => new Date().toISOString().slice(0, 10);
 /** Cents as the plain amount people type ("1500" or "1500.50"). */
 const amountInput = (cents: number) => (cents % 100 === 0 ? String(cents / 100) : (cents / 100).toFixed(2));
 
-export function NewCampaignForm() {
+/** A product with its market's campaign templates, texts in the UI language. */
+export interface ProductTemplates extends ProductChoice {
+  templates: { id: string; name: string; description: string }[];
+}
+
+export function NewCampaignForm({ products = [] }: { products?: ProductTemplates[] }) {
   const t = useMessages(campaignsMessages);
   const [state, action, pending] = useActionState<CampaignState, FormData>(createCampaignAction, {});
+  const [productId, setProductId] = useState('');
+  const [templateId, setTemplateId] = useState('');
+  const templates = products.find((product) => product.id === productId)?.templates ?? [];
   return (
     <form onSubmit={keepValues(action)} className="card stack">
       <h2>{t.newCampaign}</h2>
+      {products.length > 0 && (
+        <div className="grid-2">
+          <label>
+            {t.product} <small className="muted">{t.productHint}</small>
+            <select name="productId" value={productId} onChange={(e) => (setProductId(e.target.value), setTemplateId(''))}>
+              <option value="">{t.noProduct}</option>
+              {products.map((product) => (
+                <option key={product.id} value={product.id}>
+                  {product.name} ({product.market})
+                </option>
+              ))}
+            </select>
+          </label>
+          {templates.length > 0 && (
+            <label>
+              {t.template} <small className="muted">{t.templateHint}</small>
+              <select name="templateId" value={templateId} onChange={(e) => setTemplateId(e.target.value)}>
+                <option value="">{t.noTemplate}</option>
+                {templates.map((template) => (
+                  <option key={template.id} value={template.id}>{template.name}</option>
+                ))}
+              </select>
+            </label>
+          )}
+        </div>
+      )}
+      {templateId && <p className="muted small">{templates.find((template) => template.id === templateId)?.description}</p>}
       <label>
         {t.name}
         <input name="name" required maxLength={120} placeholder={t.namePlaceholder} />
@@ -57,7 +92,7 @@ export function NewCampaignForm() {
       <div className="grid-4">
         <label>
           {t.goal}
-          <select name="goal" defaultValue="leads">
+          <select name="goal" defaultValue="leads" disabled={Boolean(templateId)} title={templateId ? t.goalFromTemplate : undefined}>
             {GOALS.map((goal) => (
               <option key={goal} value={goal}>{t.goals[goal]}</option>
             ))}
@@ -102,10 +137,35 @@ export interface PlanData {
   budgetCents: number;
   channels: { channel: string; budgetCents: number }[];
   notes: string;
+  productId: string | null;
+}
+
+/** A product a campaign can market, with its market's name. */
+export interface ProductChoice {
+  id: string;
+  name: string;
+  market: string;
+}
+
+function ProductSelect({ products, value }: { products: ProductChoice[]; value: string | null }) {
+  const t = useMessages(campaignsMessages);
+  return (
+    <label>
+      {t.product} <small className="muted">{t.productHint}</small>
+      <select name="productId" defaultValue={value ?? ''}>
+        <option value="">{t.noProduct}</option>
+        {products.map((product) => (
+          <option key={product.id} value={product.id}>
+            {product.name} ({product.market})
+          </option>
+        ))}
+      </select>
+    </label>
+  );
 }
 
 /** The campaign's plan, with the budget split across the channels it runs in. */
-export function PlanForm({ campaign, brandAudience, canDelete }: { campaign: PlanData; brandAudience: string; canDelete: boolean }) {
+export function PlanForm({ campaign, brandAudience, canDelete, products }: { campaign: PlanData; brandAudience: string; canDelete: boolean; products: ProductChoice[] }) {
   const t = useMessages(campaignsMessages);
   const locale = intlLocale(useLocale());
   const [state, action, pending] = useActionState<CampaignState, FormData>(saveCampaignAction.bind(null, campaign.id), {});
@@ -151,6 +211,7 @@ export function PlanForm({ campaign, brandAudience, canDelete }: { campaign: Pla
         {t.message} <small className="muted">{t.messageHint}</small>
         <input name="message" defaultValue={campaign.message} maxLength={500} />
       </label>
+      {(products.length > 0 || campaign.productId) && <ProductSelect products={products} value={campaign.productId} />}
       <label>
         {t.audience} <small className="muted">{t.audienceHint}</small>
         <textarea name="audience" rows={2} defaultValue={campaign.audience} placeholder={brandAudience} maxLength={1000} />
@@ -246,8 +307,9 @@ export function PlanForm({ campaign, brandAudience, canDelete }: { campaign: Pla
   );
 }
 
-export function AddPieceForm({ campaignId }: { campaignId: string }) {
+export function AddPieceForm({ campaignId, hasProduct }: { campaignId: string; hasProduct: boolean }) {
   const t = useMessages(campaignsMessages);
+  const kinds = PIECE_KINDS.filter((k) => hasProduct || !isMarketPiece(k));
   const [state, action, pending] = useActionState<CampaignState, FormData>(addPieceAction.bind(null, campaignId), {});
   const [kind, setKind] = useState<PieceKind>('print');
   const form = useResetOnSave(state);
@@ -257,7 +319,7 @@ export function AddPieceForm({ campaignId }: { campaignId: string }) {
         <label>
           {t.kind}
           <select name="kind" value={kind} onChange={(e) => setKind(e.target.value as PieceKind)}>
-            {PIECE_KINDS.map((k) => (
+            {kinds.map((k) => (
               <option key={k} value={k}>{t.kinds[k]}</option>
             ))}
           </select>

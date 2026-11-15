@@ -1,5 +1,5 @@
 import { and, asc, count, desc, eq, sql } from 'drizzle-orm';
-import { campaignResults, campaigns, pieces, posts, type Campaign, type CampaignResult, type ChannelBudget, type Database, type Piece } from '@maas/db';
+import { campaignResults, campaigns, pieces, posts, products, type Campaign, type CampaignResult, type ChannelBudget, type Database, type Piece } from '@maas/db';
 import { LocalizedError } from './i18n';
 import { findMedia } from './media';
 import {
@@ -8,8 +8,14 @@ import {
   CURRENCIES,
   emptyContent,
   GOALS,
+  isMarketPiece,
   isPieceFormat,
   PIECE_KINDS,
+  screenshotProblems,
+  SCREENSHOT_BACKGROUNDS,
+  SCREENSHOT_LIMITS,
+  type ListingContent,
+  type ScreenshotContent,
   PIECE_STATUSES,
   pieceChannel,
   type CampaignStatus,
@@ -33,6 +39,7 @@ import {
   youtubeVideoId,
 } from './marketing';
 import { campaignMessages } from './messages';
+import { checkListing } from './products';
 
 /** Something about a campaign the user has to fix; the message is meant for the user. */
 export class CampaignError extends LocalizedError {
@@ -54,6 +61,8 @@ export interface CampaignInput {
   budgetCents: number;
   channels: ChannelBudget[];
   notes: string;
+  /** The product it markets; left out to keep the current one. */
+  productId?: string | null;
 }
 
 const DAY = /^\d{4}-\d{2}-\d{2}$/;
@@ -109,21 +118,33 @@ export function cleanCampaign(input: CampaignInput): CampaignInput {
     budgetCents: amount(input.budgetCents),
     channels: channels.sort((a, b) => CHANNELS.indexOf(a.channel as Channel) - CHANNELS.indexOf(b.channel as Channel)),
     notes: longText(input.notes, 4000),
+    ...(input.productId !== undefined && { productId: input.productId || null }),
   };
 }
 
+/** The product id, after checking it belongs to the workspace. */
+async function ownProduct(db: Database, workspaceId: string, productId: string | null | undefined): Promise<void> {
+  if (!productId) return;
+  const found = await db.query.products.findFirst({ where: and(eq(products.id, productId), eq(products.workspaceId, workspaceId)), columns: { id: true } });
+  if (!found) throw new CampaignError((m) => m.product);
+}
+
 export async function createCampaign(db: Database, workspaceId: string, userId: string, input: CampaignInput): Promise<Campaign> {
+  const clean = cleanCampaign(input);
+  await ownProduct(db, workspaceId, clean.productId);
   const [row] = await db
     .insert(campaigns)
-    .values({ workspaceId, createdBy: userId, ...cleanCampaign(input) })
+    .values({ workspaceId, createdBy: userId, ...clean })
     .returning();
   return row!;
 }
 
 export async function updateCampaign(db: Database, workspaceId: string, campaignId: string, input: CampaignInput): Promise<Campaign> {
+  const clean = cleanCampaign(input);
+  await ownProduct(db, workspaceId, clean.productId);
   const [row] = await db
     .update(campaigns)
-    .set({ ...cleanCampaign(input), updatedAt: new Date() })
+    .set({ ...clean, updatedAt: new Date() })
     .where(and(eq(campaigns.id, campaignId), eq(campaigns.workspaceId, workspaceId)))
     .returning();
   if (!row) throw new CampaignError((m) => m.notFound);
@@ -202,7 +223,9 @@ export async function createPiece(
   if (!(PIECE_KINDS as readonly string[]).includes(input.kind) || !isPieceFormat(input.kind, input.format)) throw new CampaignError((m) => m.format);
   const title = input.title.trim();
   if (!title) throw new CampaignError((m) => m.pieceTitle);
-  if (!(await campaignExists(db, workspaceId, campaignId))) throw new CampaignError((m) => m.notFound);
+  const campaign = await db.query.campaigns.findFirst({ where: and(eq(campaigns.id, campaignId), eq(campaigns.workspaceId, workspaceId)), columns: { productId: true } });
+  if (!campaign) throw new CampaignError((m) => m.notFound);
+  if (isMarketPiece(input.kind) && !campaign.productId) throw new CampaignError((m) => m.needsProduct);
   const [row] = await db
     .insert(pieces)
     .values({ workspaceId, campaignId, kind: input.kind, format: input.format, title: title.slice(0, 160), content: (input.content ?? emptyContent(input.kind, input.format)) as unknown as Record<string, unknown>, source })
@@ -224,6 +247,7 @@ export async function setPieceStatus(db: Database, workspaceId: string, pieceId:
   if (!current) throw new CampaignError((m) => m.pieceNotFound);
   // Nothing goes out unapproved.
   if ((status === 'live' || status === 'done') && current.status === 'draft') throw new CampaignError((m) => m.approveFirst);
+  if (status === 'approved' && current.status === 'draft') await readyForApproval(db, workspaceId, current);
   const approval = status === 'draft' ? { approvedBy: null, approvedAt: null } : status === 'approved' ? { approvedBy: userId, approvedAt: new Date() } : {};
   const [row] = await db
     .update(pieces)
@@ -232,6 +256,15 @@ export async function setPieceStatus(db: Database, workspaceId: string, pieceId:
     .returning();
   if (!row) throw new CampaignError((m) => m.pieceNotFound);
   return row;
+}
+
+/** A listing or screenshot is approved only when its market's checks pass. */
+async function readyForApproval(db: Database, workspaceId: string, piece: Piece): Promise<void> {
+  if (piece.kind === 'screenshot' && screenshotProblems(piece.content as unknown as ScreenshotContent).length) throw new CampaignError((m) => m.screenshotNotReady);
+  if (piece.kind !== 'listing') return;
+  const check = await checkListing(db, workspaceId, piece);
+  if (!check) throw new CampaignError((m) => m.marketMissing);
+  if (check.listing.length || check.profile.length) throw new CampaignError((m) => m.listingNotReady);
 }
 
 /** Saves a piece's title and content (already checked by its kind's rules) and the uploads it uses. */
@@ -524,4 +557,66 @@ export async function adVideoId(db: Database, workspaceId: string, content: AdCo
   if (!content.spotId) return null;
   const spot = await getPiece(db, workspaceId, content.spotId);
   return spot ? (await spotVideo(db, workspaceId, spot.content as unknown as SpotContent)).videoId : null;
+}
+
+// ------------------------------------------------------------------ listings and screenshots
+
+const MAX_KEYWORD = 100;
+const MAX_LINKS = 20;
+
+function links(input: unknown, field: string): { name: string; url: string }[] {
+  const list = Array.isArray(input) ? input : [];
+  if (list.length > MAX_LINKS) throw new CampaignError((m) => m.tooManyLinks(MAX_LINKS));
+  return list
+    .map((entry) => ({ name: String((entry as { name?: unknown })?.name ?? '').trim().slice(0, 120), url: String((entry as { url?: unknown })?.url ?? '').trim() }))
+    .filter((entry) => entry.name || entry.url)
+    .map((entry) => {
+      if (entry.url && !/^https?:\/\/\S+\.\S+/.test(entry.url)) throw new CampaignError((m) => m.listingLink(field));
+      return { name: entry.name || entry.url, url: entry.url.slice(0, 500) };
+    });
+}
+
+/**
+ * Cleans a listing's content. Texts may run over the market's limits while
+ * people write (the editor counts, the checks block approval); this only
+ * caps them so nothing unbounded is stored.
+ */
+export function cleanListingContent(input: ListingContent): ListingContent {
+  const texts: Record<string, string> = {};
+  for (const [id, value] of Object.entries(input.texts ?? {})) {
+    if (/^[a-z][a-z0-9_]{0,39}$/.test(id) && typeof value === 'string' && value.trim()) texts[id] = value.trim().slice(0, 100_000);
+  }
+  const keywords = [...new Set((input.keywords ?? []).map((keyword) => String(keyword).trim().slice(0, MAX_KEYWORD)).filter(Boolean))].slice(0, 100);
+  return { texts, keywords, videos: links(input.videos, 'videos'), documents: links(input.documents, 'documents') };
+}
+
+export async function saveListingPiece(db: Database, workspaceId: string, pieceId: string, input: { title: string; content: ListingContent }): Promise<Piece> {
+  const current = await getPiece(db, workspaceId, pieceId);
+  if (!current || current.kind !== 'listing') throw new CampaignError((m) => m.pieceNotFound);
+  return savePiece(db, workspaceId, pieceId, { title: input.title, content: cleanListingContent(input.content), mediaIds: [] });
+}
+
+export function cleanScreenshotContent(input: ScreenshotContent): ScreenshotContent {
+  const headline = input.headline.trim();
+  const caption = input.caption.trim();
+  if (headline.length > SCREENSHOT_LIMITS.headline) throw new CampaignError((m) => m.textTooLong(SCREENSHOT_LIMITS.headline));
+  if (caption.length > SCREENSHOT_LIMITS.caption) throw new CampaignError((m) => m.textTooLong(SCREENSHOT_LIMITS.caption));
+  return {
+    captureMediaId: input.captureMediaId || null,
+    headline,
+    caption,
+    background: (SCREENSHOT_BACKGROUNDS as readonly string[]).includes(input.background) ? input.background : 'gradient',
+  };
+}
+
+/** Saves a screenshot; its capture has to be an image of the workspace. */
+export async function saveScreenshotPiece(db: Database, workspaceId: string, pieceId: string, input: { title: string; content: ScreenshotContent }): Promise<Piece> {
+  const current = await getPiece(db, workspaceId, pieceId);
+  if (!current || current.kind !== 'screenshot') throw new CampaignError((m) => m.pieceNotFound);
+  const content = cleanScreenshotContent(input.content);
+  if (content.captureMediaId) {
+    const capture = (await findMedia(db, workspaceId, [content.captureMediaId])).get(content.captureMediaId);
+    if (!capture || capture.kind !== 'image') throw new CampaignError((m) => m.notAnImage);
+  }
+  return savePiece(db, workspaceId, pieceId, { title: input.title, content, mediaIds: content.captureMediaId ? [content.captureMediaId] : [] });
 }

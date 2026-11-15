@@ -4,8 +4,8 @@
  * the same rules as the server.
  */
 
-/** Where a campaign reaches people. Social posts are the platform's posts; the others are pieces. */
-export const CHANNELS = ['social', 'search_ads', 'social_ads', 'video_ads', 'print', 'mail', 'radio', 'tv', 'cinema', 'outdoor'] as const;
+/** Where a campaign reaches people. Social posts are the platform's posts; the others are pieces. The marketplace is a product's listing in its target market. */
+export const CHANNELS = ['social', 'marketplace', 'search_ads', 'social_ads', 'video_ads', 'print', 'mail', 'radio', 'tv', 'cinema', 'outdoor'] as const;
 export type Channel = (typeof CHANNELS)[number];
 
 export const GOALS = ['awareness', 'traffic', 'leads', 'sales', 'event'] as const;
@@ -16,7 +16,10 @@ export type CampaignStatus = (typeof CAMPAIGN_STATUSES)[number];
 
 export const CURRENCIES = ['EUR', 'CHF', 'USD', 'GBP'] as const;
 
-export const PIECE_KINDS = ['ad', 'print', 'spot'] as const;
+export const PIECE_KINDS = ['ad', 'print', 'spot', 'listing', 'screenshot'] as const;
+/** Piece kinds of a target market: they need a campaign with a product. */
+export const MARKET_PIECE_KINDS = ['listing', 'screenshot'] as const satisfies readonly (typeof PIECE_KINDS)[number][];
+export const isMarketPiece = (kind: string): boolean => (MARKET_PIECE_KINDS as readonly string[]).includes(kind);
 export type PieceKind = (typeof PIECE_KINDS)[number];
 
 export const PIECE_STATUSES = ['draft', 'approved', 'live', 'done'] as const;
@@ -86,12 +89,16 @@ export const PIECE_FORMATS: Record<PieceKind, readonly string[]> = {
   ad: Object.keys(AD_FORMATS),
   print: Object.keys(PRINT_FORMATS),
   spot: Object.keys(SPOT_FORMATS),
+  // The market sets the limits of these; they have one format each.
+  listing: ['listing'],
+  screenshot: ['screenshot'],
 };
 
 export const isPieceFormat = (kind: PieceKind, format: string): boolean => PIECE_FORMATS[kind].includes(format);
 
 /** The channel a piece runs in. */
 export function pieceChannel(kind: PieceKind, format: string): Channel {
+  if (isMarketPiece(kind)) return 'marketplace';
   if (kind === 'ad') return AD_FORMATS[format as AdFormat].channel;
   if (kind === 'print') return PRINT_FORMATS[format as PrintFormat].channel;
   return SPOT_FORMATS[format as SpotFormat].channel;
@@ -99,11 +106,13 @@ export function pieceChannel(kind: PieceKind, format: string): Channel {
 
 // ------------------------------------------------------------------ AI studio
 
-/** What the AI studio can draft: "ad:search", "print:flyer_a6", "spot:radio_30"…, and "posts" (ideas for social posts). */
+/** What the AI studio can draft: "ad:search", "print:flyer_a6", "spot:radio_30", "listing:listing"…, and "posts" (ideas for social posts). */
 export const STUDIO_FORMATS: readonly string[] = [
   ...Object.keys(AD_FORMATS).map((format) => `ad:${format}`),
   ...Object.keys(PRINT_FORMATS).map((format) => `print:${format}`),
   ...Object.keys(SPOT_FORMATS).map((format) => `spot:${format}`),
+  // The listing of the campaign's product, by its target market's rules.
+  'listing:listing',
   'posts',
 ];
 export const MAX_STUDIO_FORMATS = 6;
@@ -201,10 +210,51 @@ export interface SpotContent {
   youtubePostId?: string;
 }
 
-export type PieceContent = AdContent | PrintContent | SpotContent;
+/** A product's listing in its marketplace. Its screenshots are the campaign's screenshot pieces. */
+export interface ListingContent {
+  /** The listing's texts, by the ids of the market's listing texts. */
+  texts: Record<string, string>;
+  keywords: string[];
+  /** Videos hosted elsewhere (YouTube, Vimeo…), and documents to upload with the listing. */
+  videos: ListingLink[];
+  documents: ListingLink[];
+}
+
+export interface ListingLink {
+  name: string;
+  url: string;
+}
+
+export const SCREENSHOT_BACKGROUNDS = ['gradient', 'primary', 'dark', 'light'] as const;
+export type ScreenshotBackground = (typeof SCREENSHOT_BACKGROUNDS)[number];
+/** What fits on the picture above the capture. */
+export const SCREENSHOT_LIMITS = { headline: 60, caption: 120 } as const;
+
+/** A listing screenshot: a capture of the product, with a headline and caption on a brand background. */
+export interface ScreenshotContent {
+  captureMediaId: string | null;
+  headline: string;
+  /** Also the screenshot's caption in the marketplace. */
+  caption: string;
+  background: ScreenshotBackground;
+}
+
+export type ScreenshotProblem = 'capture' | 'caption';
+
+/** What a screenshot still needs before it can be approved. */
+export function screenshotProblems(content: ScreenshotContent): ScreenshotProblem[] {
+  const problems: ScreenshotProblem[] = [];
+  if (!content.captureMediaId) problems.push('capture');
+  if (!content.caption.trim()) problems.push('caption');
+  return problems;
+}
+
+export type PieceContent = AdContent | PrintContent | SpotContent | ListingContent | ScreenshotContent;
 
 /** A new piece's starting content. */
 export function emptyContent(kind: PieceKind, format: string): PieceContent {
+  if (kind === 'listing') return { texts: {}, keywords: [], videos: [], documents: [] } satisfies ListingContent;
+  if (kind === 'screenshot') return { captureMediaId: null, headline: '', caption: '', background: 'gradient' } satisfies ScreenshotContent;
   if (kind === 'ad') {
     if (format === 'search') return { headlines: ['', '', ''], descriptions: ['', ''], finalUrl: '', callToAction: '', path1: '', path2: '', keywords: [] } satisfies AdContent;
     if (format === 'video') return { headlines: [''], longHeadlines: [''], descriptions: [''], finalUrl: '', callToAction: '' } satisfies AdContent;
