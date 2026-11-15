@@ -144,6 +144,17 @@ A business's marketing runs in campaigns across every channel it uses, with one 
 ### Autopilot — our marketing runs on its own (next)
 Content is planned, drafted, checked, published and measured without anyone starting it; ads spend within their caps and improve themselves. People set goals, budgets and rules, approve in one short weekly sitting, and act on alerts. The full todo is in section 6 below.
 
+### Target markets and MarketingApp4BusinessCentral (started)
+A target market is a plugin, like a theme, that sets the platform up for one kind of product and its marketplace; a workspace can install several. The first is MarketingApp4BusinessCentral, for the publisher of an extension for Microsoft Dynamics 365 Business Central: get it found, tried and bought. Format: [target markets](markets.md); definition, mockups and build order: [MarketingApp4BusinessCentral](marketing/business-central.md).
+
+- ✅ The target market format with its checks, storage per workspace, and the built-in market for Business Central on AppSource
+- Markets and product profiles in the app: what it does, who it is for, where it runs; several products per market
+- The AppSource listing as a channel and a piece, with Microsoft's limits, checks and approval
+- Listing screenshots at 1280 × 720 from a capture, a headline and a caption
+- Campaign templates: launch, new version, release wave, event, customer story
+- Drafts by the AI studio from the extension profile
+- Visits, installs and leads from the marketplace in the campaign's results
+
 ### Phase 4 — Delight
 - Live post previews per network
 - AI assistant (Claude) in the composer to shorten and adapt one post per network, suggest hashtags, write alt text (campaign drafts and post ideas come from the AI studio)

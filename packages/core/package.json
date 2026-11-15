@@ -10,6 +10,7 @@
     "./flow": "./src/flow.ts",
     "./i18n": "./src/i18n.ts",
     "./marketing": "./src/marketing.ts",
+    "./market": "./src/market.ts",
     "./print": "./src/print.ts",
     "./studio": "./src/studio.ts",
     "./briefing": "./src/briefing.ts",

@@ -33,6 +33,7 @@ export default defineConfig({
           { text: 'Configuration', link: '/configuration' },
           { text: 'About and legal pages', link: '/legal' },
           { text: 'Themes', link: '/themes' },
+          { text: 'Target markets', link: '/markets' },
         ],
       },
       {
@@ -60,6 +61,7 @@ export default defineConfig({
           { text: 'Video and radio spots', link: '/marketing/spots' },
           { text: 'Paid ads', link: '/marketing/ads' },
           { text: 'AI studio', link: '/marketing/ai-studio' },
+          { text: 'Business Central extensions', link: '/marketing/business-central' },
         ],
       },
       {

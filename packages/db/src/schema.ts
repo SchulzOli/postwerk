@@ -38,7 +38,7 @@ export interface PostMedia {
 export const accountStatus = pgEnum('account_status', ['active', 'needs_reauth']);
 export const postStatus = pgEnum('post_status', ['draft', 'scheduled', 'publishing', 'published', 'partial', 'failed']);
 export const targetStatus = pgEnum('target_status', ['pending', 'publishing', 'published', 'failed']);
-export const pluginKind = pgEnum('plugin_kind', ['theme']);
+export const pluginKind = pgEnum('plugin_kind', ['theme', 'market']);
 
 export const users = pgTable('users', {
   id: id(),
@@ -125,12 +125,12 @@ export const invites = pgTable(
   (t) => [uniqueIndex('invites_token_idx').on(t.tokenHash), index('invites_workspace_idx').on(t.workspaceId)],
 );
 
-/** Plugins installed in a workspace (themes for now, see @maas/core/theme). */
+/** Plugins installed in a workspace: themes (@maas/core/theme) and target markets (@maas/core/market). Ids are unique across kinds. */
 export const plugins = pgTable(
   'plugins',
   {
     workspaceId: uuid('workspace_id').notNull().references(() => workspaces.id, { onDelete: 'cascade' }),
-    /** The manifest's id, e.g. "paper". */
+    /** The manifest's id, e.g. "paper" or "business-central". */
     pluginId: text('plugin_id').notNull(),
     kind: pluginKind('kind').notNull(),
     /** Built-in plugins ship with MarketingAsAService and are read from code, so they update with it. */

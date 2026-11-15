@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en" data-mode="light" data-theme="aurora">
+<head>
+<meta charset="utf-8">
+<title>Target markets · mockup</title>
+<link rel="stylesheet" href="../../../apps/web/app/globals.css">
+<link rel="stylesheet" href="theme.css">
+<link rel="stylesheet" href="mockup.css">
+</head>
+<body>
+<header class="topbar">
+  <a class="brand">MarketingAsAService</a>
+  <nav><a>Canvas</a><a>Posts</a><a>Calendar</a><a>Campaigns</a><a>Accounts</a><a>Brand</a><a>AI studio</a><a>Team</a><a>Activity</a></nav>
+  <div class="who"><span class="ws">Example Apps ▾</span><div class="mode-switch"><button aria-checked="true">☀</button><button aria-checked="false">◐</button><button aria-checked="false">☾</button></div><span class="avatar-initial">E</span></div>
+</header>
+<div class="mock">Mockup · planned, not built yet</div>
+<main class="page">
+<div class="stack-lg">
+  <div class="stack-sm">
+    <a class="small-link" href="#">← Brand</a>
+    <h1>Target markets</h1>
+  </div>
+  <section class="card stack">
+    <h2>Installed</h2>
+    <p class="muted">The marketplaces your products are sold in. Each market brings its listing rules, templates and guidance for the AI studio.</p>
+    <ul class="list">
+      <li class="stack-sm">
+        <div class="row"><strong class="grow">Business Central extensions</strong><span class="badge">Built in</span><button type="button" class="small secondary">Uninstall</button></div>
+        <span class="muted small">AppSource · 2 products: Deposit Tracker, Pallet Pool · 5 templates · version 1.0.0 by MarketingAsAService</span>
+        <span class="small">Extensions for Microsoft Dynamics 365 Business Central, listed on AppSource: the listing with its screenshots, launches, new versions and the release waves.</span>
+      </li>
+      <li class="stack-sm">
+        <div class="row"><strong class="grow">Shop apps</strong><span class="badge">From a file</span><button type="button" class="small secondary">Download</button><button type="button" class="small secondary">Uninstall</button></div>
+        <span class="muted small">App Store · 1 product: Deposit Tracker for shops · 1 template · version 1.0.0 by Example Apps GmbH</span>
+        <span class="small">Apps for online shops.</span>
+      </li>
+    </ul>
+  </section>
+  <section class="card stack">
+    <h2>Add a target market</h2>
+    <p class="muted">Paste or upload a market file. Installing a market with the same id again updates it.</p>
+    <label>Market file<textarea rows="7" class="mono">{
+  "kind": "market",
+  "id": "shop-apps",
+  "name": { "en": "Shop apps", "de": "Shop-Apps" },
+  …</textarea></label>
+    <div class="row"><button type="button">Install</button><button type="button" class="secondary">Upload file</button><span class="grow"></span><a class="small-link" href="#">How a market file works</a></div>
+  </section>
+</div>
+</main>
+</body>
+</html>
