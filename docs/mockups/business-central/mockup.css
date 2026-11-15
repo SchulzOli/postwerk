@@ -52,3 +52,5 @@ textarea { line-height: 1.45; }
 .swatches { display: flex; gap: 0.5rem; }
 .swatch { width: 2rem; height: 2rem; border-radius: 50%; border: 2px solid var(--surface); box-shadow: 0 0 0 1px var(--border); }
 .swatch.is-on { box-shadow: 0 0 0 2px var(--accent); }
+
+textarea.mono { font-family: var(--font-mono); font-size: 0.85rem; }

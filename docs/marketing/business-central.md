@@ -2,14 +2,15 @@
 
 MarketingApp4BusinessCentral is MarketingAsAService set up for one job: marketing an extension for Microsoft Dynamics 365 Business Central. It is for the people who publish such an extension and have to get it found, tried and bought: the AppSource listing, the launch, every new version, and the numbers that show what worked.
 
-It is a part of the platform, turned on per workspace. Everything else stays as it is: the [brand kit](index.md#brand-kit), [campaigns](index.md#campaigns) with their approval, posts, ads and the [AI studio](ai-studio.md).
+It is a [target market](../markets.md): a plugin that a workspace installs, next to any other markets it sells in. The plugin holds everything that is particular to Business Central and AppSource (the profile fields, the listing's limits, Microsoft's rules, the templates, the AI guidance). The tools that use it are the same for every market and build on what is already there: the [brand kit](index.md#brand-kit), [campaigns](index.md#campaigns) with their approval, posts, ads and the [AI studio](ai-studio.md).
 
-> **Status: defined, not built yet.** This page says what it adds and in which order it gets built. The pictures are mockups in the look of the app, not captures of working screens.
+> **Status:** the plugin is built: the target market format, its checks, storage per workspace, and the built-in market `business-central` (`packages/core/src/markets/business-central.ts`). The screens that use it are not built yet; the pictures are mockups in the look of the app, not captures of working screens.
 
 ## What it adds
 
 | | What you get | Step |
 |---|---|---|
+| **Target markets** | Install Business Central and any other market under Brand; each product and campaign belongs to one | 1 |
 | **Extension profile** | What the extension does, who it is for, what it can do, where it runs, and its links. Every listing, post and draft builds on it. | 1 |
 | **AppSource listing** | The listing as a piece of a campaign: its texts with Microsoft's limits, screenshots, videos and documents, checked before approval, then handed over to Partner Center. | 2 |
 | **Listing screenshots** | A capture from Business Central becomes a 1280 × 720 picture with a headline and a caption in the brand's colors. | 3 |
@@ -20,6 +21,8 @@ It is a part of the platform, turned on per workspace. Everything else stays as 
 ### The extension profile
 
 A workspace can hold several extensions, since a publisher often has more than one. A campaign belongs to one of them.
+
+Every product has the common fields of a profile. The Business Central market adds publisher, version, editions and the AppSource link.
 
 - **The extension:** name, publisher and version (the same as in the app's `app.json`, because the listing has to match), and the AppSource link
 - **What it does** and **who it is for:** the business and the person who uses it every day
@@ -45,7 +48,7 @@ The listing is a piece like an ad or a flyer: it starts as a draft, an owner or 
 | Logo | PNG, from 216 × 216 to 350 × 350 pixels |
 | Categories and industries | a primary and a secondary category, up to 2 industries |
 
-These are Microsoft's rules as documented in November 2026: [listing details](https://learn.microsoft.com/en-us/partner-center/marketplace-offers/dynamics-365-business-central-offer-listing), [marketing validation checklist](https://learn.microsoft.com/en-us/dynamics365/business-central/dev-itpro/developer/readiness/readiness-checklist-marketing) and [marketing artifacts](https://learn.microsoft.com/en-us/dynamics365/business-central/dev-itpro/developer/readiness/readiness-checklist-g-marketingartifacts-logo-video-docs-screenshots). They change; the limits live in one place in the code and get checked against these pages when they do.
+These are Microsoft's rules as documented in November 2026: [listing details](https://learn.microsoft.com/en-us/partner-center/marketplace-offers/dynamics-365-business-central-offer-listing), [marketing validation checklist](https://learn.microsoft.com/en-us/dynamics365/business-central/dev-itpro/developer/readiness/readiness-checklist-marketing) and [marketing artifacts](https://learn.microsoft.com/en-us/dynamics365/business-central/dev-itpro/developer/readiness/readiness-checklist-g-marketingartifacts-logo-video-docs-screenshots). They change; the texts, counts and screenshot size live in the market's file (`packages/core/src/markets/business-central.ts`) and get checked against these pages when they do. The logo and the categories are entered in Partner Center and are not part of the market file yet.
 
 Two more checks come from Microsoft's validation: name, publisher and version match the extension, and the countries the description names match the markets the extension is offered in.
 
@@ -83,8 +86,9 @@ For the marketplace, reach counts visits to the listing, clicks count "Get it no
 
 | Decision | Why | Revisit when |
 |---|---|---|
-| A part of the platform, not an app of its own | Brand kit, campaigns, approval, posts, ads and the AI studio are all needed and already there | It should be offered on its own |
-| Turned on per workspace | A physio practice and a software publisher can share a server without seeing each other's tools | — |
+| A target market plugin, not an app of its own | Brand kit, campaigns, approval, posts, ads and the AI studio are all needed and already there; what is particular to Business Central fits in one file | It should be offered on its own |
+| Several markets per workspace | A publisher can sell in more than one marketplace; another market is a file, not new code | — |
+| Installed per workspace, none at first | A physio practice and a software publisher can share a server without seeing each other's tools | — |
 | For any extension | The profile holds what differs between extensions; nothing is written for one product | — |
 | The listing is prepared here and entered in Partner Center by a person | Submitting is rare, and Microsoft validates by hand anyway | Listings change often enough to pay for Partner Center's submission API |
 | Marketplace numbers by hand first | They fit the results as they are; the API can follow | Step 6 |
@@ -94,9 +98,11 @@ MarketingApp4BusinessCentral is not a Microsoft product. Microsoft, Dynamics 365
 
 ## Where it lives
 
-- `packages/core`: the channel `marketplace`, the piece kind `listing` with its limits and checks in `marketing.ts` (browser-safe, like the ad formats), the extension profiles, and the campaign templates
-- `packages/db`: extensions, the campaign's extension, the new piece kind, and what a workspace has turned on
-- `apps/web`: the extension profile under **Brand**, the listing and screenshot editors, the template picker; texts in English and German
+- `packages/core/src/markets/business-central.ts`: the market itself, as data (built)
+- `packages/core/src/market.ts` and `plugins.ts`: the target market format, its checks, `listingProblems`, and installing markets per workspace (built; see [target markets](../markets.md#for-developers))
+- `packages/core`: products and their profiles, the marketplace listing and screenshot pieces, and starting a campaign from a template
+- `packages/db`: products, the campaign's product, and the new piece kinds; markets use the `plugins` table
+- `apps/web`: target markets and product profiles under **Brand**, the listing and screenshot editors, the template picker; texts in English and German
 - `apps/worker`: reading marketplace numbers (step 6)
 - `docs/mockups/business-central`: the mockups above as HTML. They load the web app's stylesheet, so they look like the app. Replace each picture with a real capture once its screen is built.
 
@@ -104,7 +110,8 @@ MarketingApp4BusinessCentral is not a Microsoft product. Microsoft, Dynamics 365
 
 Each step is useful on its own. Sizes as in the [roadmap](../plan.md).
 
-1. [ ] **Extension profile (M).** What a workspace markets, turned on by owners and admins; extensions with their profile; a campaign's extension.
+0. [x] **Target market plugins (M).** The format with its checks, storage per workspace, and the built-in market `business-central`.
+1. [ ] **Markets and profiles in the app (M).** Install markets under Brand (built-in or from a file), owners and admins only; products with their profile; a campaign's product.
 2. [ ] **AppSource listing (M).** The channel and the piece with limits, checks and approval; copy the texts, download the pictures.
 3. [ ] **Listing screenshots (S–M).** Capture, headline, caption and background, rendered at 1280 × 720.
 4. [ ] **Campaign templates (S).**

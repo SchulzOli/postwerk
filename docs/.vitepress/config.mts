@@ -33,6 +33,7 @@ export default defineConfig({
           { text: 'Configuration', link: '/configuration' },
           { text: 'About and legal pages', link: '/legal' },
           { text: 'Themes', link: '/themes' },
+          { text: 'Target markets', link: '/markets' },
         ],
       },
       {

@@ -4,11 +4,15 @@ import { createDb, plugins, users, workspaceMembers, workspaces, type Database }
 import { runMigrations } from '../../db/src/migrate';
 import {
   activeTheme,
+  installBuiltinMarket,
   installBuiltinPlugin,
   installBuiltinPlugins,
+  installMarket,
   installPlugin,
+  listMarkets,
   listPlugins,
   setMemberTheme,
+  uninstallMarket,
   uninstallPlugin,
 } from '../src/plugins';
 import { requiredTokens } from '../src/theme';
@@ -16,6 +20,22 @@ import { requiredTokens } from '../src/theme';
 const url = process.env.TEST_DATABASE_URL;
 const colors = Object.fromEntries(requiredTokens.map((name) => [name, '#336699']));
 const custom = (patch: Record<string, unknown> = {}) => ({ kind: 'theme', id: 'mine', name: 'Mine', light: colors, dark: colors, ...patch });
+const text = (en: string) => ({ en, de: en });
+const market = (patch: Record<string, unknown> = {}) => ({
+  kind: 'market',
+  id: 'shop-apps',
+  name: text('Shop apps'),
+  description: text('Apps for online shops.'),
+  product: { name: text('Shop app') },
+  marketplace: {
+    name: 'App Store',
+    url: 'https://apps.example.com',
+    listing: { texts: [{ id: 'name', label: text('Name'), max: 30 }], screenshots: { min: 1, max: 3, width: 1600, height: 900 } },
+  },
+  studio: text('Name the shop system correctly.'),
+  results: { reach: text('Visits'), clicks: text('Installs started'), leads: text('Installs') },
+  ...patch,
+});
 
 describe.skipIf(!url)('plugins (Postgres)', () => {
   let db: Database;
@@ -96,5 +116,62 @@ describe.skipIf(!url)('plugins (Postgres)', () => {
     expect(activeTheme(await listPlugins(db, workspaceId), member!.theme)?.id).toBe('aurora');
     for (const id of ['aurora', 'paper']) await uninstallPlugin(db, workspaceId, id);
     expect(activeTheme(await listPlugins(db, workspaceId), member!.theme)).toBeUndefined();
+  });
+
+  describe('target markets', () => {
+    const marketIds = async (id = workspaceId) => (await listMarkets(db, id)).map((entry) => entry.id);
+
+    it('installs none in a new workspace, and several on request', async () => {
+      await installBuiltinPlugins(db, workspaceId);
+      expect(await marketIds()).toEqual([]);
+      await installMarket(db, workspaceId, JSON.stringify(market()));
+      await installBuiltinMarket(db, workspaceId, 'business-central');
+      await installBuiltinMarket(db, workspaceId, 'business-central');
+      expect(await marketIds()).toEqual(['business-central', 'shop-apps']);
+      const [first] = await listMarkets(db, workspaceId);
+      expect(first).toMatchObject({ builtin: true, manifest: { marketplace: { name: 'AppSource' } } });
+      await expect(installBuiltinMarket(db, workspaceId, 'nope')).rejects.toThrow(/does not ship/);
+    });
+
+    it('keeps themes and markets apart', async () => {
+      await installBuiltinPlugins(db, workspaceId);
+      await installBuiltinMarket(db, workspaceId, 'business-central');
+      expect(await ids()).toEqual(['aurora', 'paper', 'blueprint']);
+      // Uninstalling a theme by a market's id, or the other way round, changes nothing.
+      await uninstallPlugin(db, workspaceId, 'business-central');
+      await uninstallMarket(db, workspaceId, 'aurora');
+      expect(await marketIds()).toEqual(['business-central']);
+      expect(await ids()).toEqual(['aurora', 'paper', 'blueprint']);
+    });
+
+    it('never lets one kind overwrite the other through a shared id', async () => {
+      await installPlugin(db, workspaceId, custom({ id: 'shared' }));
+      await expect(installMarket(db, workspaceId, market({ id: 'shared' }))).rejects.toThrow(/Another plugin already uses the id “shared”/);
+      await installMarket(db, workspaceId, market());
+      await expect(installPlugin(db, workspaceId, custom({ id: 'shop-apps' }))).rejects.toThrow(/Another plugin already uses the id “shop-apps”/);
+      await expect(installPlugin(db, workspaceId, custom({ id: 'business-central' }))).rejects.toThrow(/Another plugin already uses/);
+      await expect(installMarket(db, workspaceId, market({ id: 'paper' }))).rejects.toThrow(/Another plugin already uses/);
+      await expect(installMarket(db, workspaceId, market({ id: 'business-central' }))).rejects.toThrow(/built-in market/);
+      expect(await ids()).toEqual(['shared']);
+      expect(await marketIds()).toEqual(['shop-apps']);
+    });
+
+    it('updates a custom market in place and skips stored ones that no longer validate', async () => {
+      await installMarket(db, workspaceId, market());
+      await installMarket(db, workspaceId, market({ name: text('Shop apps v2') }));
+      const [entry] = await listMarkets(db, workspaceId);
+      expect(entry).toMatchObject({ builtin: false, manifest: { name: { en: 'Shop apps v2' } } });
+      await db.insert(plugins).values({ workspaceId, pluginId: 'broken', kind: 'market', manifest: { kind: 'market' } });
+      expect(await marketIds()).toEqual(['shop-apps']);
+    });
+
+    it('keeps markets per workspace', async () => {
+      const [other] = await db.insert(workspaces).values({ name: 'Other' }).returning();
+      await installBuiltinMarket(db, other!.id, 'business-central');
+      expect(await marketIds()).toEqual([]);
+      expect(await marketIds(other!.id)).toEqual(['business-central']);
+      await uninstallMarket(db, other!.id, 'business-central');
+      expect(await marketIds(other!.id)).toEqual([]);
+    });
   });
 });

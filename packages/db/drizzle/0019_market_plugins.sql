@@ -1,0 +1,1 @@
+ALTER TYPE "public"."plugin_kind" ADD VALUE 'market';

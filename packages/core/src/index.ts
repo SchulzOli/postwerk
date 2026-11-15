@@ -17,6 +17,7 @@ export * from './clients';
 export * from './flow';
 export * from './flows';
 export * from './theme';
+export * from './market';
 export * from './plugins';
 export * from './ratelimit';
 export * from './audit';
